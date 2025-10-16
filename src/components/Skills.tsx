@@ -236,7 +236,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                     className="flex flex-col md:flex-row items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all py-3 px-4 rounded-lg"
                   >
                     <Icon className="w-5 h-5" />
-                    <span className="text-xs md:text-sm font-medium">{category.label.split(" ")[0]}</span>
+                    <span className="text-xs md:text-sm font-medium">{category.label}</span>
                   </TabsTrigger>
                 );
               })}
