@@ -264,17 +264,17 @@ export const Hero = ({ isOwner }: HeroProps) => {
         >
           {/* Profile Picture */}
           <div className="relative inline-block group">
-            <div className="w-40 h-40 mx-auto rounded-full overflow-hidden border-4 border-primary shadow-glow bg-secondary/50 flex items-center justify-center">
+            <div className="w-56 h-56 mx-auto rounded-full overflow-hidden border-4 border-primary shadow-glow bg-secondary/50 flex items-center justify-center">
               {profileImage ? (
-                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                <img src={profileImage} alt="Profile" className="w-full h-full object-contain scale-110" />
               ) : (
-                <Camera className="w-16 h-16 text-muted-foreground" />
+                <Camera className="w-20 h-20 text-muted-foreground" />
               )}
             </div>
             {isOwner && (
               <label className="absolute inset-0 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="w-full h-full rounded-full bg-black/60 flex items-center justify-center">
-                  <Camera className="w-8 h-8 text-foreground" />
+                  <Camera className="w-10 h-10 text-foreground" />
                 </div>
                 <input
                   type="file"
