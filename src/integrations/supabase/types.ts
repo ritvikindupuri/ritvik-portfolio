@@ -14,7 +14,180 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      certifications: {
+        Row: {
+          created_at: string | null
+          credential_url: string | null
+          date: string
+          id: string
+          image_url: string | null
+          issuer: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credential_url?: string | null
+          date: string
+          id?: string
+          image_url?: string | null
+          issuer: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credential_url?: string | null
+          date?: string
+          id?: string
+          image_url?: string | null
+          issuer?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      documentation: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string
+          id: string
+          title: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          title: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          title?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          full_name: string
+          github_url: string | null
+          id: string
+          linkedin_url: string | null
+          major: string | null
+          minor: string | null
+          profile_image_url: string | null
+          university: string | null
+          university_logo_url: string | null
+          updated_at: string | null
+          years: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          full_name: string
+          github_url?: string | null
+          id: string
+          linkedin_url?: string | null
+          major?: string | null
+          minor?: string | null
+          profile_image_url?: string | null
+          university?: string | null
+          university_logo_url?: string | null
+          updated_at?: string | null
+          years?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string
+          github_url?: string | null
+          id?: string
+          linkedin_url?: string | null
+          major?: string | null
+          minor?: string | null
+          profile_image_url?: string | null
+          university?: string | null
+          university_logo_url?: string | null
+          updated_at?: string | null
+          years?: string | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string | null
+          description: string
+          github_url: string | null
+          id: string
+          image_url: string | null
+          live_url: string | null
+          technologies: string[] | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          live_url?: string | null
+          technologies?: string[] | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          live_url?: string | null
+          technologies?: string[] | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      skills: {
+        Row: {
+          category: string
+          created_at: string | null
+          icon: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
