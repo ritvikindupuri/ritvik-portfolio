@@ -283,7 +283,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
             {Object.entries(projects).map(([key, projectList]) => (
               <TabsContent key={key} value={key} className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 auto-rows-fr">
                   {projectList.map((project, index) => (
                     <motion.div
                       key={project.title}

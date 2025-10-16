@@ -358,7 +358,7 @@ const Experience = ({ isOwner }: ExperienceProps) => {
           {/* Timeline line */}
           <div className="absolute left-[17px] top-0 bottom-0 w-[2px] bg-border" />
           
-          <div className="space-y-8">
+          <div className="space-y-8 pb-8">
             {experiences.map((exp, index) => (
               <motion.div
                 key={exp.id}

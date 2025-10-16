@@ -244,7 +244,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
             {skillCategories.map((category) => (
               <TabsContent key={category.id} value={category.id} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
                   {category.skills.map((skill, index) => (
                     <motion.div
                       key={skill.name}

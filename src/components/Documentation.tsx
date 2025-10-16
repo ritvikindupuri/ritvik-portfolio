@@ -197,7 +197,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
             <div className="w-24 h-1 bg-gradient-cyber mx-auto rounded-full" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto auto-rows-fr">
             {documents.map((doc, index) => (
               <motion.div
                 key={doc.title}
