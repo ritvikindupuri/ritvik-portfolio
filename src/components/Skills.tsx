@@ -227,7 +227,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
               <div className="pb-4">
-                <TabsList className="flex flex-wrap w-full justify-center mb-12 bg-card/60 backdrop-blur-sm border border-primary/20 p-3 md:p-4 gap-3 rounded-2xl shadow-elegant">
+                <TabsList className="relative z-10 flex flex-wrap w-full justify-center mb-12 bg-card border border-primary/20 p-3 md:p-4 gap-3 rounded-2xl shadow-elegant">
                   {skillCategories.map((category) => {
                     const Icon = category.icon;
                     return (
@@ -246,7 +246,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
             {skillCategories.map((category) => (
               <TabsContent key={category.id} value={category.id} className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mt-6">
                   {category.skills.map((skill, index) => (
                     <motion.div
                       key={skill.name}
