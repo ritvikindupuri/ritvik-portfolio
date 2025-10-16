@@ -7,6 +7,7 @@ import { About } from "@/components/About";
 import { Skills } from "@/components/Skills";
 import { Certifications } from "@/components/Certifications";
 import { Documentation } from "@/components/Documentation";
+import Experience from "@/components/Experience";
 import { Projects } from "@/components/Projects";
 import { Contact } from "@/components/Contact";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ const Index = () => {
         <Skills isOwner={!!user} />
         <Certifications isOwner={!!user} />
         <Documentation isOwner={!!user} />
+        <Experience isOwner={!!user} />
         <Projects isOwner={!!user} />
         <Contact />
 
