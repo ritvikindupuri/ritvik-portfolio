@@ -263,9 +263,9 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       )}
                       
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="flex items-center justify-center w-14 h-14">
+                        <div className="flex items-center justify-center w-12 h-12">
                           {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
-                            <img src={skill.logo} alt={skill.name} className="w-full h-full object-contain" />
+                            <img src={skill.logo} alt={skill.name} className="w-12 h-12 object-contain" />
                           ) : (
                             <span className="text-5xl">{skill.logo}</span>
                           )}
