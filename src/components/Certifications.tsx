@@ -180,7 +180,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                   }}
                 >
                   {/* Hexagonal shape container */}
-                  <div className="relative w-72 h-80">
+                  <div className="relative w-72 min-h-[20rem]">
                     {/* Animated glow background */}
                     <motion.div
                       className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/20 via-primary/20 to-accent/20 blur-2xl"
@@ -197,7 +197,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                     
                     {/* Main card with 3D effect */}
                     <motion.div
-                      className="relative h-full bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-8 shadow-2xl overflow-hidden"
+                      className="relative h-full bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-8 shadow-2xl overflow-visible"
                       whileHover={{ 
                         rotateY: 5,
                         rotateX: 5,
