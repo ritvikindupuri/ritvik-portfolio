@@ -18,6 +18,11 @@ interface PortfolioChatbotProps {
 }
 
 export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
+  // Don't show chatbot to owner - check BEFORE any hooks
+  if (isOwner) {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -29,11 +34,6 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Don't show chatbot to owner
-  if (isOwner) {
-    return null;
-  }
 
   useEffect(() => {
     if (scrollRef.current) {
