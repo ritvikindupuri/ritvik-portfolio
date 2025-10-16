@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Mail, Phone, Github, Linkedin, Send } from "lucide-react";
+import { Mail, Github, Linkedin, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -21,15 +21,15 @@ export const Contact = () => {
   const contactInfo = [
     {
       icon: Mail,
-      label: "Email",
+      label: "Personal Email",
       value: "ritvik.indupuri@gmail.com",
       href: "mailto:ritvik.indupuri@gmail.com",
     },
     {
-      icon: Phone,
-      label: "Phone",
-      value: "(317) 514-9996",
-      href: "tel:+13175149996",
+      icon: Mail,
+      label: "University Email",
+      value: "rindupur@purdue.edu",
+      href: "mailto:rindupur@purdue.edu",
     },
     {
       icon: Github,
