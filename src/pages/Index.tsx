@@ -18,6 +18,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [showAuthButton, setShowAuthButton] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -31,6 +32,16 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowAuthButton(scrollPosition < 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleSignOut = async () => {
@@ -49,7 +60,7 @@ const Index = () => {
         <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-primary/40 rounded-br-xl" />
         
         {/* Auth Button - Top Right */}
-        <div className="fixed top-6 right-6 sm:top-8 sm:right-8 md:top-10 md:right-10 z-50">
+        <div className={`fixed top-6 right-6 sm:top-8 sm:right-8 md:top-10 md:right-10 z-50 transition-opacity duration-300 ${showAuthButton ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           {user ? (
             <Button 
               onClick={handleSignOut}
