@@ -38,6 +38,7 @@ const initialCertifications = [
 export const Certifications = ({ isOwner }: CertificationsProps) => {
   const [certifications, setCertifications] = useState(initialCertifications);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingCert, setEditingCert] = useState<string | null>(null);
   const [newCert, setNewCert] = useState({
     name: "",
     logo: "",
@@ -92,28 +93,53 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
-      .from('certifications')
-      .insert({
-        user_id: user.id,
-        name: newCert.name,
-        issuer: "Issuer",
-        date: new Date().toISOString().split('T')[0],
-        image_url: newCert.logo,
-        credential_url: newCert.credentialId
-      });
+    if (editingCert) {
+      // Update existing certification
+      const { error } = await supabase
+        .from('certifications')
+        .update({
+          name: newCert.name,
+          image_url: newCert.logo,
+          credential_url: newCert.credentialId
+        })
+        .eq('user_id', user.id)
+        .eq('name', editingCert);
 
-    if (error) {
-      toast.error("Failed to add certification");
-      console.error('Error adding certification:', error);
-      return;
+      if (error) {
+        toast.error("Failed to update certification");
+        console.error('Error updating certification:', error);
+        return;
+      }
+
+      await fetchCertifications();
+      toast.success("Certification updated successfully");
+    } else {
+      // Insert new certification
+      const { error } = await supabase
+        .from('certifications')
+        .insert({
+          user_id: user.id,
+          name: newCert.name,
+          issuer: "Issuer",
+          date: new Date().toISOString().split('T')[0],
+          image_url: newCert.logo,
+          credential_url: newCert.credentialId
+        });
+
+      if (error) {
+        toast.error("Failed to add certification");
+        console.error('Error adding certification:', error);
+        return;
+      }
+
+      setCertifications([...certifications, newCert]);
+      toast.success("Certification added successfully");
     }
-
-    setCertifications([...certifications, newCert]);
+    
     setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
     setUploadedLogo("");
+    setEditingCert(null);
     setIsAddDialogOpen(false);
-    toast.success("Certification added successfully");
   };
 
   const handleRemoveCert = async (certName: string) => {
@@ -219,12 +245,31 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                       </div>
 
                       {isOwner && (
-                        <button
-                          onClick={() => handleRemoveCert(cert.name)}
-                          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 z-20 backdrop-blur-sm"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
+                          <button
+                            onClick={() => {
+                              setEditingCert(cert.name);
+                              setNewCert({
+                                name: cert.name,
+                                logo: cert.logo,
+                                credentialId: cert.credentialId,
+                                issueDate: cert.issueDate,
+                                expirationDate: cert.expirationDate
+                              });
+                              setUploadedLogo(cert.logo);
+                              setIsAddDialogOpen(true);
+                            }}
+                            className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                          </button>
+                          <button
+                            onClick={() => handleRemoveCert(cert.name)}
+                            className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                       
                       <div className="relative z-10 h-full flex flex-col items-center justify-between text-center">
@@ -336,7 +381,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                   
                   <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Add New Certification</DialogTitle>
+                      <DialogTitle>{editingCert ? 'Edit' : 'Add New'} Certification</DialogTitle>
                     </DialogHeader>
                     
                     <div className="space-y-4 py-4">
@@ -409,7 +454,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                         Cancel
                       </Button>
                       <Button onClick={handleAddCert} disabled={!newCert.name || !newCert.logo}>
-                        Add Certification
+                        {editingCert ? 'Update Certification' : 'Add Certification'}
                       </Button>
                     </div>
                   </DialogContent>

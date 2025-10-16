@@ -30,6 +30,7 @@ interface ExperienceEntry {
 const Experience = ({ isOwner }: ExperienceProps) => {
   const [experiences, setExperiences] = useState<ExperienceEntry[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingExperience, setEditingExperience] = useState<string | null>(null);
   const [newExperience, setNewExperience] = useState({
     title: "",
     company: "",
@@ -74,26 +75,51 @@ const Experience = ({ isOwner }: ExperienceProps) => {
       return;
     }
 
-    const { error } = await supabase.from("experience").insert({
-      user_id: user.id,
-      title: newExperience.title,
-      company: newExperience.company,
-      location: newExperience.location || null,
-      start_date: newExperience.start_date,
-      end_date: newExperience.is_current ? null : newExperience.end_date || null,
-      is_current: newExperience.is_current,
-      description: newExperience.description.filter(d => d.trim() !== ""),
-      skills: newExperience.skills,
-    });
+    if (editingExperience) {
+      // Update existing experience
+      const { error } = await supabase.from("experience").update({
+        title: newExperience.title,
+        company: newExperience.company,
+        location: newExperience.location || null,
+        start_date: newExperience.start_date,
+        end_date: newExperience.is_current ? null : newExperience.end_date || null,
+        is_current: newExperience.is_current,
+        description: newExperience.description.filter(d => d.trim() !== ""),
+        skills: newExperience.skills,
+      }).eq('id', editingExperience);
 
-    if (error) {
-      console.error("Error adding experience:", error);
-      toast.error("Failed to add experience");
-      return;
+      if (error) {
+        console.error("Error updating experience:", error);
+        toast.error("Failed to update experience");
+        return;
+      }
+
+      toast.success("Experience updated successfully");
+    } else {
+      // Insert new experience
+      const { error } = await supabase.from("experience").insert({
+        user_id: user.id,
+        title: newExperience.title,
+        company: newExperience.company,
+        location: newExperience.location || null,
+        start_date: newExperience.start_date,
+        end_date: newExperience.is_current ? null : newExperience.end_date || null,
+        is_current: newExperience.is_current,
+        description: newExperience.description.filter(d => d.trim() !== ""),
+        skills: newExperience.skills,
+      });
+
+      if (error) {
+        console.error("Error adding experience:", error);
+        toast.error("Failed to add experience");
+        return;
+      }
+
+      toast.success("Experience added successfully");
     }
 
-    toast.success("Experience added successfully");
     setIsAddDialogOpen(false);
+    setEditingExperience(null);
     setNewExperience({
       title: "",
       company: "",
@@ -232,7 +258,7 @@ const Experience = ({ isOwner }: ExperienceProps) => {
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Add New Experience</DialogTitle>
+                  <DialogTitle>{editingExperience ? 'Edit' : 'Add New'} Experience</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -357,7 +383,7 @@ const Experience = ({ isOwner }: ExperienceProps) => {
                   </div>
                   
                   <Button onClick={handleAddExperience} className="w-full">
-                    Add Experience
+                    {editingExperience ? 'Update Experience' : 'Add Experience'}
                   </Button>
                 </div>
               </DialogContent>
@@ -394,12 +420,33 @@ const Experience = ({ isOwner }: ExperienceProps) => {
                         <p className="text-lg font-semibold text-primary mb-2">{exp.company}</p>
                       </div>
                       {isOwner && (
-                        <button
-                          onClick={() => handleRemoveExperience(exp.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2"
-                        >
-                          <X size={16} />
-                        </button>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingExperience(exp.id);
+                              setNewExperience({
+                                title: exp.title,
+                                company: exp.company,
+                                location: exp.location || "",
+                                start_date: exp.start_date,
+                                end_date: exp.end_date || "",
+                                is_current: exp.is_current,
+                                description: exp.description,
+                                skills: exp.skills,
+                              });
+                              setIsAddDialogOpen(true);
+                            }}
+                            className="bg-primary/10 hover:bg-primary/20 text-primary rounded-lg p-2"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                          </button>
+                          <button
+                            onClick={() => handleRemoveExperience(exp.id)}
+                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       )}
                     </div>
                     

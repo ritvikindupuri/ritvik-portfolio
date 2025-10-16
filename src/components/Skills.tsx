@@ -82,6 +82,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   const [activeTab, setActiveTab] = useState("programming");
   const [skillCategories, setSkillCategories] = useState(initialSkillCategories);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingSkill, setEditingSkill] = useState<{ name: string; category: string } | null>(null);
   const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
 
@@ -148,35 +149,63 @@ export const Skills = ({ isOwner }: SkillsProps) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
-      .from('skills')
-      .insert({
-        user_id: user.id,
-        name: newSkill.name,
-        category: activeTab,
-        icon: newSkill.logo,
-        level: newSkill.level,
-        description: newSkill.description,
-        link: newSkill.link
-      });
+    if (editingSkill) {
+      // Update existing skill
+      const { error } = await supabase
+        .from('skills')
+        .update({
+          name: newSkill.name,
+          icon: newSkill.logo,
+          level: newSkill.level,
+          description: newSkill.description,
+          link: newSkill.link
+        })
+        .eq('user_id', user.id)
+        .eq('name', editingSkill.name)
+        .eq('category', editingSkill.category);
 
-    if (error) {
-      toast.error("Failed to add skill");
-      console.error('Error adding skill:', error);
-      return;
+      if (error) {
+        toast.error("Failed to update skill");
+        console.error('Error updating skill:', error);
+        return;
+      }
+
+      await fetchSkills();
+      toast.success("Skill updated successfully");
+    } else {
+      // Insert new skill
+      const { error } = await supabase
+        .from('skills')
+        .insert({
+          user_id: user.id,
+          name: newSkill.name,
+          category: activeTab,
+          icon: newSkill.logo,
+          level: newSkill.level,
+          description: newSkill.description,
+          link: newSkill.link
+        });
+
+      if (error) {
+        toast.error("Failed to add skill");
+        console.error('Error adding skill:', error);
+        return;
+      }
+
+      const updatedCategories = skillCategories.map((cat) =>
+        cat.id === activeTab
+          ? { ...cat, skills: [...cat.skills, newSkill] }
+          : cat
+      );
+      
+      setSkillCategories(updatedCategories);
+      toast.success("Skill added successfully");
     }
-
-    const updatedCategories = skillCategories.map((cat) =>
-      cat.id === activeTab
-        ? { ...cat, skills: [...cat.skills, newSkill] }
-        : cat
-    );
     
-    setSkillCategories(updatedCategories);
     setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
     setUploadedLogo("");
+    setEditingSkill(null);
     setIsAddDialogOpen(false);
-    toast.success("Skill added successfully");
   };
 
   const handleRemoveSkill = async (categoryId: string, skillName: string) => {
@@ -244,12 +273,31 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                     >
                       <div className="relative bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-6 hover:border-primary/50 transition-all duration-300 flex flex-col items-center text-center shadow-lg">
                         {isOwner && (
-                          <button
-                            onClick={() => handleRemoveSkill(category.id, skill.name)}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg p-1.5 z-10"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5 z-10">
+                            <button
+                              onClick={() => {
+                                setEditingSkill({ name: skill.name, category: category.id });
+                                setNewSkill({
+                                  name: skill.name,
+                                  level: skill.level,
+                                  logo: skill.logo,
+                                  description: skill.description,
+                                  link: skill.link
+                                });
+                                setUploadedLogo(skill.logo);
+                                setIsAddDialogOpen(true);
+                              }}
+                              className="bg-primary/20 hover:bg-primary/30 text-primary rounded-lg p-1.5"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            </button>
+                            <button
+                              onClick={() => handleRemoveSkill(category.id, skill.name)}
+                              className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg p-1.5"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         )}
                         
                         <div className="flex flex-col items-center gap-4 w-full">
@@ -312,7 +360,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                          <DialogTitle>Add New Skill to {category.label}</DialogTitle>
+                          <DialogTitle>{editingSkill ? 'Edit' : 'Add New'} Skill {editingSkill ? 'in' : 'to'} {category.label}</DialogTitle>
                         </DialogHeader>
                         
                         <div className="space-y-4 py-4">
@@ -388,7 +436,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                             Cancel
                           </Button>
                           <Button onClick={handleAddSkill} disabled={!newSkill.name || !newSkill.logo}>
-                            Add Skill
+                            {editingSkill ? 'Update Skill' : 'Add Skill'}
                           </Button>
                         </div>
                       </DialogContent>

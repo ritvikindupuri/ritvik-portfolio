@@ -92,6 +92,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
   const [activeTab, setActiveTab] = useState("security");
   const [projects, setProjects] = useState(initialProjects);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
   const [newProject, setNewProject] = useState<Project>({
     title: "",
     type: "Personal",
@@ -157,26 +158,52 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
-      .from('projects')
-      .insert({
-        user_id: user.id,
-        title: newProject.title,
-        description: newProject.description,
-        github_url: newProject.github,
-        technologies: newProject.skills
+    if (editingProject) {
+      // Update existing project
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          title: newProject.title,
+          description: newProject.description,
+          github_url: newProject.github,
+          technologies: newProject.skills
+        })
+        .eq('user_id', user.id)
+        .eq('title', editingProject);
+
+      if (error) {
+        toast.error("Failed to update project");
+        console.error('Error updating project:', error);
+        return;
+      }
+
+      await fetchProjects();
+      toast.success("Project updated successfully");
+    } else {
+      // Insert new project
+      const { error } = await supabase
+        .from('projects')
+        .insert({
+          user_id: user.id,
+          title: newProject.title,
+          description: newProject.description,
+          github_url: newProject.github,
+          technologies: newProject.skills
+        });
+
+      if (error) {
+        toast.error("Failed to add project");
+        console.error('Error adding project:', error);
+        return;
+      }
+
+      setProjects({
+        ...projects,
+        [activeTab]: [...projects[activeTab], newProject],
       });
-
-    if (error) {
-      toast.error("Failed to add project");
-      console.error('Error adding project:', error);
-      return;
+      
+      toast.success("Project added successfully");
     }
-
-    setProjects({
-      ...projects,
-      [activeTab]: [...projects[activeTab], newProject],
-    });
     
     setNewProject({
       title: "",
@@ -188,8 +215,8 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
       description: "",
     });
     setSkillInput("");
+    setEditingProject(null);
     setIsAddDialogOpen(false);
-    toast.success("Project added successfully");
   };
 
   const handleRemoveProject = async (category: string, projectTitle: string) => {
@@ -281,12 +308,24 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                       <div className="relative bg-gradient-to-br from-card via-card/98 to-card/85 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-8 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl overflow-hidden">
 
                         {isOwner && (
-                          <button
-                            onClick={() => handleRemoveProject(key, project.title)}
-                            className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 z-20 backdrop-blur-sm"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
+                            <button
+                              onClick={() => {
+                                setEditingProject(project.title);
+                                setNewProject(project);
+                                setIsAddDialogOpen(true);
+                              }}
+                              className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            </button>
+                            <button
+                              onClick={() => handleRemoveProject(key, project.title)}
+                              className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
                         )}
                         
                         <div className="relative z-10 space-y-5 flex flex-col h-full">
@@ -364,7 +403,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                       
                       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle>Add New {key === 'security' ? 'Security Engineering' : key === 'cloud' ? 'Cloud Security' : 'AI'} Project</DialogTitle>
+                          <DialogTitle>{editingProject ? 'Edit' : 'Add New'} {key === 'security' ? 'Security Engineering' : key === 'cloud' ? 'Cloud Security' : 'AI'} Project</DialogTitle>
                         </DialogHeader>
                         
                         <div className="space-y-4 py-4">
@@ -460,7 +499,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                             Cancel
                           </Button>
                           <Button onClick={handleAddProject} disabled={!newProject.title || !newProject.description}>
-                            Add Project
+                            {editingProject ? 'Update Project' : 'Add Project'}
                           </Button>
                         </div>
                       </DialogContent>
