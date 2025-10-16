@@ -158,51 +158,59 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
             <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-6xl mx-auto auto-rows-fr">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {certifications.map((cert, index) => (
               <motion.div
                 key={cert.name}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
+                transition={{ delay: index * 0.08, duration: 0.4 }}
                 viewport={{ once: true }}
-                className="group relative bg-gradient-card border border-border rounded-2xl p-8 hover:border-accent/50 hover:shadow-elegant transition-all duration-300"
+                className="group relative"
               >
-                {isOwner && (
-                  <button
-                    onClick={() => handleRemoveCert(cert.name)}
-                    className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-full p-2"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+                {/* Glow effect */}
+                <div className="absolute -inset-0.5 bg-gradient-cyber rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-500" />
                 
-                <div className="text-center space-y-6">
-                  <div className="text-6xl mx-auto w-20 h-20 flex items-center justify-center">
-                    {cert.logo.startsWith('data:') ? (
-                      <img src={cert.logo} alt={cert.name} className="w-full h-full object-contain" />
-                    ) : (
-                      cert.logo
-                    )}
-                  </div>
-                  <h3 className="text-xl font-bold font-sans group-hover:text-accent transition-colors">{cert.name}</h3>
+                <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-accent/40 transition-all duration-300 h-full shadow-lg hover:shadow-glow">
+                  {isOwner && (
+                    <button
+                      onClick={() => handleRemoveCert(cert.name)}
+                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2 z-10"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                   
-                  <div className="space-y-3 text-sm">
-                    {cert.credentialId && (
-                      <p className="text-muted-foreground">
-                        <span className="text-accent font-medium">Credential ID:</span> {cert.credentialId}
-                      </p>
-                    )}
-                    {cert.issueDate && (
-                      <p className="text-muted-foreground">
-                        <span className="text-accent font-medium">Issued:</span> {cert.issueDate}
-                      </p>
-                    )}
-                    {cert.expirationDate && (
-                      <p className="text-muted-foreground">
-                        <span className="text-accent font-medium">Expires:</span> {cert.expirationDate}
-                      </p>
-                    )}
+                  <div className="text-center space-y-6">
+                    <div className="mx-auto w-20 h-20 flex items-center justify-center bg-accent/10 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                      {cert.logo.startsWith('data:') ? (
+                        <img src={cert.logo} alt={cert.name} className="w-14 h-14 object-contain" />
+                      ) : (
+                        <span className="text-4xl">{cert.logo}</span>
+                      )}
+                    </div>
+                    <h3 className="text-xl font-bold font-sans group-hover:text-accent transition-colors leading-tight">{cert.name}</h3>
+                    
+                    <div className="space-y-3 text-sm">
+                      {cert.credentialId && (
+                        <div className="bg-accent/5 rounded-lg p-3">
+                          <p className="text-muted-foreground">
+                            <span className="text-accent font-semibold block mb-1">Credential ID</span>
+                            <span className="font-mono text-xs">{cert.credentialId}</span>
+                          </p>
+                        </div>
+                      )}
+                      {cert.issueDate && (
+                        <p className="text-muted-foreground">
+                          <span className="text-accent font-semibold">Issued:</span> {cert.issueDate}
+                        </p>
+                      )}
+                      {cert.expirationDate && (
+                        <p className="text-muted-foreground">
+                          <span className="text-accent font-semibold">Expires:</span> {cert.expirationDate}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>

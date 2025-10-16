@@ -225,90 +225,107 @@ export const Skills = ({ isOwner }: SkillsProps) => {
             <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="flex flex-wrap justify-center w-full mb-16 bg-card/60 backdrop-blur-sm border border-primary/20 p-4 gap-4 rounded-2xl shadow-elegant">
-              {skillCategories.map((category) => {
-                const Icon = category.icon;
-                return (
-                  <TabsTrigger
-                    key={category.id}
-                    value={category.id}
-                    className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-5 px-8 rounded-xl hover:bg-primary/10 min-w-[200px] border border-transparent data-[state=active]:border-primary/40"
-                  >
-                    <Icon className="w-6 h-6 flex-shrink-0" />
-                    <span className="text-sm font-semibold whitespace-nowrap">{category.label}</span>
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
+            <div className="overflow-x-auto pb-4 -mx-4 px-4">
+              <TabsList className="inline-flex flex-nowrap w-auto min-w-full md:min-w-0 md:flex-wrap md:justify-center mb-16 bg-card/60 backdrop-blur-sm border border-primary/20 p-4 gap-3 rounded-2xl shadow-elegant">
+                {skillCategories.map((category) => {
+                  const Icon = category.icon;
+                  return (
+                    <TabsTrigger
+                      key={category.id}
+                      value={category.id}
+                      className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-4 px-6 rounded-xl hover:bg-primary/10 whitespace-nowrap border border-transparent data-[state=active]:border-primary/40"
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="text-sm font-semibold">{category.label}</span>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </div>
 
             {skillCategories.map((category) => (
               <TabsContent key={category.id} value={category.id} className="space-y-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 auto-rows-fr">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {category.skills.map((skill, index) => (
                     <motion.div
                       key={skill.name}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="group relative bg-gradient-card border border-border rounded-2xl p-8 hover:border-primary/50 hover:shadow-elegant transition-all duration-300 flex flex-col"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.4 }}
+                      className="group relative"
                     >
-                      {isOwner && (
-                        <button
-                          onClick={() => handleRemoveSkill(category.id, skill.name)}
-                          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-full p-2 z-10"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
+                      {/* Glow effect on hover */}
+                      <div className="absolute -inset-0.5 bg-gradient-cyber rounded-2xl opacity-0 group-hover:opacity-30 blur transition-opacity duration-500" />
                       
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="flex items-center justify-center w-16 h-16 shrink-0">
-                          {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
-                            <img src={skill.logo} alt={skill.name} className="w-full h-full object-contain" />
-                          ) : (
-                            <span className="text-5xl leading-none">{skill.logo}</span>
-                          )}
+                      <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
+                        {isOwner && (
+                          <button
+                            onClick={() => handleRemoveSkill(category.id, skill.name)}
+                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2 z-10"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                        
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className="flex items-center justify-center w-14 h-14 shrink-0 bg-primary/10 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                            {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
+                              <img src={skill.logo} alt={skill.name} className="w-10 h-10 object-contain" />
+                            ) : (
+                              <span className="text-3xl leading-none">{skill.logo}</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-base font-sans mb-1 text-foreground truncate">{skill.name}</h3>
+                            <span className={`text-xs font-semibold font-mono px-2 py-1 rounded-md ${getLevelColor(skill.level)} bg-primary/5`}>
+                              {skill.level}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg font-sans mb-1">{skill.name}</h3>
-                          <span className={`text-sm font-medium font-mono ${getLevelColor(skill.level)}`}>
-                            {skill.level}
-                          </span>
-                        </div>
-                      </div>
 
-                      {skill.description && (
-                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                          {skill.description}
-                        </p>
-                      )}
-                      
-                      {skill.link && (
-                        <a
-                          href={skill.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors mb-4"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          <span>View Project</span>
-                        </a>
-                      )}
-                      
-                      <div className="h-2 bg-secondary rounded-full overflow-hidden mt-auto">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ 
-                            width: skill.level === "Advanced" ? "100%" : 
-                                   skill.level === "Intermediate" ? "66%" : "33%" 
-                          }}
-                          transition={{ duration: 1, delay: index * 0.05 + 0.2 }}
-                          className={`h-full rounded-full ${
-                            skill.level === "Advanced" ? "bg-accent" :
-                            skill.level === "Intermediate" ? "bg-primary" : "bg-muted-foreground"
-                          }`}
-                        />
+                        {skill.description && (
+                          <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-3">
+                            {skill.description}
+                          </p>
+                        )}
+                        
+                        {skill.link && (
+                          <a
+                            href={skill.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors mb-4 font-medium"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>Learn More</span>
+                          </a>
+                        )}
+                        
+                        <div className="mt-auto">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-muted-foreground">Proficiency</span>
+                            <span className="text-xs font-bold text-primary">
+                              {skill.level === "Advanced" ? "90%" : 
+                               skill.level === "Intermediate" ? "66%" : "40%"}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-secondary/50 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ 
+                                width: skill.level === "Advanced" ? "90%" : 
+                                       skill.level === "Intermediate" ? "66%" : "40%" 
+                              }}
+                              transition={{ duration: 1, delay: index * 0.05 + 0.3, ease: "easeOut" }}
+                              className={`h-full rounded-full ${
+                                skill.level === "Advanced" ? "bg-gradient-to-r from-green-500 to-emerald-500" :
+                                skill.level === "Intermediate" ? "bg-gradient-to-r from-blue-500 to-cyan-500" : 
+                                "bg-gradient-to-r from-yellow-500 to-orange-500"
+                              }`}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
                   ))}

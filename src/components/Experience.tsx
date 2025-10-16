@@ -365,69 +365,76 @@ const Experience = ({ isOwner }: ExperienceProps) => {
           )}
         </div>
 
-        <div className="relative">
-          {/* Timeline line */}
-          <div className="absolute left-[17px] top-0 bottom-0 w-[2px] bg-border" />
+        <div className="relative max-w-4xl mx-auto">
+          {/* Enhanced Timeline line */}
+          <div className="absolute left-[21px] top-0 bottom-0 w-[3px] bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full" />
           
-          <div className="space-y-8 pb-8">
+          <div className="space-y-10 pb-8">
             {experiences.map((exp, index) => (
               <motion.div
                 key={exp.id}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative pl-12"
+                className="relative pl-16 group"
               >
-                {/* Timeline dot */}
-                <div className="absolute left-0 top-2 w-9 h-9 rounded-full bg-primary border-4 border-background flex items-center justify-center">
-                  <div className="w-3 h-3 rounded-full bg-background" />
+                {/* Enhanced Timeline dot with icon */}
+                <div className="absolute left-0 top-3 w-11 h-11 rounded-full bg-gradient-cyber border-4 border-background flex items-center justify-center shadow-glow z-10">
+                  <Briefcase className="w-5 h-5 text-background" />
                 </div>
                 
-                <div className="bg-card/50 backdrop-blur-sm border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold">{exp.title}</h3>
-                    {isOwner && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveExperience(exp.id)}
-                      >
-                        <X size={16} />
-                      </Button>
+                <div className="relative">
+                  <div className="absolute -inset-0.5 bg-gradient-cyber rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-500" />
+                  
+                  <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 shadow-lg hover:shadow-glow">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold group-hover:text-primary transition-colors mb-2 leading-tight">{exp.title}</h3>
+                        <p className="text-lg font-semibold text-primary mb-2">{exp.company}</p>
+                      </div>
+                      {isOwner && (
+                        <button
+                          onClick={() => handleRemoveExperience(exp.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground font-mono mb-3 bg-primary/5 px-3 py-1.5 rounded-lg w-fit">
+                      {formatDateRange(exp.start_date, exp.end_date, exp.is_current)}
+                    </p>
+                    
+                    {exp.location && (
+                      <p className="text-sm text-muted-foreground flex items-center gap-2 mb-5">
+                        <MapPin size={16} className="text-primary" />
+                        {exp.location}
+                      </p>
+                    )}
+                    
+                    {exp.description && exp.description.length > 0 && (
+                      <ul className="space-y-3 mb-5">
+                        {exp.description.map((desc, idx) => (
+                          <li key={idx} className="flex gap-3 text-muted-foreground leading-relaxed text-sm">
+                            <span className="text-primary mt-1 text-lg">•</span>
+                            <span>{desc}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    
+                    {exp.skills && exp.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-4 border-t border-border/50">
+                        {exp.skills.map((skill) => (
+                          <Badge key={skill} variant="secondary" className="font-mono text-xs px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  
-                  <p className="text-lg font-semibold text-primary mb-2">{exp.company}</p>
-                  
-                  <p className="text-muted-foreground mb-2">
-                    {formatDateRange(exp.start_date, exp.end_date, exp.is_current)}
-                  </p>
-                  
-                  {exp.location && (
-                    <p className="text-muted-foreground flex items-center gap-1 mb-4">
-                      <MapPin size={16} />
-                      {exp.location}
-                    </p>
-                  )}
-                  
-                  {exp.description && exp.description.length > 0 && (
-                    <ul className="list-disc list-outside ml-5 space-y-2 mb-4">
-                      {exp.description.map((desc, idx) => (
-                        <li key={idx} className="text-muted-foreground">{desc}</li>
-                      ))}
-                    </ul>
-                  )}
-                  
-                  {exp.skills && exp.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {exp.skills.map((skill) => (
-                        <Badge key={skill} variant="secondary">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </motion.div>
             ))}

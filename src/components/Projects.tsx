@@ -256,92 +256,100 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
             <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid grid-cols-3 w-full mb-12 bg-secondary/50 p-2 h-auto gap-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
+            <TabsList className="inline-flex flex-wrap justify-center w-full mb-16 bg-card/60 backdrop-blur-sm border border-primary/20 p-3 gap-3 rounded-2xl shadow-elegant">
               <TabsTrigger
                 value="security"
-                className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all py-3 px-4 rounded-lg"
+                className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-4 px-8 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
               >
-                <Shield className="w-5 h-5" />
-                <span className="text-sm font-medium">Security</span>
+                <Shield className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-semibold">Security</span>
               </TabsTrigger>
               <TabsTrigger
                 value="cloud"
-                className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all py-3 px-4 rounded-lg"
+                className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-4 px-8 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
               >
-                <Cloud className="w-5 h-5" />
-                <span className="text-sm font-medium">Cloud</span>
+                <Cloud className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-semibold">Cloud</span>
               </TabsTrigger>
               <TabsTrigger
                 value="ai"
-                className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all py-3 px-4 rounded-lg"
+                className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-4 px-8 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
               >
-                <Brain className="w-5 h-5" />
-                <span className="text-sm font-medium">AI</span>
+                <Brain className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-semibold">AI</span>
               </TabsTrigger>
             </TabsList>
 
             {Object.entries(projects).map(([key, projectList]) => (
-              <TabsContent key={key} value={key} className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 auto-rows-fr">
+              <TabsContent key={key} value={key} className="space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {projectList.map((project, index) => (
                     <motion.div
                       key={project.title}
-                      initial={{ opacity: 0, y: 30 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1, duration: 0.5 }}
-                      className="group relative bg-gradient-card border border-border rounded-2xl p-8 hover:border-primary/50 hover:shadow-elegant transition-all duration-300"
+                      transition={{ delay: index * 0.08, duration: 0.4 }}
+                      className="group relative h-full"
                     >
-                      {isOwner && (
-                        <button
-                          onClick={() => handleRemoveProject(key, project.title)}
-                          className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-full p-2"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                      <div className="space-y-6">
-                        <div className="flex items-start justify-between gap-4">
-                          <h3 className="text-2xl font-bold font-sans group-hover:text-primary transition-colors flex-1">
-                            {project.title}
-                          </h3>
-                          {project.type === "Purdue" && (
-                            <img
-                              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png"
-                              alt="Purdue"
-                              className="h-7 flex-shrink-0"
-                            />
+                      {/* Glow effect */}
+                      <div className="absolute -inset-0.5 bg-gradient-cyber rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-500" />
+                      
+                      <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
+                        {isOwner && (
+                          <button
+                            onClick={() => handleRemoveProject(key, project.title)}
+                            className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2 z-10"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                        
+                        <div className="space-y-5 flex flex-col h-full">
+                          <div className="flex items-start justify-between gap-4">
+                            <h3 className="text-2xl font-bold font-sans group-hover:text-primary transition-colors leading-tight flex-1">
+                              {project.title}
+                            </h3>
+                            {project.type === "Purdue" && (
+                              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <img
+                                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png"
+                                  alt="Purdue"
+                                  className="w-6 h-6 object-contain"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3">{project.description}</p>
+
+                          <div className="flex items-center gap-3 text-sm font-mono">
+                            <span className="text-primary font-medium">{project.startMonth}</span>
+                            <span className="text-muted-foreground">→</span>
+                            <span className="text-primary font-medium">{project.endMonth}</span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            {project.skills.map((skill) => (
+                              <Badge key={skill} variant="secondary" className="font-mono text-xs px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
+
+                          {project.github && (
+                            <a
+                              href={project.github}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link mt-auto pt-4 border-t border-border/50"
+                            >
+                              <Github className="w-5 h-5" />
+                              <span>View Repository</span>
+                              <ExternalLink className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                            </a>
                           )}
                         </div>
-
-                        <p className="text-muted-foreground leading-relaxed">{project.description}</p>
-
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground font-mono">
-                          <span className="text-primary">{project.startMonth}</span>
-                          <span>→</span>
-                          <span className="text-primary">{project.endMonth}</span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          {project.skills.map((skill) => (
-                            <Badge key={skill} variant="secondary" className="font-mono text-xs px-3 py-1">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-
-                        {project.github && (
-                          <a
-                            href={project.github}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium group/link"
-                          >
-                            <Github className="w-5 h-5" />
-                            <span>View on GitHub</span>
-                            <ExternalLink className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
-                          </a>
-                        )}
                       </div>
                     </motion.div>
                   ))}

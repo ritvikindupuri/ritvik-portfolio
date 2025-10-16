@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { FileText, Plus, Upload, X, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -197,64 +198,69 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
             <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto auto-rows-fr">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
             {documents.map((doc, index) => (
               <motion.div
                 key={doc.title}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
+                transition={{ delay: index * 0.08, duration: 0.4 }}
                 viewport={{ once: true }}
-                className="group relative bg-gradient-card border border-border rounded-2xl p-8 hover:border-primary/50 hover:shadow-elegant transition-all duration-300"
+                className="group relative"
               >
-                {isOwner && (
-                  <button
-                    onClick={() => handleRemoveDocument(doc.title)}
-                    className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-full p-2"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+                <div className="absolute -inset-0.5 bg-gradient-cyber rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-500" />
                 
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex items-center gap-2 text-sm text-primary font-mono mb-2">
-                      <FileText className="w-4 h-4" />
-                      <span>{doc.projectName}</span>
-                    </div>
-                    <h3 className="text-2xl font-bold font-sans group-hover:text-primary transition-colors mb-3">
-                      {doc.title}
-                    </h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {doc.description}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {doc.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-3 py-1 text-xs font-mono bg-secondary text-secondary-foreground rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <span className="text-sm text-muted-foreground font-mono">
-                      {doc.uploadDate}
-                    </span>
-                    <a
-                      href={doc.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium group/link"
+                <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
+                  {isOwner && (
+                    <button
+                      onClick={() => handleRemoveDocument(doc.title)}
+                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2 z-10"
                     >
-                      <Download className="w-4 h-4" />
-                      <span>Download</span>
-                      <ExternalLink className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
-                    </a>
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                  
+                  <div className="space-y-5 flex flex-col h-full">
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-mono mb-3 bg-primary/10 px-3 py-1.5 rounded-lg w-fit">
+                        <FileText className="w-4 h-4 text-primary" />
+                        <span className="font-semibold text-primary">{doc.projectName}</span>
+                      </div>
+                      <h3 className="text-2xl font-bold font-sans group-hover:text-primary transition-colors mb-3 leading-tight">
+                        {doc.title}
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3">
+                        {doc.description}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {doc.tags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="px-3 py-1 text-xs font-mono bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-auto">
+                      <span className="text-sm text-muted-foreground font-mono">
+                        {doc.uploadDate}
+                      </span>
+                      <a
+                        href={doc.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download</span>
+                        <ExternalLink className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </motion.div>
