@@ -265,7 +265,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                   ))}
 
                   {/* Add Project Button - Owner Only */}
-                  {isOwner && (
+                  {isOwner && activeTab === key && (
                     <Dialog open={isAddDialogOpen && activeTab === key} onOpenChange={setIsAddDialogOpen}>
                       <DialogTrigger asChild>
                         <motion.button

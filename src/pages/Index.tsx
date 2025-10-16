@@ -31,8 +31,8 @@ const Index = () => {
         {/* Footer */}
         <footer className="py-8 border-t border-border bg-card/50">
           <div className="container mx-auto px-6 text-center">
-            <p className="text-muted-foreground">
-              © 2024 Ritvik Indupuri. Built with React, TypeScript, and Tailwind CSS.
+            <p className="text-muted-foreground font-medium">
+              Ritvik Indupuri • Purdue University • Cybersecurity '28
             </p>
           </div>
         </footer>

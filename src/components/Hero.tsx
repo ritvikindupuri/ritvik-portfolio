@@ -1,7 +1,32 @@
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { motion, useAnimation } from "framer-motion";
+import { useState, useEffect } from "react";
 import { Camera, Github, Linkedin } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
+
+const TypewriterText = ({ text }: { text: string }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  
+  useEffect(() => {
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex <= text.length) {
+        setDisplayedText(text.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 80);
+    
+    return () => clearInterval(interval);
+  }, [text]);
+  
+  return (
+    <span>
+      {displayedText}
+      <span className="animate-pulse">|</span>
+    </span>
+  );
+};
 
 interface HeroProps {
   isOwner: boolean;
@@ -29,6 +54,41 @@ export const Hero = ({ isOwner }: HeroProps) => {
         style={{ backgroundImage: `url(${cyberBg})` }}
       />
       <div className="absolute inset-0 bg-gradient-hero" />
+      
+      {/* Animated Cyber Grid Background */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            linear-gradient(hsl(var(--cyber-purple) / 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--cyber-purple) / 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '50px 50px',
+          animation: 'gridMove 20s linear infinite'
+        }} />
+      </div>
+
+      {/* Floating Particles */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-cyber-glow rounded-full"
+            initial={{
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
+            }}
+            animate={{
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
+            }}
+            transition={{
+              duration: Math.random() * 20 + 10,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+          />
+        ))}
+      </div>
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6 py-20 text-center">
@@ -62,14 +122,14 @@ export const Hero = ({ isOwner }: HeroProps) => {
             )}
           </div>
 
-          {/* Animated Greeting */}
+          {/* Animated Greeting with Typewriter Effect */}
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 1 }}
             className="text-5xl md:text-7xl font-bold font-sans"
           >
-            Hi, my name is{" "}
+            <TypewriterText text="Hi, my name is " />
             <span className="bg-gradient-cyber bg-clip-text text-transparent">
               Ritvik Indupuri
             </span>
@@ -102,6 +162,8 @@ export const Hero = ({ isOwner }: HeroProps) => {
                 className="h-8"
               />
               <span className="font-semibold">Purdue University</span>
+              <span className="text-primary">•</span>
+              <span className="font-mono text-primary">2024-2028</span>
             </div>
           </motion.div>
 

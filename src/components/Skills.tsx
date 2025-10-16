@@ -221,7 +221,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                   ))}
 
                   {/* Add Skill Button - Owner Only */}
-                  {isOwner && (
+                  {isOwner && activeTab === category.id && (
                     <Dialog open={isAddDialogOpen && activeTab === category.id} onOpenChange={setIsAddDialogOpen}>
                       <DialogTrigger asChild>
                         <motion.button
