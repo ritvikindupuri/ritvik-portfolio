@@ -258,7 +258,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
             <div className="pb-4">
-              <TabsList className="relative z-10 flex flex-wrap w-full justify-center mb-12 bg-card border border-primary/20 p-3 md:p-4 gap-3 rounded-2xl shadow-elegant">
+              <TabsList className="relative z-10 flex flex-wrap w-full justify-center mb-12 bg-transparent h-auto p-0 gap-6 rounded-none shadow-none border-0">
                 <TabsTrigger
                   value="security"
                   className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"

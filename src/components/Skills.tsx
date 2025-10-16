@@ -227,7 +227,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
               <div className="pb-4">
-                <TabsList className="relative z-10 flex flex-wrap w-full justify-center mb-12 bg-card border border-primary/20 p-3 md:p-4 gap-3 rounded-2xl shadow-elegant">
+                <TabsList className="relative z-10 flex flex-wrap w-full justify-center mb-12 bg-transparent h-auto p-0 gap-6 rounded-none shadow-none border-0">
                   {skillCategories.map((category) => {
                     const Icon = category.icon;
                     return (
@@ -266,11 +266,11 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                         )}
                         
                         <div className="flex flex-col items-center text-center gap-3 mb-4">
-                          <div className="flex items-center justify-center w-20 h-20 md:w-24 md:h-24 shrink-0 bg-primary/10 rounded-xl">
+                          <div className="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 shrink-0 bg-primary/10 rounded-xl">
                             {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
-                              <img src={skill.logo} alt={skill.name} className="w-12 h-12 md:w-14 md:h-14 object-contain" />
+                              <img src={skill.logo} alt={skill.name} className="w-14 h-14 md:w-16 md:h-16 object-contain" />
                             ) : (
-                              <span className="text-4xl leading-none">{skill.logo}</span>
+                              <span className="text-3xl leading-none">{skill.logo}</span>
                             )}
                           </div>
                           <h3 className="font-bold text-lg font-sans text-foreground">{skill.name}</h3>
