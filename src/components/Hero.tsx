@@ -6,26 +6,42 @@ import cyberBg from "@/assets/cyber-bg.jpg";
 const TypewriterText = () => {
   const fullText = "Hi, my name is Ritvik Indupuri";
   const [displayedText, setDisplayedText] = useState("");
-  const [isComplete, setIsComplete] = useState(false);
+  const [isTyping, setIsTyping] = useState(true);
   
   useEffect(() => {
-    let currentIndex = 0;
-    const typeInterval = setInterval(() => {
-      if (currentIndex < fullText.length) {
-        setDisplayedText(fullText.slice(0, currentIndex + 1));
-        currentIndex++;
-      } else {
-        setIsComplete(true);
-        clearInterval(typeInterval);
-        setTimeout(() => {
-          setDisplayedText("");
-          setIsComplete(false);
-        }, 10000); // Wait 10 seconds before repeating
-      }
-    }, 80);
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let intervalId: ReturnType<typeof setInterval>;
     
-    return () => clearInterval(typeInterval);
-  }, [isComplete]);
+    const startTyping = () => {
+      let currentIndex = 0;
+      setIsTyping(true);
+      
+      intervalId = setInterval(() => {
+        if (currentIndex < fullText.length) {
+          setDisplayedText(fullText.slice(0, currentIndex + 1));
+          currentIndex++;
+        } else {
+          // Finished typing
+          clearInterval(intervalId);
+          setIsTyping(false);
+          
+          // Wait 10 seconds, then reset and type again
+          timeoutId = setTimeout(() => {
+            setDisplayedText("");
+            startTyping();
+          }, 10000);
+        }
+      }, 80);
+    };
+    
+    // Start the first typing animation
+    startTyping();
+    
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, []); // Only run once on mount
   
   // Split the text to apply gradient to "Ritvik Indupuri"
   const splitIndex = "Hi, my name is ".length;
@@ -36,7 +52,7 @@ const TypewriterText = () => {
     <span className="inline-block">
       {beforeName}
       {name && <span className="bg-gradient-cyber bg-clip-text text-transparent">{name}</span>}
-      {!isComplete && <span className="animate-pulse ml-1">|</span>}
+      {isTyping && <span className="animate-pulse ml-1">|</span>}
     </span>
   );
 };
