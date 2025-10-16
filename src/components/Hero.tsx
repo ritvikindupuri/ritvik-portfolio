@@ -5,14 +5,16 @@ import cyberBg from "@/assets/cyber-bg.jpg";
 
 const TypewriterText = ({ text }: { text: string }) => {
   const [displayedText, setDisplayedText] = useState("");
+  const [isComplete, setIsComplete] = useState(false);
   
   useEffect(() => {
     let currentIndex = 0;
     const interval = setInterval(() => {
-      if (currentIndex <= text.length) {
-        setDisplayedText(text.slice(0, currentIndex));
+      if (currentIndex < text.length) {
+        setDisplayedText(text.slice(0, currentIndex + 1));
         currentIndex++;
       } else {
+        setIsComplete(true);
         clearInterval(interval);
       }
     }, 80);
@@ -23,8 +25,39 @@ const TypewriterText = ({ text }: { text: string }) => {
   return (
     <span>
       {displayedText}
-      <span className="animate-pulse">|</span>
+      {!isComplete && <span className="animate-pulse ml-1">|</span>}
     </span>
+  );
+};
+
+const MatrixRain = () => {
+  const columns = 50;
+  const characters = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+  
+  return (
+    <div className="absolute inset-0 overflow-hidden opacity-10">
+      {[...Array(columns)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute top-0 text-cyber-glow font-mono text-sm"
+          style={{ left: `${(i / columns) * 100}%` }}
+          initial={{ y: -100 }}
+          animate={{ y: window.innerHeight + 100 }}
+          transition={{
+            duration: Math.random() * 10 + 10,
+            repeat: Infinity,
+            ease: "linear",
+            delay: Math.random() * 5,
+          }}
+        >
+          {[...Array(20)].map((_, j) => (
+            <div key={j} className="opacity-50">
+              {characters[Math.floor(Math.random() * characters.length)]}
+            </div>
+          ))}
+        </motion.div>
+      ))}
+    </div>
   );
 };
 
@@ -55,40 +88,8 @@ export const Hero = ({ isOwner }: HeroProps) => {
       />
       <div className="absolute inset-0 bg-gradient-hero" />
       
-      {/* Animated Cyber Grid Background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `
-            linear-gradient(hsl(var(--cyber-purple) / 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(var(--cyber-purple) / 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px',
-          animation: 'gridMove 20s linear infinite'
-        }} />
-      </div>
-
-      {/* Floating Particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-cyber-glow rounded-full"
-            initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-            }}
-            animate={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-            }}
-            transition={{
-              duration: Math.random() * 20 + 10,
-              repeat: Infinity,
-              repeatType: "reverse",
-            }}
-          />
-        ))}
-      </div>
+      {/* Matrix Rain Effect */}
+      <MatrixRain />
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6 py-20 text-center">
@@ -130,6 +131,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
             className="text-5xl md:text-7xl font-bold font-sans"
           >
             <TypewriterText text="Hi, my name is " />
+            {" "}
             <span className="bg-gradient-cyber bg-clip-text text-transparent">
               Ritvik Indupuri
             </span>

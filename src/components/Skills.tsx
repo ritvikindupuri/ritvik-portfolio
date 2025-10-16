@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X } from "lucide-react";
+import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,10 +17,10 @@ const initialSkillCategories = [
     label: "Programming Languages",
     icon: Code,
     skills: [
-      { name: "Python", level: "Advanced", logo: "🐍" },
-      { name: "JavaScript", level: "Advanced", logo: "📜" },
-      { name: "Java", level: "Intermediate", logo: "☕" },
-      { name: "C/C++", level: "Intermediate", logo: "⚙️" },
+      { name: "Python", level: "Advanced", logo: "🐍", description: "Primary language for security tools and automation", link: "" },
+      { name: "JavaScript", level: "Advanced", logo: "📜", description: "Full-stack development and web security", link: "" },
+      { name: "Java", level: "Intermediate", logo: "☕", description: "Enterprise applications and Android development", link: "" },
+      { name: "C/C++", level: "Intermediate", logo: "⚙️", description: "Low-level programming and system security", link: "" },
     ],
   },
   {
@@ -28,9 +28,9 @@ const initialSkillCategories = [
     label: "Operating Systems",
     icon: Monitor,
     skills: [
-      { name: "Linux", level: "Advanced", logo: "🐧" },
-      { name: "Windows", level: "Advanced", logo: "🪟" },
-      { name: "macOS", level: "Intermediate", logo: "🍎" },
+      { name: "Linux", level: "Advanced", logo: "🐧", description: "Primary OS for security testing and server administration", link: "" },
+      { name: "Windows", level: "Advanced", logo: "🪟", description: "System administration and security auditing", link: "" },
+      { name: "macOS", level: "Intermediate", logo: "🍎", description: "Development and security research", link: "" },
     ],
   },
   {
@@ -38,10 +38,10 @@ const initialSkillCategories = [
     label: "Web Technologies",
     icon: Globe,
     skills: [
-      { name: "React", level: "Advanced", logo: "⚛️" },
-      { name: "Node.js", level: "Advanced", logo: "💚" },
-      { name: "TypeScript", level: "Advanced", logo: "🔷" },
-      { name: "HTML/CSS", level: "Advanced", logo: "🎨" },
+      { name: "React", level: "Advanced", logo: "⚛️", description: "Building modern web applications", link: "" },
+      { name: "Node.js", level: "Advanced", logo: "💚", description: "Backend development and APIs", link: "" },
+      { name: "TypeScript", level: "Advanced", logo: "🔷", description: "Type-safe application development", link: "" },
+      { name: "HTML/CSS", level: "Advanced", logo: "🎨", description: "Frontend design and development", link: "" },
     ],
   },
   {
@@ -49,9 +49,9 @@ const initialSkillCategories = [
     label: "Cloud & Development",
     icon: Cloud,
     skills: [
-      { name: "AWS", level: "Intermediate", logo: "☁️" },
-      { name: "Docker", level: "Intermediate", logo: "🐳" },
-      { name: "Git", level: "Advanced", logo: "📚" },
+      { name: "AWS", level: "Intermediate", logo: "☁️", description: "Cloud infrastructure and security", link: "" },
+      { name: "Docker", level: "Intermediate", logo: "🐳", description: "Containerization and deployment", link: "" },
+      { name: "Git", level: "Advanced", logo: "📚", description: "Version control and collaboration", link: "" },
     ],
   },
   {
@@ -59,10 +59,10 @@ const initialSkillCategories = [
     label: "Cybersecurity Tools",
     icon: Lock,
     skills: [
-      { name: "Wireshark", level: "Advanced", logo: "🦈" },
-      { name: "Metasploit", level: "Intermediate", logo: "🎯" },
-      { name: "Burp Suite", level: "Intermediate", logo: "🔐" },
-      { name: "Nmap", level: "Advanced", logo: "🗺️" },
+      { name: "Wireshark", level: "Advanced", logo: "🦈", description: "Network traffic analysis and packet inspection", link: "" },
+      { name: "Metasploit", level: "Intermediate", logo: "🎯", description: "Penetration testing framework", link: "" },
+      { name: "Burp Suite", level: "Intermediate", logo: "🔐", description: "Web application security testing", link: "" },
+      { name: "Nmap", level: "Advanced", logo: "🗺️", description: "Network discovery and security scanning", link: "" },
     ],
   },
 ];
@@ -71,13 +71,15 @@ interface Skill {
   name: string;
   level: string;
   logo: string;
+  description: string;
+  link: string;
 }
 
 export const Skills = ({ isOwner }: SkillsProps) => {
   const [activeTab, setActiveTab] = useState("programming");
   const [skillCategories, setSkillCategories] = useState(initialSkillCategories);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "" });
+  const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
 
   const getLevelColor = (level: string) => {
@@ -115,7 +117,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
     );
     
     setSkillCategories(updatedCategories);
-    setNewSkill({ name: "", level: "Intermediate", logo: "" });
+    setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
     setUploadedLogo("");
     setIsAddDialogOpen(false);
   };
@@ -182,19 +184,23 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.05 }}
-                      className="group relative bg-gradient-card border border-border rounded-2xl p-6 hover:border-primary/50 hover:shadow-elegant transition-all duration-300"
+                      className="group relative bg-gradient-card border border-border rounded-2xl p-6 hover:border-primary/50 hover:shadow-elegant transition-all duration-300 flex flex-col"
                     >
                       {isOwner && (
                         <button
                           onClick={() => handleRemoveSkill(category.id, skill.name)}
-                          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-full p-2"
+                          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-full p-2 z-10"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       )}
                       
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="text-5xl">{skill.logo}</div>
+                        <div className="text-5xl">{skill.logo.startsWith('data:') ? (
+                          <img src={skill.logo} alt={skill.name} className="w-12 h-12 object-contain" />
+                        ) : (
+                          skill.logo
+                        )}</div>
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg font-sans mb-1">{skill.name}</h3>
                           <span className={`text-sm font-medium font-mono ${getLevelColor(skill.level)}`}>
@@ -203,7 +209,25 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                         </div>
                       </div>
                       
-                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      {skill.description && (
+                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                          {skill.description}
+                        </p>
+                      )}
+                      
+                      {skill.link && (
+                        <a
+                          href={skill.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors mb-4"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>View Project</span>
+                        </a>
+                      )}
+                      
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden mt-auto">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ 
@@ -292,8 +316,26 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                               </label>
                             </div>
                           </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Description</label>
+                            <Input
+                              placeholder="How you use this skill..."
+                              value={newSkill.description}
+                              onChange={(e) => setNewSkill({ ...newSkill, description: e.target.value })}
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Project Link (optional)</label>
+                            <Input
+                              placeholder="https://github.com/username/repo"
+                              value={newSkill.link}
+                              onChange={(e) => setNewSkill({ ...newSkill, link: e.target.value })}
+                            />
+                          </div>
                         </div>
-                        
+
                         <div className="flex justify-end gap-3">
                           <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                             Cancel

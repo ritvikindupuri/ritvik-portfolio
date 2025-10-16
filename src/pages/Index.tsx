@@ -3,6 +3,7 @@ import { Hero } from "@/components/Hero";
 import { About } from "@/components/About";
 import { Skills } from "@/components/Skills";
 import { Certifications } from "@/components/Certifications";
+import { Documentation } from "@/components/Documentation";
 import { Projects } from "@/components/Projects";
 import { Contact } from "@/components/Contact";
 import { AccessDialog } from "@/components/AccessDialog";
@@ -25,9 +26,10 @@ const Index = () => {
         <About isOwner={isOwner} />
         <Skills isOwner={isOwner} />
         <Certifications isOwner={isOwner} />
+        <Documentation isOwner={isOwner} />
         <Projects isOwner={isOwner} />
         <Contact />
-        
+
         {/* Footer */}
         <footer className="py-8 border-t border-border bg-card/50">
           <div className="container mx-auto px-6 text-center">
