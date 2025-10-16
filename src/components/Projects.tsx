@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield } from "lucide-react";
@@ -231,25 +231,12 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
   return (
     <section id="projects" className="py-32 px-4 bg-card/20 relative overflow-hidden">
-      
-
       <div className="container mx-auto max-w-7xl relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-        >
+        <div>
           <div className="text-center space-y-3 mb-16">
-            <motion.div
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-glow"
-            >
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-glow">
               <Target className="w-10 h-10 text-primary" />
-            </motion.div>
+            </div>
             <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
               Projects
             </h2>
@@ -286,51 +273,12 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
             {Object.entries(projects).map(([key, projectList]) => (
               <TabsContent key={key} value={key} className="space-y-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
-                  {projectList.map((project, index) => (
-                    <motion.div
+                  {projectList.map((project) => (
+                    <div
                       key={project.title}
-                      initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50, rotateY: index % 2 === 0 ? -10 : 10 }}
-                      animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                      transition={{ delay: index * 0.08, duration: 0.6, type: "spring", stiffness: 80 }}
                       className="group relative h-full"
-                      style={{ perspective: "1500px" }}
                     >
-                      {/* Gradient glow background */}
-                      <motion.div
-                        className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-2xl opacity-0 group-hover:opacity-40 blur-2xl transition-opacity duration-500"
-                        animate={{
-                          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
-                        }}
-                        transition={{
-                          duration: 4,
-                          repeat: Infinity,
-                          ease: "linear"
-                        }}
-                        style={{
-                          backgroundSize: "200% 200%"
-                        }}
-                      />
-
-                      <div className="relative bg-gradient-to-br from-card via-card/98 to-card/85 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-8 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl group-hover:shadow-glow overflow-hidden"
-                        style={{
-                          transformStyle: "preserve-3d",
-                          transform: "translateZ(0)"
-                        }}
-                      >
-                        {/* Animated tech grid background */}
-                        <div className="absolute inset-0 opacity-5 pointer-events-none">
-                          <div className="absolute inset-0" style={{
-                            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-                            backgroundSize: "30px 30px"
-                          }} />
-                        </div>
-
-                        {/* Scanning line effect */}
-                        <motion.div
-                          className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"
-                          animate={{ y: ["0%", "100%", "0%"] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        />
+                      <div className="relative bg-gradient-to-br from-card via-card/98 to-card/85 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-8 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl overflow-hidden">
 
                         {isOwner && (
                           <button
@@ -342,126 +290,76 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                         )}
                         
                         <div className="relative z-10 space-y-5 flex flex-col h-full">
-                          {/* Title section with icon */}
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 space-y-2">
-                              <motion.h3 
-                                className="text-2xl md:text-3xl font-bold font-sans bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight"
-                                whileHover={{ scale: 1.02 }}
-                              >
+                              <h3 className="text-2xl md:text-3xl font-bold font-sans bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight">
                                 {project.title}
-                              </motion.h3>
-                              <motion.div
-                                className="h-1 bg-gradient-to-r from-primary via-accent to-transparent rounded-full"
-                                initial={{ width: "0%" }}
-                                whileInView={{ width: "60%" }}
-                                transition={{ duration: 0.8, delay: index * 0.1 }}
-                              />
+                              </h3>
+                              <div className="h-1 bg-gradient-to-r from-primary via-accent to-transparent rounded-full w-3/5" />
                             </div>
                             {project.type === "Purdue" && (
-                              <motion.div 
-                                className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg"
-                                whileHover={{ scale: 1.1, rotate: 360 }}
-                                transition={{ duration: 0.5 }}
-                              >
+                              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg">
                                 <img
                                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png"
                                   alt="Purdue"
                                   className="w-7 h-7 object-contain"
                                 />
-                              </motion.div>
+                              </div>
                             )}
                           </div>
 
                           <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3 border-l-2 border-primary/30 pl-4">{project.description}</p>
 
-                          {/* Timeline with animated connector */}
                           <div className="flex items-center gap-3 text-sm font-mono bg-primary/5 rounded-xl p-3 border border-primary/20">
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                              <div className="w-2 h-2 rounded-full bg-primary" />
                               <span className="text-primary font-semibold">{project.startMonth}</span>
                             </div>
-                            <motion.div 
-                              className="flex-1 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full"
-                              animate={{
-                                scaleX: [0.8, 1, 0.8]
-                              }}
-                              transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                              }}
-                            />
+                            <div className="flex-1 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
                             <div className="flex items-center gap-2">
                               <span className="text-accent font-semibold">{project.endMonth}</span>
-                              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                              <div className="w-2 h-2 rounded-full bg-accent" />
                             </div>
                           </div>
 
-                          {/* Tech stack with glow effect */}
                           <div className="flex flex-wrap gap-2">
-                            {project.skills.map((skill, idx) => (
-                              <motion.div
-                                key={skill}
-                                initial={{ opacity: 0, scale: 0 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: index * 0.1 + idx * 0.05 }}
-                                whileHover={{ scale: 1.1, y: -2 }}
-                              >
-                                <Badge variant="secondary" className="font-mono text-xs px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 text-primary hover:from-primary/20 hover:to-accent/20 border border-primary/30 shadow-sm">
-                                  {skill}
-                                </Badge>
-                              </motion.div>
+                            {project.skills.map((skill) => (
+                              <Badge key={skill} variant="secondary" className="font-mono text-xs px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 text-primary hover:from-primary/20 hover:to-accent/20 border border-primary/30 shadow-sm">
+                                {skill}
+                              </Badge>
                             ))}
                           </div>
 
-                          {/* GitHub link with animated arrow */}
+                          {/* GitHub Link */}
                           {project.github && (
-                            <motion.a
+                            <a
                               href={project.github}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-semibold text-sm group/link mt-auto pt-4 border-t-2 border-primary/20"
-                              whileHover={{ x: 5 }}
+                              className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-medium text-sm mt-auto group/link bg-primary/5 hover:bg-primary/10 px-5 py-3 rounded-xl border border-primary/20 hover:border-primary/40"
                             >
                               <Github className="w-5 h-5" />
-                              <span>View Repository</span>
-                              <motion.div
-                                animate={{ x: [0, 5, 0] }}
-                                transition={{ duration: 1.5, repeat: Infinity }}
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </motion.div>
-                            </motion.a>
+                              <span>View Source Code</span>
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
                           )}
-
-                          {/* Corner tech accents */}
-                          <div className="absolute top-3 left-3 w-6 h-6 border-l-2 border-t-2 border-primary/40 rounded-tl-lg" />
-                          <div className="absolute top-3 right-3 w-6 h-6 border-r-2 border-t-2 border-accent/40 rounded-tr-lg" />
-                          <div className="absolute bottom-3 left-3 w-6 h-6 border-l-2 border-b-2 border-accent/40 rounded-bl-lg" />
-                          <div className="absolute bottom-3 right-3 w-6 h-6 border-r-2 border-b-2 border-primary/40 rounded-br-lg" />
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
 
                   {/* Add Project Button - Owner Only */}
                   {isOwner && activeTab === key && (
                     <Dialog open={isAddDialogOpen && activeTab === key} onOpenChange={setIsAddDialogOpen}>
                       <DialogTrigger asChild>
-                        <motion.button
-                          initial={{ opacity: 0, y: 30 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: projectList.length * 0.1, duration: 0.5 }}
-                          className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[400px] group hover:bg-primary/5 transition-all duration-300"
-                        >
+                        <button className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[400px] group hover:bg-primary/5 transition-all duration-300">
                           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                             <Plus className="w-7 h-7 text-primary" />
                           </div>
                           <span className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
                             Add New Project
                           </span>
-                        </motion.button>
+                        </button>
                       </DialogTrigger>
                       
                       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -572,7 +470,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
               </TabsContent>
             ))}
           </Tabs>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

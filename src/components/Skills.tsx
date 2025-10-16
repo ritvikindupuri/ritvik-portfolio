@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink } from "lucide-react";
@@ -200,25 +200,12 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
   return (
     <section id="skills-section" className="py-32 px-4 bg-card/20 relative overflow-hidden">
-      
-
       <div className="container mx-auto max-w-7xl relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-        >
+        <div>
           <div className="text-center space-y-3 mb-16">
-            <motion.div
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-glow"
-            >
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-glow">
               <Code className="w-10 h-10 text-primary" />
-            </motion.div>
+            </div>
             <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
               Skills & Expertise
             </h2>
@@ -247,43 +234,12 @@ export const Skills = ({ isOwner }: SkillsProps) => {
             {skillCategories.map((category) => (
               <TabsContent key={category.id} value={category.id} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mt-10">
-                  {category.skills.map((skill, index) => (
-                    <motion.div
+                  {category.skills.map((skill) => (
+                    <div
                       key={skill.name}
-                      initial={{ opacity: 0, scale: 0.9, rotateY: -20 }}
-                      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                      transition={{ delay: index * 0.05, duration: 0.5, type: "spring" }}
                       className="group relative"
-                      style={{ perspective: "1000px" }}
                     >
-                      {/* Animated glow effect */}
-                      <motion.div
-                        className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-500"
-                        animate={{
-                          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
-                        }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          ease: "linear"
-                        }}
-                        style={{
-                          backgroundSize: "200% 200%"
-                        }}
-                      />
-                      
-                      <div className="relative bg-gradient-to-br from-card via-card/95 to-card/80 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl group-hover:shadow-glow group-hover:transform group-hover:scale-105"
-                        style={{
-                          transformStyle: "preserve-3d",
-                          transform: "translateZ(0)"
-                        }}
-                      >
-                        {/* Circuit pattern overlay */}
-                        <div className="absolute inset-0 opacity-5 pointer-events-none">
-                          <div className="absolute top-2 right-2 w-20 h-20 border border-primary rounded-full" />
-                          <div className="absolute bottom-2 left-2 w-16 h-16 border border-accent" />
-                        </div>
-
+                      <div className="relative bg-gradient-to-br from-card via-card/95 to-card/80 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl">
                         {isOwner && (
                           <button
                             onClick={() => handleRemoveSkill(category.id, skill.name)}
@@ -294,36 +250,19 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                         )}
                         
                         <div className="relative z-10 flex flex-col items-center text-center gap-4 mb-4">
-                          {/* Logo with holographic effect */}
-                          <motion.div 
-                            className="relative"
-                            whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
-                            transition={{ duration: 0.5 }}
-                          >
-                            <div className="w-20 h-20 flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl border-2 border-primary/30 shadow-glow relative overflow-hidden">
-                              {/* Scanning effect */}
-                              <motion.div
-                                className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/20 to-transparent"
-                                animate={{ y: ["-100%", "200%"] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
-                              />
-                              {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
-                                <img src={skill.logo} alt={skill.name} className="w-14 h-14 object-contain relative z-10" />
-                              ) : (
-                                <span className="text-4xl leading-none relative z-10">{skill.logo}</span>
-                              )}
-                            </div>
-                          </motion.div>
+                          <div className="w-24 h-24 flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl border-2 border-primary/30 shadow-glow relative overflow-hidden">
+                            {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
+                              <img src={skill.logo} alt={skill.name} className="w-20 h-20 object-contain relative z-10" />
+                            ) : (
+                              <span className="text-4xl leading-none relative z-10">{skill.logo}</span>
+                            )}
+                          </div>
                           
                           <div className="space-y-2">
                             <h3 className="font-bold text-xl font-sans bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
                               {skill.name}
                             </h3>
-                            <motion.div
-                              className="h-1 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full"
-                              animate={{ width: ["20%", "60%", "20%"] }}
-                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                            />
+                            <div className="h-1 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full w-3/5 mx-auto" />
                           </div>
                           
                           <span className={`text-xs font-bold font-mono px-4 py-1.5 rounded-full ${getLevelColor(skill.level)} bg-primary/10 border border-primary/30`}>
@@ -349,30 +288,22 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                           </a>
                         )}
                         
-                        {/* Corner accents */}
-                        <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-primary/40 rounded-tl" />
-                        <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-accent/40 rounded-br" />
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
 
                   {/* Add Skill Button - Owner Only */}
                   {isOwner && activeTab === category.id && (
                     <Dialog open={isAddDialogOpen && activeTab === category.id} onOpenChange={setIsAddDialogOpen}>
                       <DialogTrigger asChild>
-                        <motion.button
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: category.skills.length * 0.05 }}
-                          className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] group hover:bg-primary/5 transition-all duration-300"
-                        >
+                        <button className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] group hover:bg-primary/5 transition-all duration-300">
                           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                             <Plus className="w-6 h-6 text-primary" />
                           </div>
                           <span className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
                             Add New Skill
                           </span>
-                        </motion.button>
+                        </button>
                       </DialogTrigger>
                       
                       <DialogContent className="sm:max-w-md">
@@ -463,7 +394,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
               </TabsContent>
             ))}
           </Tabs>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
