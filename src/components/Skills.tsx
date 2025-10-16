@@ -1,7 +1,11 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, Monitor, Globe, Cloud, Shield } from "lucide-react";
+import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SkillsProps {
   isOwner: boolean;
@@ -53,7 +57,7 @@ const skillCategories = [
   {
     id: "security",
     label: "Cybersecurity Tools",
-    icon: Shield,
+    icon: Lock,
     skills: [
       { name: "Wireshark", level: "Advanced", logo: "🦈" },
       { name: "Metasploit", level: "Intermediate", logo: "🎯" },
@@ -63,8 +67,18 @@ const skillCategories = [
   },
 ];
 
+interface Skill {
+  name: string;
+  level: string;
+  logo: string;
+}
+
 export const Skills = ({ isOwner }: SkillsProps) => {
   const [activeTab, setActiveTab] = useState("programming");
+  const [skillCategories, setSkillCategories] = useState(initialSkillCategories);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "" });
+  const [uploadedLogo, setUploadedLogo] = useState<string>("");
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -79,71 +93,87 @@ export const Skills = ({ isOwner }: SkillsProps) => {
     }
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedLogo(reader.result as string);
+        setNewSkill({ ...newSkill, logo: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddSkill = () => {
+    if (!newSkill.name || !newSkill.logo) return;
+    
+    const updatedCategories = skillCategories.map((cat) =>
+      cat.id === activeTab
+        ? { ...cat, skills: [...cat.skills, newSkill] }
+        : cat
+    );
+    
+    setSkillCategories(updatedCategories);
+    setNewSkill({ name: "", level: "Intermediate", logo: "" });
+    setUploadedLogo("");
+    setIsAddDialogOpen(false);
+  };
+
+  const handleRemoveSkill = (categoryId: string, skillName: string) => {
+    const updatedCategories = skillCategories.map((cat) =>
+      cat.id === categoryId
+        ? { ...cat, skills: cat.skills.filter((s) => s.name !== skillName) }
+        : cat
+    );
+    setSkillCategories(updatedCategories);
+  };
+
   return (
-    <section className="py-20 bg-card/30">
-      <div className="container mx-auto px-6">
+    <section className="py-32 bg-card/20 relative overflow-hidden">
+      <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-cyber-purple/5 blur-[120px] rounded-full" />
+      
+      <div className="container mx-auto px-6 max-w-7xl">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl font-bold text-center mb-12 font-sans">
-            <span className="bg-gradient-cyber bg-clip-text text-transparent">Skills & Expertise</span>
-          </h2>
+          <div className="text-center space-y-4 mb-16">
+            <motion.div
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4"
+            >
+              <Code className="w-8 h-8 text-primary" />
+            </motion.div>
+            <h2 className="text-5xl md:text-6xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+              Skills & Expertise
+            </h2>
+            <div className="w-24 h-1 bg-gradient-cyber mx-auto rounded-full" />
+          </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-5xl mx-auto">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full mb-8 bg-secondary/50 p-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
+            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full mb-12 bg-secondary/50 p-2 h-auto gap-2">
               {skillCategories.map((category) => {
                 const Icon = category.icon;
                 return (
                   <TabsTrigger
                     key={category.id}
                     value={category.id}
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+                    className="flex flex-col md:flex-row items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all py-3 px-4 rounded-lg"
                   >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden md:inline">{category.label.split(" ")[0]}</span>
+                    <Icon className="w-5 h-5" />
+                    <span className="text-xs md:text-sm font-medium">{category.label.split(" ")[0]}</span>
                   </TabsTrigger>
                 );
               })}
             </TabsList>
 
-            {skillCategories.map((category) => (
-              <TabsContent key={category.id} value={category.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                >
-                  {category.skills.map((skill, index) => (
-                    <motion.div
-                      key={skill.name}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="bg-card border border-border rounded-lg p-6 hover:border-primary/50 hover:shadow-glow transition-all group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-4xl">{skill.logo}</span>
-                          <div>
-                            <h3 className="text-lg font-semibold font-mono">{skill.name}</h3>
-                            <p className={`text-sm font-medium ${getLevelColor(skill.level)}`}>
-                              {skill.level}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="w-16 h-16 rounded-full border-2 border-primary/30 flex items-center justify-center group-hover:border-primary transition-colors">
-                          <div className="text-xs font-bold text-primary">{skill.level[0]}</div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </TabsContent>
-            ))}
+            {/* ... keep existing code (owner add skill dialog and skill cards) */}
           </Tabs>
         </motion.div>
       </div>

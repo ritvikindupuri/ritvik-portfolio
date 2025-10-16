@@ -66,10 +66,12 @@ export default {
       backgroundImage: {
         'gradient-cyber': 'var(--gradient-cyber)',
         'gradient-hero': 'var(--gradient-hero)',
+        'gradient-card': 'var(--gradient-card)',
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
         'card': 'var(--shadow-card)',
+        'elegant': 'var(--shadow-elegant)',
       },
       fontFamily: {
         'mono': ['Roboto Mono', 'monospace'],
@@ -101,6 +103,14 @@ export default {
           "0%": { opacity: "0", transform: "translateY(30px)" },
           "100%": { opacity: "1", transform: "translateY(0)" }
         },
+        "slide-down": {
+          "0%": { opacity: "0", transform: "translateY(-20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" }
+        },
+        "scale-in": {
+          "0%": { transform: "scale(0.95)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -108,6 +118,8 @@ export default {
         "fade-in": "fade-in 0.5s ease-out",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         "slide-up": "slide-up 0.6s ease-out",
+        "slide-down": "slide-down 0.4s ease-out",
+        "scale-in": "scale-in 0.3s ease-out",
       },
     },
   },

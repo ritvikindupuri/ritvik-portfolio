@@ -44,11 +44,17 @@ All colors MUST be HSL.
     
     --gradient-cyber: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--cyber-purple)) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(222 47% 5% / 0.95) 0%, hsl(222 47% 5%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--secondary) / 0.3) 100%);
     
-    --shadow-glow: 0 0 30px hsl(var(--cyber-glow) / 0.3);
+    --shadow-glow: 0 0 30px hsl(var(--cyber-glow) / 0.4);
     --shadow-card: 0 8px 32px hsl(222 47% 5% / 0.4);
+    --shadow-elegant: 0 20px 60px -10px hsl(var(--primary) / 0.2);
+    
+    --spacing-section: 8rem;
+    --spacing-component: 3rem;
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
