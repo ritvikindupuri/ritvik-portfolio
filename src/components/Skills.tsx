@@ -209,13 +209,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <div className="text-center space-y-6 mb-20">
+          <div className="text-center space-y-3 mb-16">
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-6 shadow-glow"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-glow"
             >
               <Code className="w-10 h-10 text-primary" />
             </motion.div>
@@ -250,37 +250,89 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                   {category.skills.map((skill, index) => (
                     <motion.div
                       key={skill.name}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05, duration: 0.4 }}
+                      initial={{ opacity: 0, scale: 0.9, rotateY: -20 }}
+                      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.5, type: "spring" }}
                       className="group relative"
+                      style={{ perspective: "1000px" }}
                     >
-                      <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
+                      {/* Animated glow effect */}
+                      <motion.div
+                        className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-500"
+                        animate={{
+                          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                        style={{
+                          backgroundSize: "200% 200%"
+                        }}
+                      />
+                      
+                      <div className="relative bg-gradient-to-br from-card via-card/95 to-card/80 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl group-hover:shadow-glow group-hover:transform group-hover:scale-105"
+                        style={{
+                          transformStyle: "preserve-3d",
+                          transform: "translateZ(0)"
+                        }}
+                      >
+                        {/* Circuit pattern overlay */}
+                        <div className="absolute inset-0 opacity-5 pointer-events-none">
+                          <div className="absolute top-2 right-2 w-20 h-20 border border-primary rounded-full" />
+                          <div className="absolute bottom-2 left-2 w-16 h-16 border border-accent" />
+                        </div>
+
                         {isOwner && (
                           <button
                             onClick={() => handleRemoveSkill(category.id, skill.name)}
-                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2 z-10"
+                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2 z-10 backdrop-blur-sm"
                           >
                             <X className="w-4 h-4" />
                           </button>
                         )}
                         
-                        <div className="flex flex-col items-center text-center gap-3 mb-4">
-                          <div className="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 shrink-0 bg-primary/10 rounded-xl">
-                            {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
-                              <img src={skill.logo} alt={skill.name} className="w-14 h-14 md:w-16 md:h-16 object-contain" />
-                            ) : (
-                              <span className="text-3xl leading-none">{skill.logo}</span>
-                            )}
+                        <div className="relative z-10 flex flex-col items-center text-center gap-4 mb-4">
+                          {/* Logo with holographic effect */}
+                          <motion.div 
+                            className="relative"
+                            whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <div className="w-20 h-20 flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl border-2 border-primary/30 shadow-glow relative overflow-hidden">
+                              {/* Scanning effect */}
+                              <motion.div
+                                className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/20 to-transparent"
+                                animate={{ y: ["-100%", "200%"] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+                              />
+                              {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
+                                <img src={skill.logo} alt={skill.name} className="w-14 h-14 object-contain relative z-10" />
+                              ) : (
+                                <span className="text-4xl leading-none relative z-10">{skill.logo}</span>
+                              )}
+                            </div>
+                          </motion.div>
+                          
+                          <div className="space-y-2">
+                            <h3 className="font-bold text-xl font-sans bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                              {skill.name}
+                            </h3>
+                            <motion.div
+                              className="h-1 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full"
+                              animate={{ width: ["20%", "60%", "20%"] }}
+                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            />
                           </div>
-                          <h3 className="font-bold text-lg font-sans text-foreground">{skill.name}</h3>
-                          <span className={`text-xs font-semibold font-mono px-3 py-1 rounded-full ${getLevelColor(skill.level)} bg-primary/10`}>
+                          
+                          <span className={`text-xs font-bold font-mono px-4 py-1.5 rounded-full ${getLevelColor(skill.level)} bg-primary/10 border border-primary/30`}>
                             {skill.level}
                           </span>
                         </div>
 
                         {skill.description && (
-                          <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-3">
+                          <p className="relative z-10 text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-3">
                             {skill.description}
                           </p>
                         )}
@@ -290,13 +342,16 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                             href={skill.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors mb-4 font-medium"
+                            className="relative z-10 inline-flex items-center gap-2 text-xs text-primary hover:text-accent transition-colors font-medium group/link"
                           >
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className="w-3 h-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
                             <span>Learn More</span>
                           </a>
                         )}
                         
+                        {/* Corner accents */}
+                        <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-primary/40 rounded-tl" />
+                        <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-accent/40 rounded-br" />
                       </div>
                     </motion.div>
                   ))}

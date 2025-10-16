@@ -240,13 +240,13 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <div className="text-center space-y-6 mb-20">
+          <div className="text-center space-y-3 mb-16">
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-6 shadow-glow"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-glow"
             >
               <Target className="w-10 h-10 text-primary" />
             </motion.div>
@@ -289,65 +289,157 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                   {projectList.map((project, index) => (
                     <motion.div
                       key={project.title}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.08, duration: 0.4 }}
+                      initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50, rotateY: index % 2 === 0 ? -10 : 10 }}
+                      animate={{ opacity: 1, x: 0, rotateY: 0 }}
+                      transition={{ delay: index * 0.08, duration: 0.6, type: "spring", stiffness: 80 }}
                       className="group relative h-full"
+                      style={{ perspective: "1500px" }}
                     >
-                      <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
+                      {/* Gradient glow background */}
+                      <motion.div
+                        className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-2xl opacity-0 group-hover:opacity-40 blur-2xl transition-opacity duration-500"
+                        animate={{
+                          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
+                        }}
+                        transition={{
+                          duration: 4,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                        style={{
+                          backgroundSize: "200% 200%"
+                        }}
+                      />
+
+                      <div className="relative bg-gradient-to-br from-card via-card/98 to-card/85 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-8 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl group-hover:shadow-glow overflow-hidden"
+                        style={{
+                          transformStyle: "preserve-3d",
+                          transform: "translateZ(0)"
+                        }}
+                      >
+                        {/* Animated tech grid background */}
+                        <div className="absolute inset-0 opacity-5 pointer-events-none">
+                          <div className="absolute inset-0" style={{
+                            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                            backgroundSize: "30px 30px"
+                          }} />
+                        </div>
+
+                        {/* Scanning line effect */}
+                        <motion.div
+                          className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"
+                          animate={{ y: ["0%", "100%", "0%"] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        />
+
                         {isOwner && (
                           <button
                             onClick={() => handleRemoveProject(key, project.title)}
-                            className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2 z-10"
+                            className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 z-20 backdrop-blur-sm"
                           >
                             <X className="w-4 h-4" />
                           </button>
                         )}
                         
-                        <div className="space-y-5 flex flex-col h-full">
+                        <div className="relative z-10 space-y-5 flex flex-col h-full">
+                          {/* Title section with icon */}
                           <div className="flex items-start justify-between gap-4">
-                            <h3 className="text-2xl font-bold font-sans group-hover:text-primary transition-colors leading-tight flex-1">
-                              {project.title}
-                            </h3>
+                            <div className="flex-1 space-y-2">
+                              <motion.h3 
+                                className="text-2xl md:text-3xl font-bold font-sans bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight"
+                                whileHover={{ scale: 1.02 }}
+                              >
+                                {project.title}
+                              </motion.h3>
+                              <motion.div
+                                className="h-1 bg-gradient-to-r from-primary via-accent to-transparent rounded-full"
+                                initial={{ width: "0%" }}
+                                whileInView={{ width: "60%" }}
+                                transition={{ duration: 0.8, delay: index * 0.1 }}
+                              />
+                            </div>
                             {project.type === "Purdue" && (
-                              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <motion.div 
+                                className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg"
+                                whileHover={{ scale: 1.1, rotate: 360 }}
+                                transition={{ duration: 0.5 }}
+                              >
                                 <img
                                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png"
                                   alt="Purdue"
-                                  className="w-6 h-6 object-contain"
+                                  className="w-7 h-7 object-contain"
                                 />
-                              </div>
+                              </motion.div>
                             )}
                           </div>
 
-                          <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3">{project.description}</p>
+                          <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3 border-l-2 border-primary/30 pl-4">{project.description}</p>
 
-                          <div className="flex items-center gap-3 text-sm font-mono">
-                            <span className="text-primary font-medium">{project.startMonth}</span>
-                            <span className="text-muted-foreground">→</span>
-                            <span className="text-primary font-medium">{project.endMonth}</span>
+                          {/* Timeline with animated connector */}
+                          <div className="flex items-center gap-3 text-sm font-mono bg-primary/5 rounded-xl p-3 border border-primary/20">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                              <span className="text-primary font-semibold">{project.startMonth}</span>
+                            </div>
+                            <motion.div 
+                              className="flex-1 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full"
+                              animate={{
+                                scaleX: [0.8, 1, 0.8]
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                            />
+                            <div className="flex items-center gap-2">
+                              <span className="text-accent font-semibold">{project.endMonth}</span>
+                              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                            </div>
                           </div>
 
+                          {/* Tech stack with glow effect */}
                           <div className="flex flex-wrap gap-2">
-                            {project.skills.map((skill) => (
-                              <Badge key={skill} variant="secondary" className="font-mono text-xs px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
-                                {skill}
-                              </Badge>
+                            {project.skills.map((skill, idx) => (
+                              <motion.div
+                                key={skill}
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.1 + idx * 0.05 }}
+                                whileHover={{ scale: 1.1, y: -2 }}
+                              >
+                                <Badge variant="secondary" className="font-mono text-xs px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 text-primary hover:from-primary/20 hover:to-accent/20 border border-primary/30 shadow-sm">
+                                  {skill}
+                                </Badge>
+                              </motion.div>
                             ))}
                           </div>
 
+                          {/* GitHub link with animated arrow */}
                           {project.github && (
-                            <a
+                            <motion.a
                               href={project.github}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link mt-auto pt-4 border-t border-border/50"
+                              className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-semibold text-sm group/link mt-auto pt-4 border-t-2 border-primary/20"
+                              whileHover={{ x: 5 }}
                             >
                               <Github className="w-5 h-5" />
                               <span>View Repository</span>
-                              <ExternalLink className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
-                            </a>
+                              <motion.div
+                                animate={{ x: [0, 5, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </motion.div>
+                            </motion.a>
                           )}
+
+                          {/* Corner tech accents */}
+                          <div className="absolute top-3 left-3 w-6 h-6 border-l-2 border-t-2 border-primary/40 rounded-tl-lg" />
+                          <div className="absolute top-3 right-3 w-6 h-6 border-r-2 border-t-2 border-accent/40 rounded-tr-lg" />
+                          <div className="absolute bottom-3 left-3 w-6 h-6 border-l-2 border-b-2 border-accent/40 rounded-bl-lg" />
+                          <div className="absolute bottom-3 right-3 w-6 h-6 border-r-2 border-b-2 border-primary/40 rounded-br-lg" />
                         </div>
                       </div>
                     </motion.div>

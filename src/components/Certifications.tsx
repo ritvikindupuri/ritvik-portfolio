@@ -142,13 +142,13 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <div className="text-center space-y-6 mb-20">
+          <div className="text-center space-y-3 mb-16">
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-accent/10 mb-6 shadow-glow"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-accent/10 mb-4 shadow-glow"
             >
               <Award className="w-10 h-10 text-accent" />
             </motion.div>
@@ -276,8 +276,8 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                           />
                         </div>
 
-                        {/* Info section */}
-                        <div className="space-y-3 w-full">
+                        {/* Info section with better spacing */}
+                        <div className="space-y-2.5 w-full">
                           {cert.credentialId && (
                             <div className="bg-accent/10 backdrop-blur-sm rounded-xl p-3 border border-accent/20">
                               <p className="text-xs text-accent/80 font-semibold mb-1">CREDENTIAL ID</p>
@@ -285,20 +285,22 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                             </div>
                           )}
                           
-                          <div className="flex justify-between gap-3 text-xs">
-                            {cert.issueDate && (
-                              <div className="flex-1 bg-primary/10 rounded-lg p-2 border border-primary/20">
-                                <p className="text-primary/70 font-semibold mb-0.5">ISSUED</p>
-                                <p className="font-mono text-foreground/90">{cert.issueDate}</p>
-                              </div>
-                            )}
-                            {cert.expirationDate && (
-                              <div className="flex-1 bg-primary/10 rounded-lg p-2 border border-primary/20">
-                                <p className="text-primary/70 font-semibold mb-0.5">EXPIRES</p>
-                                <p className="font-mono text-foreground/90">{cert.expirationDate}</p>
-                              </div>
-                            )}
-                          </div>
+                          {(cert.issueDate || cert.expirationDate) && (
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {cert.issueDate && (
+                                <div className="bg-primary/10 rounded-lg p-2.5 border border-primary/20">
+                                  <p className="text-primary/70 font-semibold mb-1">ISSUED</p>
+                                  <p className="font-mono text-foreground/90 text-xs">{cert.issueDate}</p>
+                                </div>
+                              )}
+                              {cert.expirationDate && (
+                                <div className="bg-primary/10 rounded-lg p-2.5 border border-primary/20">
+                                  <p className="text-primary/70 font-semibold mb-1">EXPIRES</p>
+                                  <p className="font-mono text-foreground/90 text-xs">{cert.expirationDate}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Corner accents */}
