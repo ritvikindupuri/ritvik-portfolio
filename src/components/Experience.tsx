@@ -195,7 +195,7 @@ const Experience = ({ isOwner }: ExperienceProps) => {
   };
 
   return (
-    <section id="experience" className="py-20 px-4 relative overflow-hidden">
+    <section id="experience" className="py-32 px-4 relative overflow-hidden bg-card/20">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background/50 to-background" />
       
       <motion.div
@@ -203,19 +203,30 @@ const Experience = ({ isOwner }: ExperienceProps) => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="max-w-4xl mx-auto relative z-10"
+        className="max-w-5xl mx-auto relative z-10"
       >
-        <div className="flex items-center justify-between mb-12">
-          <h2 className="text-4xl font-bold">
-            <Briefcase className="inline-block mr-3 text-primary" size={36} />
+        <div className="text-center space-y-6 mb-20">
+          <motion.div
+            initial={{ scale: 0 }}
+            whileInView={{ scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-6 shadow-glow mx-auto"
+          >
+            <Briefcase className="w-10 h-10 text-primary" />
+          </motion.div>
+          <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
             Experience
           </h2>
-          
+          <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
+        </div>
+        
+        <div className="flex justify-end mb-12">
           {isOwner && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2" size={16} />
+                <Button size="lg" className="shadow-glow">
+                  <Plus className="mr-2" size={18} />
                   Add Experience
                 </Button>
               </DialogTrigger>

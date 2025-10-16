@@ -133,7 +133,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
   };
 
   return (
-    <section className="py-20 px-4 bg-background relative overflow-hidden">
+    <section className="py-32 px-4 bg-background relative overflow-hidden">
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-accent/5 blur-[120px] rounded-full" />
       <div className="container mx-auto max-w-7xl relative z-10">
         <motion.div
@@ -142,20 +142,20 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <div className="text-center space-y-4 mb-16">
+          <div className="text-center space-y-6 mb-20">
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 mb-4"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-accent/10 mb-6 shadow-glow"
             >
-              <Award className="w-8 h-8 text-accent" />
+              <Award className="w-10 h-10 text-accent" />
             </motion.div>
-            <h2 className="text-5xl md:text-6xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+            <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
               Certifications
             </h2>
-            <div className="w-24 h-1 bg-gradient-cyber mx-auto rounded-full" />
+            <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-6xl mx-auto auto-rows-fr">

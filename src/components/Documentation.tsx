@@ -168,7 +168,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
   };
 
   return (
-    <section className="py-20 px-4 bg-background relative overflow-hidden">
+    <section className="py-32 px-4 bg-background relative overflow-hidden">
       <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-primary/5 blur-[150px] rounded-full" />
       
       <div className="container mx-auto max-w-7xl relative z-10">
@@ -178,23 +178,23 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <div className="text-center space-y-4 mb-16">
+          <div className="text-center space-y-6 mb-20">
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-6 shadow-glow"
             >
-              <FileText className="w-8 h-8 text-primary" />
+              <FileText className="w-10 h-10 text-primary" />
             </motion.div>
-            <h2 className="text-5xl md:text-6xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+            <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
               Technical Documentation
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">
               Comprehensive technical documentation for all my projects
             </p>
-            <div className="w-24 h-1 bg-gradient-cyber mx-auto rounded-full" />
+            <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto auto-rows-fr">

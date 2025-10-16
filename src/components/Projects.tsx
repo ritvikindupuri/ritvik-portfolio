@@ -230,7 +230,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
 
   return (
-    <section id="projects" className="py-20 px-4 bg-card/30 relative overflow-hidden">
+    <section id="projects" className="py-32 px-4 bg-card/30 relative overflow-hidden">
       <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-primary/5 blur-[150px] rounded-full" />
       
       <div className="container mx-auto max-w-7xl relative z-10">
@@ -240,20 +240,20 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <div className="text-center space-y-4 mb-16">
+          <div className="text-center space-y-6 mb-20">
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-6 shadow-glow"
             >
-              <Target className="w-8 h-8 text-primary" />
+              <Target className="w-10 h-10 text-primary" />
             </motion.div>
-            <h2 className="text-5xl md:text-6xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+            <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
               Projects
             </h2>
-            <div className="w-24 h-1 bg-gradient-cyber mx-auto rounded-full" />
+            <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">

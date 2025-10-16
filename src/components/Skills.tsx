@@ -199,7 +199,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   };
 
   return (
-    <section id="skills-section" className="py-20 px-4 bg-card/20 relative overflow-hidden">
+    <section id="skills-section" className="py-32 px-4 bg-card/20 relative overflow-hidden">
       <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-cyber-purple/5 blur-[120px] rounded-full" />
 
       <div className="container mx-auto max-w-7xl relative z-10">
@@ -209,49 +209,49 @@ export const Skills = ({ isOwner }: SkillsProps) => {
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
         >
-          <div className="text-center space-y-4 mb-16">
+          <div className="text-center space-y-6 mb-20">
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-6 shadow-glow"
             >
-              <Code className="w-8 h-8 text-primary" />
+              <Code className="w-10 h-10 text-primary" />
             </motion.div>
-            <h2 className="text-5xl md:text-6xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+            <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
               Skills & Expertise
             </h2>
-            <div className="w-24 h-1 bg-gradient-cyber mx-auto rounded-full" />
+            <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full mb-12 bg-secondary/50 p-2 h-auto gap-2">
+            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full mb-16 bg-secondary/50 p-3 h-auto gap-3 rounded-2xl">
               {skillCategories.map((category) => {
                 const Icon = category.icon;
                 return (
                   <TabsTrigger
                     key={category.id}
                     value={category.id}
-                    className="flex flex-col md:flex-row items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all py-3 px-4 rounded-lg"
+                    className="flex flex-col md:flex-row items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all py-4 px-5 rounded-xl hover:bg-primary/10"
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-xs md:text-sm font-medium">{category.label}</span>
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-xs md:text-sm font-semibold whitespace-nowrap">{category.label}</span>
                   </TabsTrigger>
                 );
               })}
             </TabsList>
 
             {skillCategories.map((category) => (
-              <TabsContent key={category.id} value={category.id} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+              <TabsContent key={category.id} value={category.id} className="space-y-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr">
                   {category.skills.map((skill, index) => (
                     <motion.div
                       key={skill.name}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.05 }}
-                      className="group relative bg-gradient-card border border-border rounded-2xl p-6 hover:border-primary/50 hover:shadow-elegant transition-all duration-300 flex flex-col"
+                      className="group relative bg-gradient-card border border-border rounded-2xl p-8 hover:border-primary/50 hover:shadow-elegant transition-all duration-300 flex flex-col"
                     >
                       {isOwner && (
                         <button
