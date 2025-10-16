@@ -20,7 +20,7 @@ const TypewriterText = () => {
         setTimeout(() => {
           setDisplayedText("");
           setIsComplete(false);
-        }, 100);
+        }, 10000); // Wait 10 seconds before repeating
       }
     }, 80);
     
