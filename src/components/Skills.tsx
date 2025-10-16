@@ -11,7 +11,7 @@ interface SkillsProps {
   isOwner: boolean;
 }
 
-const skillCategories = [
+const initialSkillCategories = [
   {
     id: "programming",
     label: "Programming Languages",
