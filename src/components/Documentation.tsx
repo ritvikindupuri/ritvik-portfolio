@@ -106,7 +106,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
   };
 
   return (
-    <section className="py-32 bg-background relative overflow-hidden">
+    <section className="py-16 bg-background relative overflow-hidden">
       <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-primary/5 blur-[150px] rounded-full" />
       
       <div className="container mx-auto px-6 max-w-7xl">

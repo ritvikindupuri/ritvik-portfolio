@@ -132,7 +132,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   };
 
   return (
-    <section id="skills-section" className="py-32 bg-card/20 relative overflow-hidden">
+    <section id="skills-section" className="py-16 bg-card/20 relative overflow-hidden">
       <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-cyber-purple/5 blur-[120px] rounded-full" />
 
       <div className="container mx-auto px-6 max-w-7xl">

@@ -9,18 +9,23 @@ const TypewriterText = ({ text }: { text: string }) => {
   
   useEffect(() => {
     let currentIndex = 0;
-    const interval = setInterval(() => {
+    const typeInterval = setInterval(() => {
       if (currentIndex < text.length) {
         setDisplayedText(text.slice(0, currentIndex + 1));
         currentIndex++;
       } else {
         setIsComplete(true);
-        clearInterval(interval);
+        clearInterval(typeInterval);
+        // Reset after a delay to repeat
+        setTimeout(() => {
+          setDisplayedText("");
+          setIsComplete(false);
+        }, 2000);
       }
     }, 80);
     
-    return () => clearInterval(interval);
-  }, [text]);
+    return () => clearInterval(typeInterval);
+  }, [text, isComplete]);
   
   return (
     <span>
@@ -32,9 +37,9 @@ const TypewriterText = ({ text }: { text: string }) => {
 
 const CloudSecurityBackground = () => {
   return (
-    <div className="absolute inset-0 overflow-hidden opacity-10">
+    <div className="absolute inset-0 overflow-hidden opacity-40">
       {/* Floating Cloud Icons */}
-      {[...Array(15)].map((_, i) => (
+      {[...Array(20)].map((_, i) => (
         <motion.div
           key={`cloud-${i}`}
           className="absolute text-cyber-glow"
@@ -44,7 +49,7 @@ const CloudSecurityBackground = () => {
           }}
           initial={{ opacity: 0 }}
           animate={{
-            opacity: [0.3, 0.6, 0.3],
+            opacity: [0.5, 0.9, 0.5],
             y: [0, -30, 0],
             x: [0, Math.random() * 20 - 10, 0],
           }}
@@ -54,13 +59,13 @@ const CloudSecurityBackground = () => {
             delay: Math.random() * 3,
           }}
         >
-          <Cloud className="w-8 h-8" />
+          <Cloud className="w-12 h-12" />
         </motion.div>
       ))}
       
       {/* Network Connection Lines */}
       <svg className="absolute inset-0 w-full h-full">
-        {[...Array(8)].map((_, i) => (
+        {[...Array(12)].map((_, i) => (
           <motion.line
             key={`line-${i}`}
             x1={`${Math.random() * 100}%`}
@@ -68,11 +73,11 @@ const CloudSecurityBackground = () => {
             x2={`${Math.random() * 100}%`}
             y2={`${Math.random() * 100}%`}
             stroke="hsl(var(--cyber-purple))"
-            strokeWidth="1"
+            strokeWidth="2"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ 
               pathLength: [0, 1, 0],
-              opacity: [0, 0.4, 0]
+              opacity: [0, 0.7, 0]
             }}
             transition={{
               duration: 4,
@@ -84,7 +89,7 @@ const CloudSecurityBackground = () => {
       </svg>
       
       {/* Lock/Shield Icons */}
-      {[...Array(6)].map((_, i) => (
+      {[...Array(10)].map((_, i) => (
         <motion.div
           key={`lock-${i}`}
           className="absolute text-accent"
@@ -93,7 +98,7 @@ const CloudSecurityBackground = () => {
             top: `${Math.random() * 100}%`,
           }}
           animate={{
-            opacity: [0.2, 0.5, 0.2],
+            opacity: [0.4, 0.8, 0.4],
             scale: [1, 1.2, 1],
           }}
           transition={{
@@ -102,7 +107,7 @@ const CloudSecurityBackground = () => {
             delay: Math.random() * 2,
           }}
         >
-          <Lock className="w-6 h-6" />
+          <Lock className="w-8 h-8" />
         </motion.div>
       ))}
     </div>
