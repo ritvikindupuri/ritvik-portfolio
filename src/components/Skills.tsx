@@ -38,7 +38,7 @@ const initialSkillCategories = [
   },
   {
     id: "web",
-    label: "Web Technologies",
+    label: "Web Development & AI",
     icon: Globe,
     skills: [
       { name: "React", level: "Advanced", logo: "⚛️", description: "Building modern web applications", link: "" },
