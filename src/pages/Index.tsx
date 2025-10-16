@@ -1,13 +1,43 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from "react";
+import { Hero } from "@/components/Hero";
+import { About } from "@/components/About";
+import { Skills } from "@/components/Skills";
+import { Certifications } from "@/components/Certifications";
+import { Projects } from "@/components/Projects";
+import { Contact } from "@/components/Contact";
+import { AccessDialog } from "@/components/AccessDialog";
 
 const Index = () => {
+  const [accessGranted, setAccessGranted] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+
+  const handleAccessGranted = (owner: boolean) => {
+    setIsOwner(owner);
+    setAccessGranted(true);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <>
+      <AccessDialog open={!accessGranted} onAccessGranted={handleAccessGranted} />
+      
+      <div className="min-h-screen bg-background">
+        <Hero isOwner={isOwner} />
+        <About isOwner={isOwner} />
+        <Skills isOwner={isOwner} />
+        <Certifications isOwner={isOwner} />
+        <Projects isOwner={isOwner} />
+        <Contact />
+        
+        {/* Footer */}
+        <footer className="py-8 border-t border-border bg-card/50">
+          <div className="container mx-auto px-6 text-center">
+            <p className="text-muted-foreground">
+              © 2024 Ritvik Indupuri. Built with React, TypeScript, and Tailwind CSS.
+            </p>
+          </div>
+        </footer>
       </div>
-    </div>
+    </>
   );
 };
 

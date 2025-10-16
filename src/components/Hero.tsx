@@ -1,0 +1,125 @@
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { Camera } from "lucide-react";
+import cyberBg from "@/assets/cyber-bg.jpg";
+
+interface HeroProps {
+  isOwner: boolean;
+}
+
+export const Hero = ({ isOwner }: HeroProps) => {
+  const [profileImage, setProfileImage] = useState<string>("");
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background Image with Overlay */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${cyberBg})` }}
+      />
+      <div className="absolute inset-0 bg-gradient-hero" />
+      
+      {/* Content */}
+      <div className="relative z-10 container mx-auto px-6 py-20 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="space-y-8"
+        >
+          {/* Profile Picture */}
+          <div className="relative inline-block group">
+            <div className="w-40 h-40 mx-auto rounded-full overflow-hidden border-4 border-primary shadow-glow bg-secondary/50 flex items-center justify-center">
+              {profileImage ? (
+                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <Camera className="w-16 h-16 text-muted-foreground" />
+              )}
+            </div>
+            {isOwner && (
+              <label className="absolute inset-0 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="w-full h-full rounded-full bg-black/60 flex items-center justify-center">
+                  <Camera className="w-8 h-8 text-foreground" />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Animated Greeting */}
+          <motion.h1
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 1 }}
+            className="text-5xl md:text-7xl font-bold font-sans"
+          >
+            Hi, my name is{" "}
+            <span className="bg-gradient-cyber bg-clip-text text-transparent">
+              Ritvik Indupuri
+            </span>
+          </motion.h1>
+
+          {/* Details */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="space-y-4"
+          >
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-xl md:text-2xl text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="text-primary">Major:</span>
+                <span className="font-mono">Cybersecurity</span>
+              </div>
+              <span className="hidden md:inline text-primary">•</span>
+              <div className="flex items-center gap-2">
+                <span className="text-primary">Minor:</span>
+                <span className="font-mono">AI/ML</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-center gap-3 text-lg">
+              <span className="text-muted-foreground">Institution:</span>
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
+                alt="Purdue University" 
+                className="h-8"
+              />
+              <span className="font-semibold">Purdue University</span>
+            </div>
+          </motion.div>
+
+          {/* Scroll Indicator */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2, duration: 0.8 }}
+            className="pt-12"
+          >
+            <div className="inline-block animate-bounce">
+              <div className="w-6 h-10 border-2 border-primary rounded-full flex items-start justify-center p-2">
+                <div className="w-1 h-2 bg-primary rounded-full animate-glow-pulse" />
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
