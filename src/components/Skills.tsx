@@ -246,7 +246,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
             {skillCategories.map((category) => (
               <TabsContent key={category.id} value={category.id} className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mt-10">
                   {category.skills.map((skill, index) => (
                     <motion.div
                       key={skill.name}
@@ -255,9 +255,6 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       transition={{ delay: index * 0.05, duration: 0.4 }}
                       className="group relative"
                     >
-                      {/* Glow effect on hover */}
-                      <div className="absolute -inset-0.5 bg-gradient-cyber rounded-2xl opacity-0 group-hover:opacity-30 blur transition-opacity duration-500" />
-                      
                       <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
                         {isOwner && (
                           <button
@@ -268,20 +265,18 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                           </button>
                         )}
                         
-                        <div className="flex items-start gap-4 mb-4">
-                          <div className="flex items-center justify-center w-14 h-14 shrink-0 bg-primary/10 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                        <div className="flex flex-col items-center text-center gap-3 mb-4">
+                          <div className="flex items-center justify-center w-20 h-20 md:w-24 md:h-24 shrink-0 bg-primary/10 rounded-xl">
                             {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
-                              <img src={skill.logo} alt={skill.name} className="w-10 h-10 object-contain" />
+                              <img src={skill.logo} alt={skill.name} className="w-12 h-12 md:w-14 md:h-14 object-contain" />
                             ) : (
-                              <span className="text-3xl leading-none">{skill.logo}</span>
+                              <span className="text-4xl leading-none">{skill.logo}</span>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-base font-sans mb-1 text-foreground truncate">{skill.name}</h3>
-                            <span className={`text-xs font-semibold font-mono px-2 py-1 rounded-md ${getLevelColor(skill.level)} bg-primary/5`}>
-                              {skill.level}
-                            </span>
-                          </div>
+                          <h3 className="font-bold text-lg font-sans text-foreground">{skill.name}</h3>
+                          <span className={`text-xs font-semibold font-mono px-3 py-1 rounded-full ${getLevelColor(skill.level)} bg-primary/10`}>
+                            {skill.level}
+                          </span>
                         </div>
 
                         {skill.description && (
@@ -302,30 +297,6 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                           </a>
                         )}
                         
-                        <div className="mt-auto">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-muted-foreground">Proficiency</span>
-                            <span className="text-xs font-bold text-primary">
-                              {skill.level === "Advanced" ? "90%" : 
-                               skill.level === "Intermediate" ? "66%" : "40%"}
-                            </span>
-                          </div>
-                          <div className="h-2 bg-secondary/50 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ 
-                                width: skill.level === "Advanced" ? "90%" : 
-                                       skill.level === "Intermediate" ? "66%" : "40%" 
-                              }}
-                              transition={{ duration: 1, delay: index * 0.05 + 0.3, ease: "easeOut" }}
-                              className={`h-full rounded-full ${
-                                skill.level === "Advanced" ? "bg-gradient-to-r from-green-500 to-emerald-500" :
-                                skill.level === "Intermediate" ? "bg-gradient-to-r from-blue-500 to-cyan-500" : 
-                                "bg-gradient-to-r from-yellow-500 to-orange-500"
-                              }`}
-                            />
-                          </div>
-                        </div>
                       </div>
                     </motion.div>
                   ))}
