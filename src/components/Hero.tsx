@@ -3,15 +3,16 @@ import { useState, useEffect } from "react";
 import { Camera, Github, Linkedin, Cloud, Lock } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 
-const TypewriterText = ({ text }: { text: string }) => {
+const TypewriterText = () => {
+  const fullText = "Hi, my name is Ritvik Indupuri";
   const [displayedText, setDisplayedText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
   
   useEffect(() => {
     let currentIndex = 0;
     const typeInterval = setInterval(() => {
-      if (currentIndex < text.length) {
-        setDisplayedText(text.slice(0, currentIndex + 1));
+      if (currentIndex < fullText.length) {
+        setDisplayedText(fullText.slice(0, currentIndex + 1));
         currentIndex++;
       } else {
         setIsComplete(true);
@@ -24,11 +25,17 @@ const TypewriterText = ({ text }: { text: string }) => {
     }, 80);
     
     return () => clearInterval(typeInterval);
-  }, [text, isComplete]);
+  }, [isComplete]);
+  
+  // Split the text to apply gradient to "Ritvik Indupuri"
+  const splitIndex = "Hi, my name is ".length;
+  const beforeName = displayedText.slice(0, splitIndex);
+  const name = displayedText.slice(splitIndex);
   
   return (
     <span className="inline-block">
-      {displayedText}
+      {beforeName}
+      {name && <span className="bg-gradient-cyber bg-clip-text text-transparent">{name}</span>}
       {!isComplete && <span className="animate-pulse ml-1">|</span>}
     </span>
   );
@@ -270,10 +277,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
             transition={{ delay: 0.3, duration: 1 }}
             className="text-5xl md:text-7xl font-bold font-sans"
           >
-            <TypewriterText text="Hi, my name is " />
-            <span className="bg-gradient-cyber bg-clip-text text-transparent">
-              Ritvik Indupuri
-            </span>
+            <TypewriterText />
           </motion.h1>
 
           {/* Details */}
