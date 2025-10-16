@@ -132,9 +132,9 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   };
 
   return (
-    <section className="py-32 bg-card/20 relative overflow-hidden">
+    <section id="skills-section" className="py-32 bg-card/20 relative overflow-hidden">
       <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-cyber-purple/5 blur-[120px] rounded-full" />
-      
+
       <div className="container mx-auto px-6 max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -196,11 +196,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       )}
                       
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="text-5xl">{skill.logo.startsWith('data:') ? (
-                          <img src={skill.logo} alt={skill.name} className="w-12 h-12 object-contain" />
-                        ) : (
-                          skill.logo
-                        )}</div>
+                        <div className="flex items-center justify-center w-14 h-14">
+                          {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
+                            <img src={skill.logo} alt={skill.name} className="w-full h-full object-contain" />
+                          ) : (
+                            <span className="text-5xl">{skill.logo}</span>
+                          )}
+                        </div>
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg font-sans mb-1">{skill.name}</h3>
                           <span className={`text-sm font-medium font-mono ${getLevelColor(skill.level)}`}>
@@ -208,7 +210,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                           </span>
                         </div>
                       </div>
-                      
+
                       {skill.description && (
                         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                           {skill.description}

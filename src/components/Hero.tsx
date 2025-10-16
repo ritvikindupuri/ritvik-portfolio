@@ -1,6 +1,6 @@
 import { motion, useAnimation } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Camera, Github, Linkedin } from "lucide-react";
+import { Camera, Github, Linkedin, Cloud, Lock } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 
 const TypewriterText = ({ text }: { text: string }) => {
@@ -30,31 +30,79 @@ const TypewriterText = ({ text }: { text: string }) => {
   );
 };
 
-const MatrixRain = () => {
-  const columns = 50;
-  const characters = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
-  
+const CloudSecurityBackground = () => {
   return (
     <div className="absolute inset-0 overflow-hidden opacity-10">
-      {[...Array(columns)].map((_, i) => (
+      {/* Floating Cloud Icons */}
+      {[...Array(15)].map((_, i) => (
         <motion.div
-          key={i}
-          className="absolute top-0 text-cyber-glow font-mono text-sm"
-          style={{ left: `${(i / columns) * 100}%` }}
-          initial={{ y: -100 }}
-          animate={{ y: window.innerHeight + 100 }}
+          key={`cloud-${i}`}
+          className="absolute text-cyber-glow"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: [0.3, 0.6, 0.3],
+            y: [0, -30, 0],
+            x: [0, Math.random() * 20 - 10, 0],
+          }}
           transition={{
-            duration: Math.random() * 10 + 10,
+            duration: Math.random() * 8 + 6,
             repeat: Infinity,
-            ease: "linear",
-            delay: Math.random() * 5,
+            delay: Math.random() * 3,
           }}
         >
-          {[...Array(20)].map((_, j) => (
-            <div key={j} className="opacity-50">
-              {characters[Math.floor(Math.random() * characters.length)]}
-            </div>
-          ))}
+          <Cloud className="w-8 h-8" />
+        </motion.div>
+      ))}
+      
+      {/* Network Connection Lines */}
+      <svg className="absolute inset-0 w-full h-full">
+        {[...Array(8)].map((_, i) => (
+          <motion.line
+            key={`line-${i}`}
+            x1={`${Math.random() * 100}%`}
+            y1={`${Math.random() * 100}%`}
+            x2={`${Math.random() * 100}%`}
+            y2={`${Math.random() * 100}%`}
+            stroke="hsl(var(--cyber-purple))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ 
+              pathLength: [0, 1, 0],
+              opacity: [0, 0.4, 0]
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              delay: i * 0.5,
+            }}
+          />
+        ))}
+      </svg>
+      
+      {/* Lock/Shield Icons */}
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={`lock-${i}`}
+          className="absolute text-accent"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            opacity: [0.2, 0.5, 0.2],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: Math.random() * 6 + 4,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+          }}
+        >
+          <Lock className="w-6 h-6" />
         </motion.div>
       ))}
     </div>
@@ -88,9 +136,9 @@ export const Hero = ({ isOwner }: HeroProps) => {
       />
       <div className="absolute inset-0 bg-gradient-hero" />
       
-      {/* Matrix Rain Effect */}
-      <MatrixRain />
-      
+      {/* Cloud Security Background Animation */}
+      <CloudSecurityBackground />
+
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6 py-20 text-center">
         <motion.div
@@ -156,16 +204,19 @@ export const Hero = ({ isOwner }: HeroProps) => {
               </div>
             </div>
             
-            <div className="flex items-center justify-center gap-3 text-lg">
-              <span className="text-muted-foreground">Institution:</span>
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
-                alt="Purdue University" 
-                className="h-8"
-              />
-              <span className="font-semibold">Purdue University</span>
-              <span className="text-primary">•</span>
-              <span className="font-mono text-primary">2024-2028</span>
+            <div className="flex flex-col items-center justify-center gap-4 text-lg">
+              <div className="flex items-center justify-center gap-4">
+                <img 
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
+                  alt="Purdue University" 
+                  className="h-10"
+                />
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-xl">Purdue University</span>
+                  <span className="text-primary text-lg">•</span>
+                  <span className="font-mono text-primary text-lg">2024-2028</span>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -196,18 +247,25 @@ export const Hero = ({ isOwner }: HeroProps) => {
             </a>
           </motion.div>
 
-          {/* Scroll Indicator */}
+          {/* Scroll Indicator - Clickable */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.8 }}
             className="pt-12"
           >
-            <div className="inline-block animate-bounce">
+            <button
+              onClick={() => {
+                const skillsSection = document.getElementById('skills-section');
+                skillsSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="inline-block animate-bounce cursor-pointer hover:scale-110 transition-transform focus:outline-none"
+              aria-label="Scroll to skills section"
+            >
               <div className="w-6 h-10 border-2 border-primary rounded-full flex items-start justify-center p-2">
                 <div className="w-1 h-2 bg-primary rounded-full animate-glow-pulse" />
               </div>
-            </div>
+            </button>
           </motion.div>
         </motion.div>
       </div>
