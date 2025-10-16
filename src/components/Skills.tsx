@@ -104,13 +104,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
       const categorizedSkills = initialSkillCategories.map(cat => ({
         ...cat,
         skills: data
-          .filter(skill => skill.category === cat.id)
-          .map(skill => ({
+          .filter((skill: any) => skill.category === cat.id)
+          .map((skill: any) => ({
             name: skill.name,
-            level: "Intermediate",
+            level: skill.level ?? "Intermediate",
             logo: skill.icon || "",
-            description: "",
-            link: ""
+            description: skill.description ?? "",
+            link: skill.link ?? ""
           }))
       }));
       setSkillCategories(categorizedSkills);
@@ -154,7 +154,10 @@ export const Skills = ({ isOwner }: SkillsProps) => {
         user_id: user.id,
         name: newSkill.name,
         category: activeTab,
-        icon: newSkill.logo
+        icon: newSkill.logo,
+        level: newSkill.level,
+        description: newSkill.description,
+        link: newSkill.link
       });
 
     if (error) {

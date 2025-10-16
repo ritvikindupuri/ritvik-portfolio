@@ -207,24 +207,33 @@ export type Database = {
         Row: {
           category: string
           created_at: string | null
+          description: string | null
           icon: string | null
           id: string
+          level: string | null
+          link: string | null
           name: string
           user_id: string
         }
         Insert: {
           category: string
           created_at?: string | null
+          description?: string | null
           icon?: string | null
           id?: string
+          level?: string | null
+          link?: string | null
           name: string
           user_id: string
         }
         Update: {
           category?: string
           created_at?: string | null
+          description?: string | null
           icon?: string | null
           id?: string
+          level?: string | null
+          link?: string | null
           name?: string
           user_id?: string
         }
