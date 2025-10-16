@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Camera } from "lucide-react";
+import { Camera, Github, Linkedin } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 
 interface HeroProps {
@@ -103,6 +103,33 @@ export const Hero = ({ isOwner }: HeroProps) => {
               />
               <span className="font-semibold">Purdue University</span>
             </div>
+          </motion.div>
+
+          {/* Social Links */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.8 }}
+            className="flex items-center justify-center gap-6 pt-6"
+          >
+            <a
+              href="https://github.com/ritvikindupuri"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2 px-6 py-3 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300 hover:shadow-elegant"
+            >
+              <Github className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="font-medium text-sm">GitHub</span>
+            </a>
+            <a
+              href="https://www.linkedin.com/in/ritvik-indupuri-4b6037288/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2 px-6 py-3 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300 hover:shadow-elegant"
+            >
+              <Linkedin className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="font-medium text-sm">LinkedIn</span>
+            </a>
           </motion.div>
 
           {/* Scroll Indicator */}
