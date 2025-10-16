@@ -226,17 +226,17 @@ export const Skills = ({ isOwner }: SkillsProps) => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full mb-16 bg-secondary/50 p-3 h-auto gap-3 rounded-2xl">
+            <TabsList className="flex flex-wrap justify-center w-full mb-16 bg-card/60 backdrop-blur-sm border border-primary/20 p-4 gap-4 rounded-2xl shadow-elegant">
               {skillCategories.map((category) => {
                 const Icon = category.icon;
                 return (
                   <TabsTrigger
                     key={category.id}
                     value={category.id}
-                    className="flex flex-col md:flex-row items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all py-4 px-5 rounded-xl hover:bg-primary/10"
+                    className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-5 px-8 rounded-xl hover:bg-primary/10 min-w-[200px] border border-transparent data-[state=active]:border-primary/40"
                   >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-xs md:text-sm font-semibold whitespace-nowrap">{category.label}</span>
+                    <Icon className="w-6 h-6 flex-shrink-0" />
+                    <span className="text-sm font-semibold whitespace-nowrap">{category.label}</span>
                   </TabsTrigger>
                 );
               })}
@@ -244,7 +244,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
             {skillCategories.map((category) => (
               <TabsContent key={category.id} value={category.id} className="space-y-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 auto-rows-fr">
                   {category.skills.map((skill, index) => (
                     <motion.div
                       key={skill.name}

@@ -13,6 +13,7 @@ import { Contact } from "@/components/Contact";
 import { AccessDialog } from "@/components/AccessDialog";
 import { PortfolioChatbot } from "@/components/PortfolioChatbot";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { LogOut, LogIn } from "lucide-react";
 import { toast } from "sonner";
 
@@ -88,12 +89,33 @@ const Index = () => {
         
         <div className="relative bg-background">
           <Hero isOwner={isOwner || !!user} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
           <About isOwner={isOwner || !!user} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
           <Skills isOwner={isOwner || !!user} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
           <Certifications isOwner={isOwner || !!user} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
           <Documentation isOwner={isOwner || !!user} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
           <Experience isOwner={isOwner || !!user} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
           <Projects isOwner={isOwner || !!user} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
           <Contact />
 
           {/* Chatbot - Only for guests */}
