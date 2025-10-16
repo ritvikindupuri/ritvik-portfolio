@@ -11,6 +11,7 @@ import Experience from "@/components/Experience";
 import { Projects } from "@/components/Projects";
 import { Contact } from "@/components/Contact";
 import { AccessDialog } from "@/components/AccessDialog";
+import { PortfolioChatbot } from "@/components/PortfolioChatbot";
 import { Button } from "@/components/ui/button";
 import { LogOut, LogIn } from "lucide-react";
 import { toast } from "sonner";
@@ -94,6 +95,9 @@ const Index = () => {
           <Experience isOwner={isOwner || !!user} />
           <Projects isOwner={isOwner || !!user} />
           <Contact />
+
+          {/* Chatbot - Only for guests */}
+          <PortfolioChatbot isOwner={isOwner || !!user} />
 
           {/* Footer */}
           <footer className="py-8 border-t border-primary/20 bg-gradient-to-b from-background to-card/30">
