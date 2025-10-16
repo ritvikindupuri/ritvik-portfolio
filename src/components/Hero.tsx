@@ -301,30 +301,29 @@ export const Hero = ({ isOwner }: HeroProps) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8 }}
-            className="space-y-4"
+            className="space-y-10 pt-6"
           >
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-xl md:text-2xl text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="text-primary">Major:</span>
-                <span className="font-mono">Cybersecurity</span>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 text-xl md:text-2xl">
+              <div className="flex items-center gap-3 px-6 py-3 bg-card/30 backdrop-blur-sm rounded-2xl border border-primary/20">
+                <span className="text-primary font-semibold">Major:</span>
+                <span className="font-mono font-medium">Cybersecurity</span>
               </div>
-              <span className="hidden md:inline text-primary">•</span>
-              <div className="flex items-center gap-2">
-                <span className="text-primary">Minor:</span>
-                <span className="font-mono">AI/ML</span>
+              <div className="flex items-center gap-3 px-6 py-3 bg-card/30 backdrop-blur-sm rounded-2xl border border-primary/20">
+                <span className="text-primary font-semibold">Minor:</span>
+                <span className="font-mono font-medium">AI/ML</span>
               </div>
             </div>
             
-            <div className="flex flex-col items-center justify-center gap-4 text-lg">
-              <div className="flex items-center justify-center gap-4">
+            <div className="flex flex-col items-center justify-center gap-4 text-lg pt-4">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-5 px-8 py-5 bg-card/30 backdrop-blur-sm rounded-2xl border border-primary/20">
                 <img 
                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
                   alt="Purdue University" 
-                  className="h-10"
+                  className="h-12"
                 />
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col md:flex-row items-center gap-3">
                   <span className="font-semibold text-xl">Purdue University</span>
-                  <span className="text-primary text-lg">•</span>
+                  <span className="text-primary text-lg hidden md:inline">•</span>
                   <span className="font-mono text-primary text-lg">2024-2028</span>
                 </div>
               </div>

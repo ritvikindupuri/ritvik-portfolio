@@ -158,162 +158,262 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
             <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {certifications.map((cert, index) => (
-              <motion.div
-                key={cert.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.08, duration: 0.4 }}
-                viewport={{ once: true }}
-                className="group relative"
-              >
-                <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-accent/40 transition-all duration-300 h-full shadow-lg hover:shadow-glow">
-                  {isOwner && (
-                    <button
-                      onClick={() => handleRemoveCert(cert.name)}
-                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2 z-10"
+          {/* Hexagonal Grid Layout - Unique & Eye-catching */}
+          <div className="relative max-w-6xl mx-auto">
+            {/* Main certification showcase */}
+            <div className="flex flex-wrap justify-center items-center gap-8 lg:gap-12">
+              {certifications.map((cert, index) => (
+                <motion.div
+                  key={cert.name}
+                  initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{ 
+                    delay: index * 0.15, 
+                    duration: 0.6,
+                    type: "spring",
+                    stiffness: 100
+                  }}
+                  viewport={{ once: true }}
+                  className="group relative"
+                  style={{
+                    perspective: "1000px"
+                  }}
+                >
+                  {/* Hexagonal shape container */}
+                  <div className="relative w-72 h-80">
+                    {/* Animated glow background */}
+                    <motion.div
+                      className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/20 via-primary/20 to-accent/20 blur-2xl"
+                      animate={{
+                        opacity: [0.3, 0.6, 0.3],
+                        scale: [1, 1.05, 1]
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        delay: index * 0.5
+                      }}
+                    />
+                    
+                    {/* Main card with 3D effect */}
+                    <motion.div
+                      className="relative h-full bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-8 shadow-2xl overflow-hidden"
+                      whileHover={{ 
+                        rotateY: 5,
+                        rotateX: 5,
+                        scale: 1.05,
+                        borderColor: "hsl(var(--accent) / 0.6)"
+                      }}
+                      transition={{ duration: 0.3 }}
+                      style={{
+                        transformStyle: "preserve-3d"
+                      }}
                     >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                  
-                  <div className="text-center space-y-6">
-                    <div className="mx-auto w-20 h-20 flex items-center justify-center bg-accent/10 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                      {cert.logo.startsWith('data:') ? (
-                        <img src={cert.logo} alt={cert.name} className="w-14 h-14 object-contain" />
-                      ) : (
-                        <span className="text-4xl">{cert.logo}</span>
-                      )}
-                    </div>
-                    <h3 className="text-xl font-bold font-sans group-hover:text-accent transition-colors leading-tight">{cert.name}</h3>
-                    
-                    <div className="space-y-3 text-sm">
-                      {cert.credentialId && (
-                        <div className="bg-accent/5 rounded-lg p-3">
-                          <p className="text-muted-foreground">
-                            <span className="text-accent font-semibold block mb-1">Credential ID</span>
-                            <span className="font-mono text-xs">{cert.credentialId}</span>
-                          </p>
-                        </div>
-                      )}
-                      {cert.issueDate && (
-                        <p className="text-muted-foreground">
-                          <span className="text-accent font-semibold">Issued:</span> {cert.issueDate}
-                        </p>
-                      )}
-                      {cert.expirationDate && (
-                        <p className="text-muted-foreground">
-                          <span className="text-accent font-semibold">Expires:</span> {cert.expirationDate}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-
-            {/* Add Certification Button - Owner Only */}
-            {isOwner && (
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <motion.button
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: certifications.length * 0.1, duration: 0.5 }}
-                    viewport={{ once: true }}
-                    className="border-2 border-dashed border-border hover:border-accent/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[300px] group hover:bg-accent/5 transition-all duration-300"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
-                      <Plus className="w-7 h-7 text-accent" />
-                    </div>
-                    <span className="text-sm font-medium text-muted-foreground group-hover:text-accent transition-colors">
-                      Add New Certification
-                    </span>
-                  </motion.button>
-                </DialogTrigger>
-                
-                <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Add New Certification</DialogTitle>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Certification Name</label>
-                      <Input
-                        placeholder="e.g., CISSP"
-                        value={newCert.name}
-                        onChange={(e) => setNewCert({ ...newCert, name: e.target.value })}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Logo</label>
-                      <div className="flex gap-3">
-                        {uploadedLogo && (
-                          <div className="w-16 h-16 rounded-lg border-2 border-accent overflow-hidden">
-                            <img src={uploadedLogo} alt="Preview" className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                        <label className="flex-1 cursor-pointer">
-                          <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-accent/50 transition-colors flex items-center justify-center gap-2">
-                            <Upload className="w-5 h-5 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              {uploadedLogo ? "Change Logo" : "Upload Logo"}
-                            </span>
-                          </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoUpload}
-                            className="hidden"
-                          />
-                        </label>
+                      {/* Animated circuit pattern overlay */}
+                      <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-4 right-4 w-32 h-32 border border-accent rounded-full" />
+                        <div className="absolute bottom-4 left-4 w-24 h-24 border border-primary rounded-full" />
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-accent/50" 
+                          style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }} 
+                        />
                       </div>
-                    </div>
+
+                      {isOwner && (
+                        <button
+                          onClick={() => handleRemoveCert(cert.name)}
+                          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 z-20 backdrop-blur-sm"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                      
+                      <div className="relative z-10 h-full flex flex-col items-center justify-between text-center">
+                        {/* Logo with holographic effect */}
+                        <motion.div 
+                          className="relative"
+                          whileHover={{ scale: 1.1, rotate: 360 }}
+                          transition={{ duration: 0.6 }}
+                        >
+                          <div className="w-24 h-24 flex items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 rounded-2xl border-2 border-accent/40 shadow-glow relative overflow-hidden">
+                            {/* Scanning light effect */}
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/30 to-transparent"
+                              animate={{
+                                y: ["-100%", "200%"]
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                repeatDelay: 1,
+                                ease: "linear"
+                              }}
+                            />
+                            {cert.logo.startsWith('data:') ? (
+                              <img src={cert.logo} alt={cert.name} className="w-16 h-16 object-contain relative z-10" />
+                            ) : (
+                              <span className="text-5xl relative z-10">{cert.logo}</span>
+                            )}
+                          </div>
+                        </motion.div>
+
+                        {/* Certification name with gradient */}
+                        <div className="space-y-3 flex-1 flex flex-col justify-center">
+                          <h3 className="text-2xl font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent leading-tight px-2">
+                            {cert.name}
+                          </h3>
+                          
+                          {/* Divider line */}
+                          <motion.div 
+                            className="w-16 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto rounded-full"
+                            animate={{
+                              width: ["64px", "96px", "64px"]
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                          />
+                        </div>
+
+                        {/* Info section */}
+                        <div className="space-y-3 w-full">
+                          {cert.credentialId && (
+                            <div className="bg-accent/10 backdrop-blur-sm rounded-xl p-3 border border-accent/20">
+                              <p className="text-xs text-accent/80 font-semibold mb-1">CREDENTIAL ID</p>
+                              <p className="font-mono text-xs text-foreground/90 break-all">{cert.credentialId}</p>
+                            </div>
+                          )}
+                          
+                          <div className="flex justify-between gap-3 text-xs">
+                            {cert.issueDate && (
+                              <div className="flex-1 bg-primary/10 rounded-lg p-2 border border-primary/20">
+                                <p className="text-primary/70 font-semibold mb-0.5">ISSUED</p>
+                                <p className="font-mono text-foreground/90">{cert.issueDate}</p>
+                              </div>
+                            )}
+                            {cert.expirationDate && (
+                              <div className="flex-1 bg-primary/10 rounded-lg p-2 border border-primary/20">
+                                <p className="text-primary/70 font-semibold mb-0.5">EXPIRES</p>
+                                <p className="font-mono text-foreground/90">{cert.expirationDate}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Corner accents */}
+                        <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-accent/40 rounded-tl-lg" />
+                        <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-accent/40 rounded-tr-lg" />
+                        <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-primary/40 rounded-bl-lg" />
+                        <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-primary/40 rounded-br-lg" />
+                      </div>
+                    </motion.div>
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Add Certification Button - Owner Only */}
+              {isOwner && (
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                  <DialogTrigger asChild>
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: certifications.length * 0.15, duration: 0.6 }}
+                      viewport={{ once: true }}
+                      className="relative w-72 h-80 border-2 border-dashed border-accent/30 hover:border-accent/60 rounded-3xl flex flex-col items-center justify-center gap-6 group hover:bg-accent/5 transition-all duration-300"
+                    >
+                      <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-all group-hover:scale-110">
+                        <Plus className="w-8 h-8 text-accent" />
+                      </div>
+                      <span className="text-base font-semibold text-muted-foreground group-hover:text-accent transition-colors">
+                        Add New Certification
+                      </span>
+                    </motion.button>
+                  </DialogTrigger>
+                  
+                  <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Add New Certification</DialogTitle>
+                    </DialogHeader>
                     
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Credential ID (optional)</label>
-                      <Input
-                        placeholder="e.g., CERT-2024-XXX"
-                        value={newCert.credentialId}
-                        onChange={(e) => setNewCert({ ...newCert, credentialId: e.target.value })}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Issue Date (optional)</label>
+                        <label className="text-sm font-medium">Certification Name</label>
                         <Input
-                          placeholder="e.g., Jan 2024"
-                          value={newCert.issueDate}
-                          onChange={(e) => setNewCert({ ...newCert, issueDate: e.target.value })}
+                          placeholder="e.g., CISSP"
+                          value={newCert.name}
+                          onChange={(e) => setNewCert({ ...newCert, name: e.target.value })}
                         />
                       </div>
                       
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Expiration (optional)</label>
+                        <label className="text-sm font-medium">Logo</label>
+                        <div className="flex gap-3">
+                          {uploadedLogo && (
+                            <div className="w-16 h-16 rounded-lg border-2 border-accent overflow-hidden">
+                              <img src={uploadedLogo} alt="Preview" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <label className="flex-1 cursor-pointer">
+                            <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-accent/50 transition-colors flex items-center justify-center gap-2">
+                              <Upload className="w-5 h-5 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                {uploadedLogo ? "Change Logo" : "Upload Logo"}
+                              </span>
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Credential ID (optional)</label>
                         <Input
-                          placeholder="e.g., Jan 2027"
-                          value={newCert.expirationDate}
-                          onChange={(e) => setNewCert({ ...newCert, expirationDate: e.target.value })}
+                          placeholder="e.g., CERT-2024-XXX"
+                          value={newCert.credentialId}
+                          onChange={(e) => setNewCert({ ...newCert, credentialId: e.target.value })}
                         />
                       </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Issue Date (optional)</label>
+                          <Input
+                            placeholder="e.g., Jan 2024"
+                            value={newCert.issueDate}
+                            onChange={(e) => setNewCert({ ...newCert, issueDate: e.target.value })}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Expiration (optional)</label>
+                          <Input
+                            placeholder="e.g., Jan 2027"
+                            value={newCert.expirationDate}
+                            onChange={(e) => setNewCert({ ...newCert, expirationDate: e.target.value })}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddCert} disabled={!newCert.name || !newCert.logo}>
-                      Add Certification
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                    
+                    <div className="flex justify-end gap-3">
+                      <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddCert} disabled={!newCert.name || !newCert.logo}>
+                        Add Certification
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
         </motion.div>
       </div>
