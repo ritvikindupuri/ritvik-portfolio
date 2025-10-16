@@ -2,11 +2,12 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Mail, Phone, Github, Linkedin, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Contact = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
@@ -49,24 +50,18 @@ export const Contact = () => {
     setIsSending(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const { data, error } = await supabase.functions.invoke('send-contact-email', {
+        body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send email');
-      }
+      if (error) throw error;
 
       toast.success("Message sent successfully! I'll get back to you soon.");
       setFormData({ name: "", email: "", message: "" });
       setIsEmailDialogOpen(false);
     } catch (error) {
       console.error('Error sending email:', error);
-      toast.error("Failed to send message. Please try emailing directly.");
+      toast.error("Failed to send message. Please email me directly at ritvik.indupuri@gmail.com");
     } finally {
       setIsSending(false);
     }
@@ -161,6 +156,9 @@ export const Contact = () => {
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Send me a message</DialogTitle>
+                  <DialogDescription>
+                    Fill out the form below and I'll get back to you as soon as possible.
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                   <div className="space-y-2">
