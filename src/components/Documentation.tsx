@@ -208,7 +208,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                 viewport={{ once: true }}
                 className="group relative"
               >
-                <div className="absolute -inset-0.5 bg-gradient-cyber rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-500" />
+                
                 
                 <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
                   {isOwner && (

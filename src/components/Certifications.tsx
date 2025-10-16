@@ -168,9 +168,6 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                 viewport={{ once: true }}
                 className="group relative"
               >
-                {/* Glow effect */}
-                <div className="absolute -inset-0.5 bg-gradient-cyber rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-500" />
-                
                 <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-accent/40 transition-all duration-300 h-full shadow-lg hover:shadow-glow">
                   {isOwner && (
                     <button
