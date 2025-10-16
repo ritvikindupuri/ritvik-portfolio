@@ -230,9 +230,9 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
 
   return (
-    <section id="projects" className="py-32 px-4 bg-card/30 relative overflow-hidden">
-      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-primary/5 blur-[150px] rounded-full" />
+    <section id="projects" className="py-32 px-4 bg-card/20 relative overflow-hidden">
       
+
       <div className="container mx-auto max-w-7xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -257,33 +257,35 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
-            <TabsList className="inline-flex flex-wrap justify-center w-full mb-16 bg-card/60 backdrop-blur-sm border border-primary/20 p-3 gap-3 rounded-2xl shadow-elegant">
-              <TabsTrigger
-                value="security"
-                className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-4 px-8 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
-              >
-                <Shield className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm font-semibold">Security</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="cloud"
-                className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-4 px-8 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
-              >
-                <Cloud className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm font-semibold">Cloud</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="ai"
-                className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-4 px-8 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
-              >
-                <Brain className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm font-semibold">AI</span>
-              </TabsTrigger>
-            </TabsList>
+            <div className="pb-4">
+              <TabsList className="relative z-10 flex flex-wrap w-full justify-center mb-12 bg-card border border-primary/20 p-3 md:p-4 gap-3 rounded-2xl shadow-elegant">
+                <TabsTrigger
+                  value="security"
+                  className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
+                >
+                  <Shield className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm font-semibold">Security Engineering Projects</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="cloud"
+                  className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
+                >
+                  <Cloud className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm font-semibold">Cloud Security Projects</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="ai"
+                  className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
+                >
+                  <Brain className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm font-semibold">AI & Cybersecurity Projects</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             {Object.entries(projects).map(([key, projectList]) => (
               <TabsContent key={key} value={key} className="space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
                   {projectList.map((project, index) => (
                     <motion.div
                       key={project.title}
