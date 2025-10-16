@@ -239,33 +239,33 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       key={skill.name}
                       className="group relative"
                     >
-                      <div className="relative bg-gradient-to-br from-card via-card/95 to-card/80 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl">
+                      <div className="relative bg-gradient-to-br from-card via-card/95 to-card/80 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-5 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl">
                         {isOwner && (
                           <button
                             onClick={() => handleRemoveSkill(category.id, skill.name)}
-                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2 z-10 backdrop-blur-sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-1.5 z-10 backdrop-blur-sm"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         )}
                         
-                        <div className="relative z-10 flex flex-col items-center text-center gap-4 mb-4">
-                          <div className="w-24 h-24 flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl border-2 border-primary/30 shadow-glow relative overflow-hidden">
+                        <div className="relative z-10 flex flex-col items-center text-center gap-3">
+                          <div className="w-16 h-16 flex items-center justify-center">
                             {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
-                              <img src={skill.logo} alt={skill.name} className="w-20 h-20 object-contain relative z-10" />
+                              <img src={skill.logo} alt={skill.name} className="w-full h-full object-contain" />
                             ) : (
-                              <span className="text-4xl leading-none relative z-10">{skill.logo}</span>
+                              <span className="text-4xl leading-none">{skill.logo}</span>
                             )}
                           </div>
                           
-                          <div className="space-y-2">
-                            <h3 className="font-bold text-xl font-sans bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                          <div className="space-y-1.5">
+                            <h3 className="font-bold text-lg font-sans">
                               {skill.name}
                             </h3>
-                            <div className="h-1 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full w-3/5 mx-auto" />
+                            <div className="h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full w-3/5 mx-auto" />
                           </div>
                           
-                          <span className={`text-xs font-bold font-mono px-4 py-1.5 rounded-full ${getLevelColor(skill.level)} bg-primary/10 border border-primary/30`}>
+                          <span className={`text-xs font-bold font-mono px-3 py-1 rounded-full ${getLevelColor(skill.level)} bg-primary/10 border border-primary/30`}>
                             {skill.level}
                           </span>
                         </div>
