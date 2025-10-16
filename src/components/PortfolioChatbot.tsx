@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User as UserIcon } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User as UserIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,23 +23,60 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
     return null;
   }
 
+  const STORAGE_KEY = 'portfolio_chatbot_history';
+  const initialMessage: Message = {
+    role: 'assistant',
+    content: "Hi! I'm here to answer questions about Ritvik Indupuri's background, skills, and experience. What would you like to know?",
+    timestamp: new Date()
+  };
+
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: "Hi! I'm here to answer questions about Ritvik Indupuri's background, skills, and experience. What would you like to know?",
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Load chat history from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Convert timestamp strings back to Date objects
+        const messagesWithDates = parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        if (messagesWithDates.length > 0) {
+          setMessages(messagesWithDates);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
+    }
+  }, []);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    } catch (error) {
+      console.error('Failed to save chat history:', error);
+    }
+  }, [messages]);
+
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const handleClearChat = () => {
+    setMessages([initialMessage]);
+    localStorage.removeItem(STORAGE_KEY);
+    toast.success('Chat history cleared');
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -134,14 +171,25 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                   <p className="text-xs text-muted-foreground">Ask me about Ritvik</p>
                 </div>
               </div>
-              <Button
-                onClick={() => setIsOpen(false)}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleClearChat}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  title="Clear chat history"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setIsOpen(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Messages */}
