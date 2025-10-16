@@ -230,10 +230,10 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
 
   return (
-    <section className="py-16 bg-card/30 relative overflow-hidden">
+    <section id="projects" className="py-20 px-4 bg-card/30 relative overflow-hidden">
       <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-primary/5 blur-[150px] rounded-full" />
       
-      <div className="container mx-auto px-6 max-w-7xl">
+      <div className="container mx-auto max-w-7xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}

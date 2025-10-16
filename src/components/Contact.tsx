@@ -1,136 +1,140 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Mail, Send, CheckCircle } from "lucide-react";
+import { Mail, Phone, Github, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
 
 export const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const { toast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate sending email (will need Lovable Cloud for actual implementation)
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
-      toast({
-        title: "Message Sent Successfully ✅",
-        description: "I'll get back to you as soon as possible!",
-      });
-      
-      setFormData({ name: "", email: "", message: "" });
-      
-      setTimeout(() => setIsSuccess(false), 3000);
-    }, 1500);
-  };
+  const contactInfo = [
+    {
+      icon: Mail,
+      label: "Email",
+      value: "ritvik.indupuri@gmail.com",
+      href: "mailto:ritvik.indupuri@gmail.com",
+    },
+    {
+      icon: Phone,
+      label: "Phone",
+      value: "(317) 514-9996",
+      href: "tel:+13175149996",
+    },
+    {
+      icon: Github,
+      label: "GitHub",
+      value: "github.com/ritvikindupuri",
+      href: "https://github.com/ritvikindupuri",
+    },
+    {
+      icon: Linkedin,
+      label: "LinkedIn",
+      value: "linkedin.com/in/ritvik-indupuri",
+      href: "https://www.linkedin.com/in/ritvik-indupuri-4b6037288/",
+    },
+  ];
 
   return (
-    <section className="py-16 bg-background">
-      <div className="container mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="max-w-2xl mx-auto"
-        >
-          <div className="flex items-center gap-3 mb-12 justify-center">
+    <section id="contact" className="py-20 px-4 bg-gradient-to-b from-background to-card/30 relative overflow-hidden">
+      <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="max-w-5xl mx-auto relative z-10"
+      >
+        <div className="text-center mb-16">
+          <motion.div
+            initial={{ scale: 0 }}
+            whileInView={{ scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6"
+          >
             <Mail className="w-8 h-8 text-primary" />
-            <h2 className="text-4xl font-bold font-sans">Get In Touch</h2>
-          </div>
+          </motion.div>
+          
+          <h2 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-cyber bg-clip-text text-transparent">
+            Get In Touch
+          </h2>
+          
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Let's connect and discuss opportunities in cybersecurity, cloud computing, and AI development
+          </p>
+        </div>
 
-          <div className="bg-card border border-border rounded-lg p-8 shadow-card">
-            {isSuccess ? (
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-center py-12"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {contactInfo.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <motion.a
+                key={item.label}
+                href={item.href}
+                target={item.label === "GitHub" || item.label === "LinkedIn" ? "_blank" : undefined}
+                rel={item.label === "GitHub" || item.label === "LinkedIn" ? "noopener noreferrer" : undefined}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="group relative bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-primary/50 hover:shadow-elegant transition-all duration-300"
               >
-                <CheckCircle className="w-20 h-20 text-accent mx-auto mb-4" />
-                <h3 className="text-2xl font-bold mb-2">Message Sent Successfully!</h3>
-                <p className="text-muted-foreground">I'll get back to you soon.</p>
-              </motion.div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2">
-                    Name
-                  </label>
-                  <Input
-                    id="name"
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Your Name"
-                    className="bg-secondary border-border focus:border-primary"
-                  />
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                    <Icon className="w-6 h-6 text-primary" />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">
+                      {item.label}
+                    </h3>
+                    <p className="text-lg font-medium text-foreground group-hover:text-primary transition-colors break-words">
+                      {item.value}
+                    </p>
+                  </div>
                 </div>
+                
+                {/* Hover effect */}
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.a>
+            );
+          })}
+        </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2">
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="your.email@example.com"
-                    className="bg-secondary border-border focus:border-primary"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium mb-2">
-                    Message
-                  </label>
-                  <Textarea
-                    id="message"
-                    required
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Your message..."
-                    rows={6}
-                    className="bg-secondary border-border focus:border-primary resize-none"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                >
-                  {isSubmitting ? (
-                    "Sending..."
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Send Message
-                    </>
-                  )}
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  Messages will be sent to: ritvik.indupuri@gmail.com
-                </p>
-              </form>
-            )}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mt-12 text-center"
+        >
+          <p className="text-muted-foreground mb-6">
+            Available for cybersecurity internships, cloud development roles, and AI/ML projects
+          </p>
+          
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button
+              asChild
+              size="lg"
+              className="gap-2"
+            >
+              <a href="mailto:ritvik.indupuri@gmail.com">
+                <Mail className="w-4 h-4" />
+                Send Email
+              </a>
+            </Button>
+            
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="gap-2"
+            >
+              <a href="https://www.linkedin.com/in/ritvik-indupuri-4b6037288/" target="_blank" rel="noopener noreferrer">
+                <Linkedin className="w-4 h-4" />
+                Connect on LinkedIn
+              </a>
+            </Button>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 };

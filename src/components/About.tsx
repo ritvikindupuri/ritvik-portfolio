@@ -36,11 +36,11 @@ export const About = ({ isOwner }: AboutProps) => {
   ]);
 
   return (
-    <section className="py-16 bg-background relative overflow-hidden">
+    <section className="py-20 px-4 bg-background relative overflow-hidden">
       {/* Subtle background accent */}
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-primary/5 blur-[120px] rounded-full" />
       
-      <div className="container mx-auto px-6 max-w-7xl">
+      <div className="container mx-auto max-w-7xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
