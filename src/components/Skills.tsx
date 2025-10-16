@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface SkillsProps {
   isOwner: boolean;
@@ -129,6 +131,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
         : cat
     );
     setSkillCategories(updatedCategories);
+    toast.success(`Removed ${skillName} from skills`);
   };
 
   return (

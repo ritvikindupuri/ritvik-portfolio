@@ -36,78 +36,179 @@ const TypewriterText = ({ text }: { text: string }) => {
 };
 
 const CloudSecurityBackground = () => {
+  // Generate consistent positions for connections
+  const nodes = Array.from({ length: 12 }, (_, i) => ({
+    x: (i % 4) * 25 + 12.5,
+    y: Math.floor(i / 4) * 33 + 16.5,
+  }));
+
   return (
-    <div className="absolute inset-0 overflow-hidden opacity-40">
-      {/* Floating Cloud Icons */}
-      {[...Array(20)].map((_, i) => (
+    <div className="absolute inset-0 overflow-hidden opacity-30">
+      {/* Grid Lines - Network Infrastructure */}
+      <svg className="absolute inset-0 w-full h-full">
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--cyber-purple))" stopOpacity="0.2" />
+            <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="hsl(var(--cyber-purple))" stopOpacity="0.2" />
+          </linearGradient>
+        </defs>
+        
+        {/* Horizontal grid lines */}
+        {[...Array(4)].map((_, i) => (
+          <motion.line
+            key={`h-grid-${i}`}
+            x1="0%"
+            y1={`${i * 25}%`}
+            x2="100%"
+            y2={`${i * 25}%`}
+            stroke="hsl(var(--primary))"
+            strokeWidth="1"
+            strokeOpacity="0.15"
+            strokeDasharray="5,5"
+          />
+        ))}
+        
+        {/* Vertical grid lines */}
+        {[...Array(5)].map((_, i) => (
+          <motion.line
+            key={`v-grid-${i}`}
+            x1={`${i * 25}%`}
+            y1="0%"
+            x2={`${i * 25}%`}
+            y2="100%"
+            stroke="hsl(var(--primary))"
+            strokeWidth="1"
+            strokeOpacity="0.15"
+            strokeDasharray="5,5"
+          />
+        ))}
+        
+        {/* Animated connection lines between nodes */}
+        {nodes.map((node, i) => {
+          const nextNode = nodes[(i + 1) % nodes.length];
+          const nextNode2 = nodes[(i + 3) % nodes.length];
+          
+          return (
+            <g key={`connections-${i}`}>
+              <motion.line
+                x1={`${node.x}%`}
+                y1={`${node.y}%`}
+                x2={`${nextNode.x}%`}
+                y2={`${nextNode.y}%`}
+                stroke="url(#lineGradient)"
+                strokeWidth="2"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ 
+                  pathLength: [0, 1, 1, 0],
+                  opacity: [0, 0.8, 0.8, 0]
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  delay: i * 0.3,
+                  ease: "easeInOut"
+                }}
+              />
+              {i % 3 === 0 && (
+                <motion.line
+                  x1={`${node.x}%`}
+                  y1={`${node.y}%`}
+                  x2={`${nextNode2.x}%`}
+                  y2={`${nextNode2.y}%`}
+                  stroke="url(#lineGradient)"
+                  strokeWidth="1.5"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ 
+                    pathLength: [0, 1, 1, 0],
+                    opacity: [0, 0.6, 0.6, 0]
+                  }}
+                  transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    delay: i * 0.4 + 1,
+                    ease: "easeInOut"
+                  }}
+                />
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      
+      {/* Cloud Nodes - Positioned at grid intersections */}
+      {nodes.map((node, i) => (
         <motion.div
           key={`cloud-${i}`}
           className="absolute text-cyber-glow"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
+            left: `${node.x}%`,
+            top: `${node.y}%`,
+            transform: 'translate(-50%, -50%)'
           }}
-          initial={{ opacity: 0 }}
           animate={{
-            opacity: [0.5, 0.9, 0.5],
-            y: [0, -30, 0],
-            x: [0, Math.random() * 20 - 10, 0],
+            opacity: [0.4, 0.8, 0.4],
+            scale: [1, 1.1, 1],
           }}
           transition={{
-            duration: Math.random() * 8 + 6,
+            duration: 3 + (i % 3),
             repeat: Infinity,
-            delay: Math.random() * 3,
+            delay: i * 0.2,
+            ease: "easeInOut"
           }}
         >
-          <Cloud className="w-12 h-12" />
+          <Cloud className="w-10 h-10" />
         </motion.div>
       ))}
       
-      {/* Network Connection Lines */}
-      <svg className="absolute inset-0 w-full h-full">
-        {[...Array(12)].map((_, i) => (
-          <motion.line
-            key={`line-${i}`}
-            x1={`${Math.random() * 100}%`}
-            y1={`${Math.random() * 100}%`}
-            x2={`${Math.random() * 100}%`}
-            y2={`${Math.random() * 100}%`}
-            stroke="hsl(var(--cyber-purple))"
-            strokeWidth="2"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ 
-              pathLength: [0, 1, 0],
-              opacity: [0, 0.7, 0]
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              delay: i * 0.5,
-            }}
-          />
-        ))}
-      </svg>
-      
-      {/* Lock/Shield Icons */}
-      {[...Array(10)].map((_, i) => (
+      {/* Security Lock Icons - Scattered strategically */}
+      {nodes.filter((_, i) => i % 2 === 0).map((node, i) => (
         <motion.div
           key={`lock-${i}`}
           className="absolute text-accent"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
+            left: `${node.x + 10}%`,
+            top: `${node.y - 8}%`,
+            transform: 'translate(-50%, -50%)'
           }}
           animate={{
-            opacity: [0.4, 0.8, 0.4],
-            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.7, 0.3],
+            scale: [0.9, 1.1, 0.9],
           }}
           transition={{
-            duration: Math.random() * 6 + 4,
+            duration: 4,
             repeat: Infinity,
-            delay: Math.random() * 2,
+            delay: i * 0.5,
+            ease: "easeInOut"
           }}
         >
-          <Lock className="w-8 h-8" />
+          <Lock className="w-7 h-7" />
+        </motion.div>
+      ))}
+      
+      {/* Data pulse points */}
+      {nodes.filter((_, i) => i % 3 === 0).map((node, i) => (
+        <motion.div
+          key={`pulse-${i}`}
+          className="absolute"
+          style={{
+            left: `${node.x}%`,
+            top: `${node.y}%`,
+            transform: 'translate(-50%, -50%)'
+          }}
+        >
+          <motion.div
+            className="w-3 h-3 rounded-full bg-primary"
+            animate={{
+              scale: [1, 2, 1],
+              opacity: [0.8, 0, 0.8],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              delay: i * 0.7,
+            }}
+          />
         </motion.div>
       ))}
     </div>

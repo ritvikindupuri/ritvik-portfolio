@@ -21,6 +21,15 @@ const Index = () => {
     <>
       <AccessDialog open={!accessGranted} onAccessGranted={handleAccessGranted} />
       
+      {/* Owner Info Banner */}
+      {isOwner && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm bg-primary/10 border border-primary/30 backdrop-blur-md rounded-lg p-4 shadow-elegant">
+          <p className="text-sm text-foreground">
+            <span className="font-semibold text-primary">Owner Mode:</span> Your edits are visible during this session only. Changes don't persist after refresh or for other viewers.
+          </p>
+        </div>
+      )}
+      
       <div className="min-h-screen bg-background">
         <Hero isOwner={isOwner} />
         <About isOwner={isOwner} />

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface DocumentationProps {
   isOwner: boolean;
@@ -103,6 +104,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
 
   const handleRemoveDocument = (docTitle: string) => {
     setDocuments(documents.filter((d) => d.title !== docTitle));
+    toast.success(`Removed ${docTitle} documentation`);
   };
 
   return (

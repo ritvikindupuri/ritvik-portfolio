@@ -4,6 +4,7 @@ import { Award, Plus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface CertificationsProps {
   isOwner: boolean;
@@ -68,6 +69,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
 
   const handleRemoveCert = (certName: string) => {
     setCertifications(certifications.filter((c) => c.name !== certName));
+    toast.success(`Removed ${certName} certification`);
   };
 
   return (
