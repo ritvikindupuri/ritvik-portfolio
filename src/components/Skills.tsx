@@ -120,13 +120,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   const getLevelColor = (level: string) => {
     switch (level) {
       case "Advanced":
-        return "text-accent";
+        return "bg-green-500 text-white";
       case "Intermediate":
-        return "text-primary";
+        return "bg-amber-500 text-white";
       case "Beginner":
-        return "text-muted-foreground";
+        return "bg-blue-500 text-white";
       default:
-        return "text-foreground";
+        return "bg-primary text-primary-foreground";
     }
   };
 
@@ -239,42 +239,43 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       key={skill.name}
                       className="group relative"
                     >
-                      <div className="relative bg-gradient-to-br from-card via-card/95 to-card/80 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-5 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl">
+                      <div className="relative bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-6 hover:border-primary/50 transition-all duration-300 flex flex-col items-center text-center shadow-lg">
                         {isOwner && (
                           <button
                             onClick={() => handleRemoveSkill(category.id, skill.name)}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-1.5 z-10 backdrop-blur-sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg p-1.5 z-10"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
                         )}
                         
-                        <div className="relative z-10 flex flex-col items-center text-center gap-3">
-                          <div className="w-16 h-16 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-4 w-full">
+                          {/* Logo */}
+                          <div className="w-14 h-14 flex items-center justify-center">
                             {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
                               <img src={skill.logo} alt={skill.name} className="w-full h-full object-contain" />
                             ) : (
-                              <span className="text-4xl leading-none">{skill.logo}</span>
+                              <span className="text-3xl">{skill.logo}</span>
                             )}
                           </div>
                           
-                          <div className="space-y-1.5">
-                            <h3 className="font-bold text-lg font-sans">
-                              {skill.name}
-                            </h3>
-                            <div className="h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full w-3/5 mx-auto" />
-                          </div>
+                          {/* Title */}
+                          <h3 className="font-bold text-xl font-sans text-foreground">
+                            {skill.name}
+                          </h3>
+
+                          {/* Description */}
+                          {skill.description && (
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {skill.description}
+                            </p>
+                          )}
                           
-                          <span className={`text-xs font-bold font-mono px-3 py-1 rounded-full ${getLevelColor(skill.level)} bg-primary/10 border border-primary/30`}>
+                          {/* Proficiency Badge */}
+                          <span className={`text-sm font-semibold px-4 py-1.5 rounded-full ${getLevelColor(skill.level)}`}>
                             {skill.level}
                           </span>
                         </div>
-
-                        {skill.description && (
-                          <p className="relative z-10 text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-3">
-                            {skill.description}
-                          </p>
-                        )}
                         
                         {skill.link && (
                           <a
