@@ -227,7 +227,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
             <div className="overflow-x-auto pb-4 -mx-4 px-4">
-              <TabsList className="inline-flex flex-nowrap w-auto min-w-full md:min-w-0 md:flex-wrap md:justify-center mb-16 bg-card/60 backdrop-blur-sm border border-primary/20 p-4 gap-3 rounded-2xl shadow-elegant relative z-10">
+              <TabsList className="inline-flex flex-nowrap w-max md:w-auto justify-start md:justify-center mb-16 bg-card/60 backdrop-blur-sm border border-primary/20 p-2 md:p-4 gap-3 rounded-2xl shadow-elegant">
                 {skillCategories.map((category) => {
                   const Icon = category.icon;
                   return (
