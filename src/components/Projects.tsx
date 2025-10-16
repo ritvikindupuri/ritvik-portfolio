@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectsProps {
   isOwner: boolean;
@@ -102,9 +103,76 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
   });
   const [skillInput, setSkillInput] = useState("");
 
-  const handleAddProject = () => {
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching projects:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const categorizedProjects: Record<string, Project[]> = {
+        security: [],
+        cloud: [],
+        ai: []
+      };
+
+      data.forEach(project => {
+        const proj: Project = {
+          title: project.title,
+          type: "Personal",
+          startMonth: "",
+          endMonth: "",
+          skills: project.technologies || [],
+          github: project.github_url || "",
+          description: project.description
+        };
+
+        // Simple categorization based on title/description
+        const content = (project.title + project.description).toLowerCase();
+        if (content.includes('security') || content.includes('nids') || content.includes('audit')) {
+          categorizedProjects.security.push(proj);
+        } else if (content.includes('cloud') || content.includes('aws') || content.includes('container')) {
+          categorizedProjects.cloud.push(proj);
+        } else {
+          categorizedProjects.ai.push(proj);
+        }
+      });
+
+      setProjects(categorizedProjects);
+    }
+  };
+
+  const handleAddProject = async () => {
     if (!newProject.title || !newProject.description) return;
     
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('projects')
+      .insert({
+        user_id: user.id,
+        title: newProject.title,
+        description: newProject.description,
+        github_url: newProject.github,
+        technologies: newProject.skills
+      });
+
+    if (error) {
+      toast.error("Failed to add project");
+      console.error('Error adding project:', error);
+      return;
+    }
+
     setProjects({
       ...projects,
       [activeTab]: [...projects[activeTab], newProject],
@@ -121,9 +189,21 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
     });
     setSkillInput("");
     setIsAddDialogOpen(false);
+    toast.success("Project added successfully");
   };
 
-  const handleRemoveProject = (category: string, projectTitle: string) => {
+  const handleRemoveProject = async (category: string, projectTitle: string) => {
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('title', projectTitle);
+
+    if (error) {
+      toast.error("Failed to remove project");
+      console.error('Error removing project:', error);
+      return;
+    }
+
     setProjects({
       ...projects,
       [category]: projects[category].filter((p) => p.title !== projectTitle),

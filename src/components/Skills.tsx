@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SkillsProps {
   isOwner: boolean;
@@ -84,6 +85,38 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
 
+  useEffect(() => {
+    fetchSkills();
+  }, []);
+
+  const fetchSkills = async () => {
+    const { data, error } = await supabase
+      .from('skills')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching skills:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const categorizedSkills = initialSkillCategories.map(cat => ({
+        ...cat,
+        skills: data
+          .filter(skill => skill.category === cat.id)
+          .map(skill => ({
+            name: skill.name,
+            level: "Intermediate",
+            logo: skill.icon || "",
+            description: "",
+            link: ""
+          }))
+      }));
+      setSkillCategories(categorizedSkills);
+    }
+  };
+
   const getLevelColor = (level: string) => {
     switch (level) {
       case "Advanced":
@@ -109,9 +142,27 @@ export const Skills = ({ isOwner }: SkillsProps) => {
     }
   };
 
-  const handleAddSkill = () => {
+  const handleAddSkill = async () => {
     if (!newSkill.name || !newSkill.logo) return;
     
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('skills')
+      .insert({
+        user_id: user.id,
+        name: newSkill.name,
+        category: activeTab,
+        icon: newSkill.logo
+      });
+
+    if (error) {
+      toast.error("Failed to add skill");
+      console.error('Error adding skill:', error);
+      return;
+    }
+
     const updatedCategories = skillCategories.map((cat) =>
       cat.id === activeTab
         ? { ...cat, skills: [...cat.skills, newSkill] }
@@ -122,9 +173,22 @@ export const Skills = ({ isOwner }: SkillsProps) => {
     setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
     setUploadedLogo("");
     setIsAddDialogOpen(false);
+    toast.success("Skill added successfully");
   };
 
-  const handleRemoveSkill = (categoryId: string, skillName: string) => {
+  const handleRemoveSkill = async (categoryId: string, skillName: string) => {
+    const { error } = await supabase
+      .from('skills')
+      .delete()
+      .eq('name', skillName)
+      .eq('category', categoryId);
+
+    if (error) {
+      toast.error("Failed to remove skill");
+      console.error('Error removing skill:', error);
+      return;
+    }
+
     const updatedCategories = skillCategories.map((cat) =>
       cat.id === categoryId
         ? { ...cat, skills: cat.skills.filter((s) => s.name !== skillName) }

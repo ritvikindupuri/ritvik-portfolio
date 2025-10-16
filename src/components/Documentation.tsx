@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileText, Plus, Upload, X, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DocumentationProps {
   isOwner: boolean;
@@ -53,6 +54,34 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
   const [tagInput, setTagInput] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
+  useEffect(() => {
+    fetchDocumentation();
+  }, []);
+
+  const fetchDocumentation = async () => {
+    const { data, error } = await supabase
+      .from('documentation')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching documentation:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const docs = data.map(doc => ({
+        title: doc.title,
+        projectName: doc.category || "General",
+        description: doc.description,
+        fileUrl: doc.url,
+        uploadDate: doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
+        tags: []
+      }));
+      setDocuments(docs);
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -79,8 +108,27 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
     });
   };
 
-  const handleAddDocument = () => {
+  const handleAddDocument = async () => {
     if (!newDoc.title || !newDoc.projectName || !newDoc.description) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('documentation')
+      .insert({
+        user_id: user.id,
+        title: newDoc.title,
+        description: newDoc.description,
+        url: newDoc.fileUrl || "#",
+        category: newDoc.projectName
+      });
+
+    if (error) {
+      toast.error("Failed to add documentation");
+      console.error('Error adding documentation:', error);
+      return;
+    }
 
     const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     
@@ -100,9 +148,21 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
     setTagInput("");
     setUploadedFile(null);
     setIsAddDialogOpen(false);
+    toast.success("Documentation added successfully");
   };
 
-  const handleRemoveDocument = (docTitle: string) => {
+  const handleRemoveDocument = async (docTitle: string) => {
+    const { error } = await supabase
+      .from('documentation')
+      .delete()
+      .eq('title', docTitle);
+
+    if (error) {
+      toast.error("Failed to remove documentation");
+      console.error('Error removing documentation:', error);
+      return;
+    }
+
     setDocuments(documents.filter((d) => d.title !== docTitle));
     toast.success(`Removed ${docTitle} documentation`);
   };

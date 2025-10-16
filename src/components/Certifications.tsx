@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Award, Plus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CertificationsProps {
   isOwner: boolean;
@@ -46,6 +47,33 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
   });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
 
+  useEffect(() => {
+    fetchCertifications();
+  }, []);
+
+  const fetchCertifications = async () => {
+    const { data, error } = await supabase
+      .from('certifications')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching certifications:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const certs = data.map(cert => ({
+        name: cert.name,
+        logo: cert.image_url || "🏆",
+        credentialId: cert.credential_url || "",
+        issueDate: cert.date ? new Date(cert.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
+        expirationDate: ""
+      }));
+      setCertifications(certs);
+    }
+  };
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -58,16 +86,48 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
     }
   };
 
-  const handleAddCert = () => {
+  const handleAddCert = async () => {
     if (!newCert.name || !newCert.logo) return;
     
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('certifications')
+      .insert({
+        user_id: user.id,
+        name: newCert.name,
+        issuer: "Issuer",
+        date: new Date().toISOString().split('T')[0],
+        image_url: newCert.logo,
+        credential_url: newCert.credentialId
+      });
+
+    if (error) {
+      toast.error("Failed to add certification");
+      console.error('Error adding certification:', error);
+      return;
+    }
+
     setCertifications([...certifications, newCert]);
     setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
     setUploadedLogo("");
     setIsAddDialogOpen(false);
+    toast.success("Certification added successfully");
   };
 
-  const handleRemoveCert = (certName: string) => {
+  const handleRemoveCert = async (certName: string) => {
+    const { error } = await supabase
+      .from('certifications')
+      .delete()
+      .eq('name', certName);
+
+    if (error) {
+      toast.error("Failed to remove certification");
+      console.error('Error removing certification:', error);
+      return;
+    }
+
     setCertifications(certifications.filter((c) => c.name !== certName));
     toast.success(`Removed ${certName} certification`);
   };
