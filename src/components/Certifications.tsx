@@ -134,7 +134,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
 
   return (
     <section className="py-32 px-4 bg-background relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-accent/5 blur-[120px] rounded-full" />
+      
       <div className="container mx-auto max-w-7xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
