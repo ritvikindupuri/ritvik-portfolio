@@ -16,7 +16,6 @@ const TypewriterText = ({ text }: { text: string }) => {
       } else {
         setIsComplete(true);
         clearInterval(typeInterval);
-        // Reset immediately to repeat smoothly
         setTimeout(() => {
           setDisplayedText("");
           setIsComplete(false);
@@ -28,37 +27,49 @@ const TypewriterText = ({ text }: { text: string }) => {
   }, [text, isComplete]);
   
   return (
-    <span className="inline-block" style={{ minWidth: '280px' }}>
-      <span>{displayedText}</span>
-      <span className="invisible" aria-hidden="true">{text.slice(displayedText.length)}</span>
+    <span className="inline-block">
+      {displayedText}
       {!isComplete && <span className="animate-pulse ml-1">|</span>}
     </span>
   );
 };
 
 const CloudSecurityBackground = () => {
-  // Create a proper network topology grid
-  const gridSize = 4;
-  const nodes = Array.from({ length: gridSize * gridSize }, (_, i) => ({
-    x: (i % gridSize) * (100 / (gridSize + 1)) + (100 / (gridSize + 1)),
-    y: Math.floor(i / gridSize) * (100 / (gridSize + 1)) + (100 / (gridSize + 1)),
-    id: i
+  // Create scattered nodes for a more organic cybersecurity network feel
+  const nodes = Array.from({ length: 60 }, (_, i) => ({
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    id: i,
+    size: 2 + Math.random() * 3
   }));
 
+  // Connect nearby nodes
+  const connections = nodes.flatMap((node, i) => {
+    return nodes
+      .slice(i + 1)
+      .filter(other => {
+        const dx = node.x - other.x;
+        const dy = node.y - other.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < 20; // Only connect nearby nodes
+      })
+      .map(other => ({ from: node, to: other }));
+  });
+
   return (
-    <div className="absolute inset-0 overflow-hidden opacity-40">
+    <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
       <svg className="absolute inset-0 w-full h-full">
         <defs>
           {/* Animated gradient for data flow */}
           <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-            <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+            <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
             <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
           </linearGradient>
           
           {/* Glow filter for nodes */}
           <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
@@ -66,103 +77,63 @@ const CloudSecurityBackground = () => {
           </filter>
         </defs>
         
-        {/* Network connection lines - horizontal */}
-        {nodes.map((node, i) => {
-          const rightNeighbor = nodes.find(n => 
-            n.id === node.id + 1 && Math.floor(n.id / gridSize) === Math.floor(node.id / gridSize)
-          );
-          const bottomNeighbor = nodes.find(n => n.id === node.id + gridSize);
-          
-          return (
-            <g key={`connections-${i}`}>
-              {/* Horizontal line */}
-              {rightNeighbor && (
-                <>
-                  <line
-                    x1={`${node.x}%`}
-                    y1={`${node.y}%`}
-                    x2={`${rightNeighbor.x}%`}
-                    y2={`${rightNeighbor.y}%`}
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.3"
-                  />
-                  {/* Animated data flow */}
-                  <motion.line
-                    x1={`${node.x}%`}
-                    y1={`${node.y}%`}
-                    x2={`${rightNeighbor.x}%`}
-                    y2={`${rightNeighbor.y}%`}
-                    stroke="url(#flowGradient)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: [0, 1, 0] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                      ease: "linear"
-                    }}
-                  />
-                </>
-              )}
-              
-              {/* Vertical line */}
-              {bottomNeighbor && (
-                <>
-                  <line
-                    x1={`${node.x}%`}
-                    y1={`${node.y}%`}
-                    x2={`${bottomNeighbor.x}%`}
-                    y2={`${bottomNeighbor.y}%`}
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.3"
-                  />
-                  {/* Animated data flow */}
-                  <motion.line
-                    x1={`${node.x}%`}
-                    y1={`${node.y}%`}
-                    x2={`${bottomNeighbor.x}%`}
-                    y2={`${bottomNeighbor.y}%`}
-                    stroke="url(#flowGradient)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: [0, 1, 0] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      delay: i * 0.15 + 0.5,
-                      ease: "linear"
-                    }}
-                  />
-                </>
-              )}
-            </g>
-          );
-        })}
+        {/* Network connection lines */}
+        {connections.map((conn, i) => (
+          <g key={`connection-${i}`}>
+            <line
+              x1={`${conn.from.x}%`}
+              y1={`${conn.from.y}%`}
+              x2={`${conn.to.x}%`}
+              y2={`${conn.to.y}%`}
+              stroke="hsl(var(--primary))"
+              strokeWidth="1"
+              strokeOpacity="0.2"
+            />
+            {/* Animated data flow on some connections */}
+            {i % 3 === 0 && (
+              <motion.line
+                x1={`${conn.from.x}%`}
+                y1={`${conn.from.y}%`}
+                x2={`${conn.to.x}%`}
+                y2={`${conn.to.y}%`}
+                stroke="hsl(var(--primary))"
+                strokeWidth="2"
+                strokeLinecap="round"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ 
+                  pathLength: [0, 1, 0],
+                  opacity: [0, 0.6, 0]
+                }}
+                transition={{
+                  duration: 2 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 3,
+                  ease: "linear"
+                }}
+              />
+            )}
+          </g>
+        ))}
         
-        {/* Network nodes */}
+        {/* Network nodes - particles */}
         {nodes.map((node, i) => (
           <g key={`node-${i}`}>
             {/* Node glow */}
             <motion.circle
               cx={`${node.x}%`}
               cy={`${node.y}%`}
-              r="12"
+              r={node.size * 2}
               fill="hsl(var(--primary))"
-              opacity="0.2"
+              opacity="0.15"
               filter="url(#glow)"
               animate={{
-                r: [12, 16, 12],
-                opacity: [0.2, 0.4, 0.2]
+                r: [node.size * 2, node.size * 3, node.size * 2],
+                opacity: [0.15, 0.3, 0.15]
               }}
               transition={{
-                duration: 2,
+                duration: 2 + Math.random() * 2,
                 repeat: Infinity,
-                delay: i * 0.1,
+                delay: Math.random() * 2,
                 ease: "easeInOut"
               }}
             />
@@ -170,62 +141,60 @@ const CloudSecurityBackground = () => {
             <circle
               cx={`${node.x}%`}
               cy={`${node.y}%`}
-              r="6"
+              r={node.size}
               fill="hsl(var(--primary))"
-              stroke="hsl(var(--background))"
-              strokeWidth="2"
+              opacity="0.6"
             />
           </g>
         ))}
       </svg>
       
-      {/* Cloud icons at specific nodes */}
-      {nodes.filter((_, i) => i % 3 === 0).map((node, i) => (
+      {/* Floating cloud icons */}
+      {Array.from({ length: 5 }).map((_, i) => (
         <motion.div
           key={`cloud-${i}`}
           className="absolute"
           style={{
-            left: `${node.x}%`,
-            top: `${node.y}%`,
-            transform: 'translate(-50%, -50%)'
+            left: `${20 + i * 20}%`,
+            top: `${20 + (i % 2) * 30}%`,
           }}
           animate={{
-            y: [-5, 5, -5],
-            opacity: [0.6, 1, 0.6]
+            y: [-10, 10, -10],
+            x: [-5, 5, -5],
+            opacity: [0.3, 0.6, 0.3]
           }}
           transition={{
-            duration: 4,
+            duration: 4 + i,
+            repeat: Infinity,
+            delay: i * 0.5,
+            ease: "easeInOut"
+          }}
+        >
+          <Cloud className="w-6 h-6 text-primary" style={{ filter: 'drop-shadow(0 0 8px hsl(var(--primary) / 0.5))' }} />
+        </motion.div>
+      ))}
+      
+      {/* Security lock icons */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <motion.div
+          key={`lock-${i}`}
+          className="absolute"
+          style={{
+            left: `${15 + i * 25}%`,
+            top: `${30 + (i % 2) * 25}%`,
+          }}
+          animate={{
+            scale: [1, 1.15, 1],
+            opacity: [0.4, 0.7, 0.4]
+          }}
+          transition={{
+            duration: 3 + i * 0.5,
             repeat: Infinity,
             delay: i * 0.3,
             ease: "easeInOut"
           }}
         >
-          <Cloud className="w-8 h-8 text-primary drop-shadow-glow" />
-        </motion.div>
-      ))}
-      
-      {/* Lock icons at security checkpoints */}
-      {nodes.filter((_, i) => i % 5 === 2).map((node, i) => (
-        <motion.div
-          key={`lock-${i}`}
-          className="absolute"
-          style={{
-            left: `${node.x}%`,
-            top: `${node.y}%`,
-            transform: 'translate(-50%, -50%)'
-          }}
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.7, 1, 0.7]
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            delay: i * 0.4,
-            ease: "easeInOut"
-          }}
-        >
-          <Lock className="w-6 h-6 text-accent drop-shadow-glow" />
+          <Lock className="w-5 h-5 text-accent" style={{ filter: 'drop-shadow(0 0 6px hsl(var(--accent) / 0.5))' }} />
         </motion.div>
       ))}
     </div>
@@ -302,7 +271,6 @@ export const Hero = ({ isOwner }: HeroProps) => {
             className="text-5xl md:text-7xl font-bold font-sans"
           >
             <TypewriterText text="Hi, my name is " />
-            {" "}
             <span className="bg-gradient-cyber bg-clip-text text-transparent">
               Ritvik Indupuri
             </span>
