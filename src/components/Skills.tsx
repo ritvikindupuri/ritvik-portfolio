@@ -266,13 +266,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
                           {/* Description */}
                           {skill.description && (
-                            <p className="text-sm text-muted-foreground leading-relaxed">
+                            <p className="text-sm text-muted-foreground leading-relaxed font-sans">
                               {skill.description}
                             </p>
                           )}
                           
                           {/* Proficiency Badge */}
-                          <span className={`text-sm font-semibold px-4 py-1.5 rounded-full ${getLevelColor(skill.level)}`}>
+                          <span className={`text-sm font-semibold font-sans px-4 py-1.5 rounded-full ${getLevelColor(skill.level)}`}>
                             {skill.level}
                           </span>
                         </div>
