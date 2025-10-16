@@ -10,6 +10,7 @@ import { Documentation } from "@/components/Documentation";
 import Experience from "@/components/Experience";
 import { Projects } from "@/components/Projects";
 import { Contact } from "@/components/Contact";
+import { AccessDialog } from "@/components/AccessDialog";
 import { Button } from "@/components/ui/button";
 import { LogOut, LogIn } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +20,8 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [showAuthButton, setShowAuthButton] = useState(true);
+  const [showAccessDialog, setShowAccessDialog] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -49,8 +52,15 @@ const Index = () => {
     toast.success("Signed out successfully");
   };
 
+  const handleAccessGranted = (ownerStatus: boolean) => {
+    setIsOwner(ownerStatus);
+    setShowAccessDialog(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} />
+      
       <div className="relative">
         {/* Auth Button - Top Right */}
         <div className={`fixed top-6 right-6 sm:top-8 sm:right-8 md:top-10 md:right-10 z-50 transition-opacity duration-300 ${showAuthButton ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -76,13 +86,13 @@ const Index = () => {
         </div>
         
         <div className="relative bg-background">
-          <Hero isOwner={!!user} />
-          <About isOwner={!!user} />
-          <Skills isOwner={!!user} />
-          <Certifications isOwner={!!user} />
-          <Documentation isOwner={!!user} />
-          <Experience isOwner={!!user} />
-          <Projects isOwner={!!user} />
+          <Hero isOwner={isOwner || !!user} />
+          <About isOwner={isOwner || !!user} />
+          <Skills isOwner={isOwner || !!user} />
+          <Certifications isOwner={isOwner || !!user} />
+          <Documentation isOwner={isOwner || !!user} />
+          <Experience isOwner={isOwner || !!user} />
+          <Projects isOwner={isOwner || !!user} />
           <Contact />
 
           {/* Footer */}
