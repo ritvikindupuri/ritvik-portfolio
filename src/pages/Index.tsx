@@ -39,50 +39,59 @@ const Index = () => {
   };
 
   return (
-    <>
-      {/* Auth Button - Top Right */}
-      <div className="fixed top-4 right-4 z-50">
-        {user ? (
-          <Button 
-            onClick={handleSignOut}
-            variant="outline"
-            className="gap-2 bg-background/80 backdrop-blur-sm border-primary/30 hover:bg-primary/10"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
-        ) : (
-          <Button 
-            onClick={() => navigate("/auth")}
-            variant="outline"
-            className="gap-2 bg-background/80 backdrop-blur-sm border-primary/30 hover:bg-primary/10"
-          >
-            <LogIn className="w-4 h-4" />
-            Sign In
-          </Button>
-        )}
-      </div>
-      
-      <div className="min-h-screen bg-background">
-        <Hero isOwner={!!user} />
-        <About isOwner={!!user} />
-        <Skills isOwner={!!user} />
-        <Certifications isOwner={!!user} />
-        <Documentation isOwner={!!user} />
-        <Experience isOwner={!!user} />
-        <Projects isOwner={!!user} />
-        <Contact />
+    <div className="min-h-screen bg-background p-2 sm:p-4 md:p-6">
+      {/* Professional border frame */}
+      <div className="relative border-2 border-primary/20 rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(23,184,217,0.1)] min-h-[calc(100vh-1rem)] sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)]">
+        {/* Corner accents */}
+        <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-primary/40 rounded-tl-xl" />
+        <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-primary/40 rounded-tr-xl" />
+        <div className="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-primary/40 rounded-bl-xl" />
+        <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-primary/40 rounded-br-xl" />
+        
+        {/* Auth Button - Top Right */}
+        <div className="fixed top-6 right-6 sm:top-8 sm:right-8 md:top-10 md:right-10 z-50">
+          {user ? (
+            <Button 
+              onClick={handleSignOut}
+              variant="outline"
+              className="gap-2 bg-background/90 backdrop-blur-sm border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          ) : (
+            <Button 
+              onClick={() => navigate("/auth")}
+              variant="outline"
+              className="gap-2 bg-background/90 backdrop-blur-sm border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In
+            </Button>
+          )}
+        </div>
+        
+        <div className="relative bg-background">
+          <Hero isOwner={!!user} />
+          <About isOwner={!!user} />
+          <Skills isOwner={!!user} />
+          <Certifications isOwner={!!user} />
+          <Documentation isOwner={!!user} />
+          <Experience isOwner={!!user} />
+          <Projects isOwner={!!user} />
+          <Contact />
 
-        {/* Footer */}
-        <footer className="py-8 border-t border-border bg-card/50">
-          <div className="container mx-auto px-6 text-center">
-            <p className="text-muted-foreground font-medium">
-              Ritvik Indupuri • Purdue University • Cybersecurity '28
-            </p>
-          </div>
-        </footer>
+          {/* Footer */}
+          <footer className="py-8 border-t border-primary/20 bg-gradient-to-b from-background to-card/30">
+            <div className="container mx-auto px-6 text-center">
+              <p className="text-muted-foreground font-medium">
+                Ritvik Indupuri • Purdue University • Cybersecurity '28
+              </p>
+            </div>
+          </footer>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

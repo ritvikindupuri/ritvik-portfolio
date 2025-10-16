@@ -8,51 +8,61 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Core Colors - Professional Cybersecurity Theme */
     --background: 222 47% 5%;
     --foreground: 210 40% 98%;
 
     --card: 222 40% 8%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 40% 8%;
+    --popover: 222 40% 10%;
     --popover-foreground: 210 40% 98%;
 
+    /* Primary - Cyber Blue */
     --primary: 199 89% 48%;
     --primary-foreground: 222 47% 5%;
 
+    /* Secondary - Dark Slate */
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
+    /* Accent - Matrix Green */
     --accent: 142 76% 36%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Borders & Inputs */
     --border: 217 33% 17%;
     --input: 217 33% 17%;
     --ring: 199 89% 48%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
+    /* Cyber Theme Colors */
     --cyber-glow: 199 89% 48%;
     --cyber-purple: 271 81% 56%;
     --cyber-matrix: 142 76% 36%;
     
-    --gradient-cyber: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--cyber-purple)) 100%);
+    /* Gradients */
+    --gradient-cyber: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(271 81% 56%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(222 47% 5% / 0.95) 0%, hsl(222 47% 5%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--secondary) / 0.3) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(222 40% 8%) 0%, hsl(217 33% 17% / 0.3) 100%);
     
-    --shadow-glow: 0 0 30px hsl(var(--cyber-glow) / 0.4);
+    /* Shadows */
+    --shadow-glow: 0 0 30px hsl(199 89% 48% / 0.4);
     --shadow-card: 0 8px 32px hsl(222 47% 5% / 0.4);
-    --shadow-elegant: 0 20px 60px -10px hsl(var(--primary) / 0.2);
+    --shadow-elegant: 0 20px 60px -10px hsl(199 89% 48% / 0.2);
     
+    /* Spacing */
     --spacing-section: 8rem;
     --spacing-component: 3rem;
     
+    /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
