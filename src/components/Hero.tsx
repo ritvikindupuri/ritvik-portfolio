@@ -28,8 +28,9 @@ const TypewriterText = ({ text }: { text: string }) => {
   }, [text, isComplete]);
   
   return (
-    <span>
-      {displayedText}
+    <span className="inline-block" style={{ minWidth: '280px' }}>
+      <span>{displayedText}</span>
+      <span className="invisible" aria-hidden="true">{text.slice(displayedText.length)}</span>
       {!isComplete && <span className="animate-pulse ml-1">|</span>}
     </span>
   );
