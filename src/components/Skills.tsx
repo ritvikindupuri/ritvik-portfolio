@@ -16,14 +16,14 @@ interface SkillsProps {
 
 const initialSkillCategories = [
   {
-    id: "programming",
-    label: "Programming Languages",
-    icon: Code,
+    id: "security",
+    label: "Cybersecurity Tools",
+    icon: Lock,
     skills: [
-      { name: "Python", level: "Advanced", logo: "🐍", description: "Primary language for security tools and automation", link: "" },
-      { name: "JavaScript", level: "Advanced", logo: "📜", description: "Full-stack development and web security", link: "" },
-      { name: "Java", level: "Intermediate", logo: "☕", description: "Enterprise applications and Android development", link: "" },
-      { name: "C/C++", level: "Intermediate", logo: "⚙️", description: "Low-level programming and system security", link: "" },
+      { name: "Wireshark", level: "Advanced", logo: "🦈", description: "Network traffic analysis and packet inspection", link: "" },
+      { name: "Metasploit", level: "Intermediate", logo: "🎯", description: "Penetration testing framework", link: "" },
+      { name: "Burp Suite", level: "Intermediate", logo: "🔐", description: "Web application security testing", link: "" },
+      { name: "Nmap", level: "Advanced", logo: "🗺️", description: "Network discovery and security scanning", link: "" },
     ],
   },
   {
@@ -57,17 +57,6 @@ const initialSkillCategories = [
       { name: "Git", level: "Advanced", logo: "📚", description: "Version control and collaboration", link: "" },
     ],
   },
-  {
-    id: "security",
-    label: "Cybersecurity Tools",
-    icon: Lock,
-    skills: [
-      { name: "Wireshark", level: "Advanced", logo: "🦈", description: "Network traffic analysis and packet inspection", link: "" },
-      { name: "Metasploit", level: "Intermediate", logo: "🎯", description: "Penetration testing framework", link: "" },
-      { name: "Burp Suite", level: "Intermediate", logo: "🔐", description: "Web application security testing", link: "" },
-      { name: "Nmap", level: "Advanced", logo: "🗺️", description: "Network discovery and security scanning", link: "" },
-    ],
-  },
 ];
 
 interface Skill {
@@ -79,7 +68,7 @@ interface Skill {
 }
 
 export const Skills = ({ isOwner }: SkillsProps) => {
-  const [activeTab, setActiveTab] = useState("programming");
+  const [activeTab, setActiveTab] = useState("security");
   const [skillCategories, setSkillCategories] = useState(initialSkillCategories);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
@@ -226,7 +215,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full mb-12 bg-secondary/50 p-2 h-auto gap-2">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full mb-12 bg-secondary/50 p-2 h-auto gap-2">
               {skillCategories.map((category) => {
                 const Icon = category.icon;
                 return (
