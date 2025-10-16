@@ -226,23 +226,23 @@ export const Skills = ({ isOwner }: SkillsProps) => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
-            <div className="overflow-x-auto pb-4 -mx-4 px-4">
-              <TabsList className="inline-flex flex-nowrap w-max md:w-auto justify-start md:justify-center mb-16 bg-card/60 backdrop-blur-sm border border-primary/20 p-2 md:p-4 gap-3 rounded-2xl shadow-elegant">
-                {skillCategories.map((category) => {
-                  const Icon = category.icon;
-                  return (
-                    <TabsTrigger
-                      key={category.id}
-                      value={category.id}
-                      className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-4 px-6 rounded-xl hover:bg-primary/10 whitespace-nowrap border border-transparent data-[state=active]:border-primary/40"
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      <span className="text-sm font-semibold">{category.label}</span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </div>
+              <div className="pb-4">
+                <TabsList className="flex flex-wrap w-full justify-center mb-12 bg-card/60 backdrop-blur-sm border border-primary/20 p-3 md:p-4 gap-3 rounded-2xl shadow-elegant">
+                  {skillCategories.map((category) => {
+                    const Icon = category.icon;
+                    return (
+                      <TabsTrigger
+                        key={category.id}
+                        value={category.id}
+                        className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
+                      >
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-semibold">{category.label}</span>
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+              </div>
 
             {skillCategories.map((category) => (
               <TabsContent key={category.id} value={category.id} className="space-y-8">
