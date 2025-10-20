@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { FileText, Plus, Upload, X, Download, ExternalLink } from "lucide-react";
+import { FileText, Plus, Upload, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -256,8 +256,8 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link"
                       >
-                        <Download className="w-4 h-4" />
-                        <span>Download</span>
+                        <FileText className="w-4 h-4" />
+                        <span>View PDF</span>
                         <ExternalLink className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
                       </a>
                     </div>

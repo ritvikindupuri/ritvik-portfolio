@@ -22,7 +22,7 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [showAuthButton, setShowAuthButton] = useState(true);
-  const [showAccessDialog, setShowAccessDialog] = useState(false);
+  const [showAccessDialog, setShowAccessDialog] = useState(true); // Always show on mount
   const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
