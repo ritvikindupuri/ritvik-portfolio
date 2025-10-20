@@ -252,12 +252,11 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       </span>
                       <a
                         href={doc.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        download
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link"
                       >
                         <FileText className="w-4 h-4" />
-                        <span>View PDF</span>
+                        <span>Download PDF</span>
                         <ExternalLink className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
                       </a>
                     </div>

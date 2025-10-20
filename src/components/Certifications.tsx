@@ -69,7 +69,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
         logo: cert.image_url || "🏆",
         credentialId: cert.credential_url || "",
         issueDate: cert.date ? new Date(cert.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
-        expirationDate: ""
+        expirationDate: cert.expiration_date ? new Date(cert.expiration_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ""
       }));
       setCertifications(certs);
     }
@@ -114,6 +114,24 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
       }
     }
 
+    // Convert expirationDate to YYYY-MM-DD format if provided
+    let expirationDateValue = null;
+    if (newCert.expirationDate) {
+      if (newCert.expirationDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        expirationDateValue = newCert.expirationDate;
+      } else {
+        try {
+          const parsedExpDate = new Date(newCert.expirationDate);
+          if (!isNaN(parsedExpDate.getTime())) {
+            expirationDateValue = parsedExpDate.toISOString().split('T')[0];
+          }
+        } catch {
+          // If expiration date is invalid, just skip it
+          expirationDateValue = null;
+        }
+      }
+    }
+
     if (editingCert) {
       // Update existing certification
       const { error } = await supabase
@@ -123,6 +141,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           image_url: newCert.logo,
           credential_url: newCert.credentialId,
           date: dateValue,
+          expiration_date: expirationDateValue,
           issuer: "Certification Issuer"
         })
         .eq('user_id', user.id)
@@ -145,6 +164,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           name: newCert.name,
           issuer: "Certification Issuer",
           date: dateValue,
+          expiration_date: expirationDateValue,
           image_url: newCert.logo,
           credential_url: newCert.credentialId
         });
@@ -457,6 +477,15 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                           type="date"
                           value={newCert.issueDate}
                           onChange={(e) => setNewCert({ ...newCert, issueDate: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Expiration Date (optional)</label>
+                        <Input
+                          type="date"
+                          value={newCert.expirationDate}
+                          onChange={(e) => setNewCert({ ...newCert, expirationDate: e.target.value })}
                         />
                       </div>
                     </div>

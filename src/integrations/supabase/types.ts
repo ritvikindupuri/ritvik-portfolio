@@ -19,6 +19,7 @@ export type Database = {
           created_at: string | null
           credential_url: string | null
           date: string
+          expiration_date: string | null
           id: string
           image_url: string | null
           issuer: string
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string | null
           credential_url?: string | null
           date: string
+          expiration_date?: string | null
           id?: string
           image_url?: string | null
           issuer: string
@@ -39,6 +41,7 @@ export type Database = {
           created_at?: string | null
           credential_url?: string | null
           date?: string
+          expiration_date?: string | null
           id?: string
           image_url?: string | null
           issuer?: string
