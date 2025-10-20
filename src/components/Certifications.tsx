@@ -88,10 +88,31 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
   };
 
   const handleAddCert = async () => {
-    if (!newCert.name || !newCert.logo) return;
+    if (!newCert.name || !newCert.logo || !newCert.issueDate) {
+      toast.error("Please fill in name, logo, and issue date");
+      return;
+    }
     
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Convert issueDate to YYYY-MM-DD format
+    let dateValue = newCert.issueDate;
+    if (!dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // Try to parse common formats like "Jan 2024"
+      try {
+        const parsedDate = new Date(newCert.issueDate);
+        if (!isNaN(parsedDate.getTime())) {
+          dateValue = parsedDate.toISOString().split('T')[0];
+        } else {
+          toast.error("Please enter a valid date");
+          return;
+        }
+      } catch {
+        toast.error("Please enter a valid date");
+        return;
+      }
+    }
 
     if (editingCert) {
       // Update existing certification
@@ -100,7 +121,9 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
         .update({
           name: newCert.name,
           image_url: newCert.logo,
-          credential_url: newCert.credentialId
+          credential_url: newCert.credentialId,
+          date: dateValue,
+          issuer: "Certification Issuer"
         })
         .eq('user_id', user.id)
         .eq('name', editingCert);
@@ -120,8 +143,8 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
         .insert({
           user_id: user.id,
           name: newCert.name,
-          issuer: "Issuer",
-          date: new Date().toISOString().split('T')[0],
+          issuer: "Certification Issuer",
+          date: dateValue,
           image_url: newCert.logo,
           credential_url: newCert.credentialId
         });
@@ -132,7 +155,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
         return;
       }
 
-      setCertifications([...certifications, newCert]);
+      await fetchCertifications();
       toast.success("Certification added successfully");
     }
     
@@ -428,24 +451,13 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                         />
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Issue Date (optional)</label>
-                          <Input
-                            placeholder="e.g., Jan 2024"
-                            value={newCert.issueDate}
-                            onChange={(e) => setNewCert({ ...newCert, issueDate: e.target.value })}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Expiration (optional)</label>
-                          <Input
-                            placeholder="e.g., Jan 2027"
-                            value={newCert.expirationDate}
-                            onChange={(e) => setNewCert({ ...newCert, expirationDate: e.target.value })}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Issue Date *</label>
+                        <Input
+                          type="date"
+                          value={newCert.issueDate}
+                          onChange={(e) => setNewCert({ ...newCert, issueDate: e.target.value })}
+                        />
                       </div>
                     </div>
                     
@@ -453,7 +465,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                       <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button onClick={handleAddCert} disabled={!newCert.name || !newCert.logo}>
+                      <Button onClick={handleAddCert} disabled={!newCert.name || !newCert.logo || !newCert.issueDate}>
                         {editingCert ? 'Update Certification' : 'Add Certification'}
                       </Button>
                     </div>
