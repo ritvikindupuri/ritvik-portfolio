@@ -252,8 +252,16 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       </span>
                       <a
                         href={doc.fileUrl}
-                        download
+                        download={doc.title}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link"
+                        onClick={(e) => {
+                          if (doc.fileUrl === "#" || !doc.fileUrl) {
+                            e.preventDefault();
+                            toast.error("No file available for download");
+                          }
+                        }}
                       >
                         <FileText className="w-4 h-4" />
                         <span>Download PDF</span>

@@ -302,11 +302,11 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                         
                         <div className="flex flex-col items-center gap-4 w-full">
                           {/* Logo */}
-                          <div className="w-20 h-20 flex items-center justify-center">
+                          <div className="w-20 h-20 flex items-center justify-center flex-shrink-0">
                             {skill.logo && typeof skill.logo === 'string' && skill.logo.startsWith('data:') ? (
-                              <img src={skill.logo} alt={skill.name} className="w-full h-full object-contain" />
+                              <img src={skill.logo} alt={skill.name} className="w-full h-full object-cover rounded-lg" />
                             ) : (
-                              <span className="text-5xl">{skill.logo}</span>
+                              <span className="text-5xl leading-none">{skill.logo}</span>
                             )}
                           </div>
                           
@@ -390,8 +390,8 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Logo/Icon</label>
                             <div className="flex gap-3">
-                              {uploadedLogo && (
-                                <div className="w-16 h-16 rounded-lg border-2 border-primary overflow-hidden">
+                               {uploadedLogo && (
+                                <div className="w-20 h-20 rounded-lg border-2 border-primary overflow-hidden flex-shrink-0">
                                   <img src={uploadedLogo} alt="Preview" className="w-full h-full object-cover" />
                                 </div>
                               )}
