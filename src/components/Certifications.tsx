@@ -404,13 +404,26 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
 
               {/* Add Certification Button - Owner Only */}
               {isOwner && (
-                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+                  setIsAddDialogOpen(open);
+                  if (!open) {
+                    setEditingCert(null);
+                    setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
+                    setUploadedLogo("");
+                  }
+                }}>
                   <DialogTrigger asChild>
                     <motion.button
                       initial={{ opacity: 0, scale: 0.8 }}
                       whileInView={{ opacity: 1, scale: 1 }}
                       transition={{ delay: certifications.length * 0.15, duration: 0.6 }}
                       viewport={{ once: true }}
+                      onClick={() => {
+                        setEditingCert(null);
+                        setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
+                        setUploadedLogo("");
+                        setIsAddDialogOpen(true);
+                      }}
                       className="relative w-72 h-80 border-2 border-dashed border-accent/30 hover:border-accent/60 rounded-3xl flex flex-col items-center justify-center gap-6 group hover:bg-accent/5 transition-all duration-300"
                     >
                       <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-all group-hover:scale-110">
@@ -491,10 +504,19 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                     </div>
                     
                     <div className="flex justify-end gap-3">
-                      <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                      <Button variant="outline" onClick={() => {
+                        setIsAddDialogOpen(false);
+                        setEditingCert(null);
+                        setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
+                        setUploadedLogo("");
+                      }}>
                         Cancel
                       </Button>
-                      <Button onClick={handleAddCert} disabled={!newCert.name || !newCert.logo || !newCert.issueDate}>
+                      <Button 
+                        onClick={handleAddCert} 
+                        disabled={!newCert.name || !newCert.logo || !newCert.issueDate}
+                        type="button"
+                      >
                         {editingCert ? 'Update Certification' : 'Add Certification'}
                       </Button>
                     </div>

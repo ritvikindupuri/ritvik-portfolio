@@ -389,9 +389,24 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
                   {/* Add Project Button - Owner Only */}
                   {isOwner && activeTab === key && (
-                    <Dialog open={isAddDialogOpen && activeTab === key} onOpenChange={setIsAddDialogOpen}>
+                    <Dialog open={isAddDialogOpen && activeTab === key} onOpenChange={(open) => {
+                      setIsAddDialogOpen(open);
+                      if (!open) {
+                        setEditingProject(null);
+                        setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
+                        setSkillInput("");
+                      }
+                    }}>
                       <DialogTrigger asChild>
-                        <button className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[400px] group hover:bg-primary/5 transition-all duration-300">
+                        <button 
+                          onClick={() => {
+                            setEditingProject(null);
+                            setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
+                            setSkillInput("");
+                            setIsAddDialogOpen(true);
+                          }}
+                          className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[400px] group hover:bg-primary/5 transition-all duration-300"
+                        >
                           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                             <Plus className="w-7 h-7 text-primary" />
                           </div>
@@ -494,14 +509,23 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                           </div>
                         </div>
                         
-                        <div className="flex justify-end gap-3">
-                          <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                            Cancel
-                          </Button>
-                          <Button onClick={handleAddProject} disabled={!newProject.title || !newProject.description}>
-                            {editingProject ? 'Update Project' : 'Add Project'}
-                          </Button>
-                        </div>
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline" onClick={() => {
+                      setIsAddDialogOpen(false);
+                      setEditingProject(null);
+                      setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
+                      setSkillInput("");
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleAddProject} 
+                      disabled={!newProject.title || !newProject.description}
+                      type="button"
+                    >
+                      {editingProject ? 'Update Project' : 'Add Project'}
+                    </Button>
+                  </div>
                       </DialogContent>
                     </Dialog>
                   )}

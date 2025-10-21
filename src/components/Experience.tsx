@@ -249,9 +249,25 @@ const Experience = ({ isOwner }: ExperienceProps) => {
         
         <div className="flex justify-end mb-12">
           {isOwner && (
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+              setIsAddDialogOpen(open);
+              if (!open) {
+                setEditingExperience(null);
+                setNewExperience({ title: "", company: "", location: "", start_date: "", end_date: "", is_current: false, description: [""], skills: [] });
+                setSkillInput("");
+              }
+            }}>
               <DialogTrigger asChild>
-                <Button size="lg" className="shadow-glow">
+                <Button 
+                  size="lg" 
+                  className="shadow-glow"
+                  onClick={() => {
+                    setEditingExperience(null);
+                    setNewExperience({ title: "", company: "", location: "", start_date: "", end_date: "", is_current: false, description: [""], skills: [] });
+                    setSkillInput("");
+                    setIsAddDialogOpen(true);
+                  }}
+                >
                   <Plus className="mr-2" size={18} />
                   Add Experience
                 </Button>
@@ -382,7 +398,7 @@ const Experience = ({ isOwner }: ExperienceProps) => {
                     </div>
                   </div>
                   
-                  <Button onClick={handleAddExperience} className="w-full">
+                  <Button onClick={handleAddExperience} className="w-full" type="button">
                     {editingExperience ? 'Update Experience' : 'Add Experience'}
                   </Button>
                 </div>

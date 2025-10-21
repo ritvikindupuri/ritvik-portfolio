@@ -275,13 +275,26 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
 
             {/* Add Documentation Button - Owner Only */}
             {isOwner && (
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+                setIsAddDialogOpen(open);
+                if (!open) {
+                  setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
+                  setTagInput("");
+                  setUploadedFile(null);
+                }
+              }}>
                 <DialogTrigger asChild>
                   <motion.button
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: documents.length * 0.1, duration: 0.5 }}
                     viewport={{ once: true }}
+                    onClick={() => {
+                      setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
+                      setTagInput("");
+                      setUploadedFile(null);
+                      setIsAddDialogOpen(true);
+                    }}
                     className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[350px] group hover:bg-primary/5 transition-all duration-300"
                   >
                     <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -384,10 +397,19 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                   </div>
                   
                   <div className="flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    <Button variant="outline" onClick={() => {
+                      setIsAddDialogOpen(false);
+                      setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
+                      setTagInput("");
+                      setUploadedFile(null);
+                    }}>
                       Cancel
                     </Button>
-                    <Button onClick={handleAddDocument} disabled={!newDoc.title || !newDoc.projectName || !newDoc.description}>
+                    <Button 
+                      onClick={handleAddDocument} 
+                      disabled={!newDoc.title || !newDoc.projectName || !newDoc.description}
+                      type="button"
+                    >
                       Upload Documentation
                     </Button>
                   </div>

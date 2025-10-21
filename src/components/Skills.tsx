@@ -346,9 +346,24 @@ export const Skills = ({ isOwner }: SkillsProps) => {
 
                   {/* Add Skill Button - Owner Only */}
                   {isOwner && activeTab === category.id && (
-                    <Dialog open={isAddDialogOpen && activeTab === category.id} onOpenChange={setIsAddDialogOpen}>
+                    <Dialog open={isAddDialogOpen && activeTab === category.id} onOpenChange={(open) => {
+                      setIsAddDialogOpen(open);
+                      if (!open) {
+                        setEditingSkill(null);
+                        setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+                        setUploadedLogo("");
+                      }
+                    }}>
                       <DialogTrigger asChild>
-                        <button className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] group hover:bg-primary/5 transition-all duration-300">
+                        <button 
+                          onClick={() => {
+                            setEditingSkill(null);
+                            setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+                            setUploadedLogo("");
+                            setIsAddDialogOpen(true);
+                          }}
+                          className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] group hover:bg-primary/5 transition-all duration-300"
+                        >
                           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                             <Plus className="w-6 h-6 text-primary" />
                           </div>
@@ -432,10 +447,19 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                         </div>
 
                         <div className="flex justify-end gap-3">
-                          <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                          <Button variant="outline" onClick={() => {
+                            setIsAddDialogOpen(false);
+                            setEditingSkill(null);
+                            setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+                            setUploadedLogo("");
+                          }}>
                             Cancel
                           </Button>
-                          <Button onClick={handleAddSkill} disabled={!newSkill.name || !newSkill.logo}>
+                          <Button 
+                            onClick={handleAddSkill} 
+                            disabled={!newSkill.name || !newSkill.logo}
+                            type="button"
+                          >
                             {editingSkill ? 'Update Skill' : 'Add Skill'}
                           </Button>
                         </div>
