@@ -172,34 +172,43 @@ export type Database = {
       }
       projects: {
         Row: {
+          category: string | null
           created_at: string | null
           description: string
+          end_date: string | null
           github_url: string | null
           id: string
           image_url: string | null
           live_url: string | null
+          start_date: string | null
           technologies: string[] | null
           title: string
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           description: string
+          end_date?: string | null
           github_url?: string | null
           id?: string
           image_url?: string | null
           live_url?: string | null
+          start_date?: string | null
           technologies?: string[] | null
           title: string
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           description?: string
+          end_date?: string | null
           github_url?: string | null
           id?: string
           image_url?: string | null
           live_url?: string | null
+          start_date?: string | null
           technologies?: string[] | null
           title?: string
           user_id?: string

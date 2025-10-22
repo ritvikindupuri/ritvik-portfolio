@@ -130,20 +130,20 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
         const proj: Project = {
           title: project.title,
           type: "Personal",
-          startMonth: "",
-          endMonth: "",
+          startMonth: project.start_date || "",
+          endMonth: project.end_date || "",
           skills: project.technologies || [],
           github: project.github_url || "",
           description: project.description
         };
 
-        // Simple categorization based on title/description
-        const content = (project.title + project.description).toLowerCase();
-        if (content.includes('security') || content.includes('nids') || content.includes('audit')) {
+        // Use saved category, fallback to 'security' if not set
+        const category = project.category || 'security';
+        if (category === 'security') {
           categorizedProjects.security.push(proj);
-        } else if (content.includes('cloud') || content.includes('aws') || content.includes('container')) {
+        } else if (category === 'cloud') {
           categorizedProjects.cloud.push(proj);
-        } else {
+        } else if (category === 'ai') {
           categorizedProjects.ai.push(proj);
         }
       });
@@ -166,7 +166,10 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
           title: newProject.title,
           description: newProject.description,
           github_url: newProject.github,
-          technologies: newProject.skills
+          technologies: newProject.skills,
+          category: activeTab,
+          start_date: newProject.startMonth,
+          end_date: newProject.endMonth
         })
         .eq('user_id', user.id)
         .eq('title', editingProject);
@@ -188,7 +191,10 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
           title: newProject.title,
           description: newProject.description,
           github_url: newProject.github,
-          technologies: newProject.skills
+          technologies: newProject.skills,
+          category: activeTab,
+          start_date: newProject.startMonth,
+          end_date: newProject.endMonth
         });
 
       if (error) {

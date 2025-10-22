@@ -1,7 +1,12 @@
 import { motion, useAnimation } from "framer-motion";
-import { useState, useEffect } from "react";
-import { Camera, Github, Linkedin, Cloud, Lock } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Camera, Github, Linkedin, Cloud, Lock, ZoomIn, ZoomOut, X } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
+import Cropper from "react-easy-crop";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const TypewriterText = () => {
   const fullText = "Hi, my name is Ritvik Indupuri";
@@ -230,15 +235,120 @@ interface HeroProps {
 
 export const Hero = ({ isOwner }: HeroProps) => {
   const [profileImage, setProfileImage] = useState<string>("");
+  const [tempImage, setTempImage] = useState<string>("");
+  const [showCropDialog, setShowCropDialog] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  useEffect(() => {
+    fetchProfileImage();
+  }, []);
+
+  const fetchProfileImage = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('profile_image_url')
+      .eq('id', user.id)
+      .single();
+
+    if (data?.profile_image_url) {
+      setProfileImage(data.profile_image_url);
+    }
+  };
+
+  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener('load', () => resolve(image));
+      image.addEventListener('error', (error) => reject(error));
+      image.src = url;
+    });
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<string> => {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+      }, 'image/jpeg');
+    });
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result as string);
+        setTempImage(reader.result as string);
+        setShowCropDialog(true);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveCroppedImage = async () => {
+    if (!croppedAreaPixels || !tempImage) return;
+
+    try {
+      const croppedImage = await getCroppedImg(tempImage, croppedAreaPixels);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ profile_image_url: croppedImage })
+        .eq('id', user.id);
+
+      if (error) {
+        toast.error("Failed to save profile picture");
+        console.error('Error saving profile image:', error);
+        return;
+      }
+
+      setProfileImage(croppedImage);
+      setShowCropDialog(false);
+      setTempImage("");
+      toast.success("Profile picture updated successfully");
+    } catch (e) {
+      console.error('Error cropping image:', e);
+      toast.error("Failed to crop image");
     }
   };
 
@@ -266,7 +376,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
           <div className="relative inline-block group">
             <div className="w-56 h-56 mx-auto rounded-full overflow-hidden border-4 border-primary shadow-glow bg-secondary/50 flex items-center justify-center">
               {profileImage ? (
-                <img src={profileImage} alt="Profile" className="w-full h-full object-contain scale-110" />
+                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <Camera className="w-20 h-20 text-muted-foreground" />
               )}
@@ -285,6 +395,59 @@ export const Hero = ({ isOwner }: HeroProps) => {
               </label>
             )}
           </div>
+
+          {/* Image Crop Dialog */}
+          <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Crop Profile Picture</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="relative w-full h-96 bg-black rounded-lg overflow-hidden">
+                  {tempImage && (
+                    <Cropper
+                      image={tempImage}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      cropShape="round"
+                      showGrid={false}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      onCropComplete={onCropComplete}
+                    />
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <ZoomOut className="w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="range"
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <ZoomIn className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="flex gap-3 justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowCropDialog(false);
+                      setTempImage("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveCroppedImage}>
+                    Save Profile Picture
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Animated Greeting with Typewriter Effect */}
           <motion.h1
