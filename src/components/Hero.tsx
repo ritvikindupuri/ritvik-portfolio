@@ -1,5 +1,5 @@
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
 import { Camera, Github, Linkedin, Cloud, Lock, ZoomIn, ZoomOut, X } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import Cropper from "react-easy-crop";
