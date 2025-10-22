@@ -103,6 +103,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
     description: "",
   });
   const [skillInput, setSkillInput] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -155,34 +156,48 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
   const handleAddProject = async () => {
     if (!newProject.title || !newProject.description) return;
     
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    if (editingProject) {
-      // Update existing project
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          title: newProject.title,
-          description: newProject.description,
-          github_url: newProject.github,
-          technologies: newProject.skills,
-          category: activeTab,
-          start_date: newProject.startMonth,
-          end_date: newProject.endMonth
-        })
-        .eq('user_id', user.id)
-        .eq('title', editingProject);
-
-      if (error) {
-        toast.error("Failed to update project");
-        console.error('Error updating project:', error);
+    setIsUpdating(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in");
         return;
       }
 
-      await fetchProjects();
-      toast.success("Project updated successfully");
-    } else {
+      if (editingProject) {
+        // Update existing project - use ID for more reliable updates
+        const { data: existingProject } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('title', editingProject)
+          .single();
+
+        if (existingProject) {
+          const { error } = await supabase
+            .from('projects')
+            .update({
+              title: newProject.title,
+              description: newProject.description,
+              github_url: newProject.github,
+              technologies: newProject.skills,
+              category: activeTab,
+              start_date: newProject.startMonth,
+              end_date: newProject.endMonth
+            })
+            .eq('id', existingProject.id);
+
+          if (error) {
+            toast.error("Failed to update project");
+            console.error('Error updating project:', error);
+            return;
+          }
+
+          await fetchProjects();
+          toast.success("Project updated successfully");
+        }
+      } else {
       // Insert new project
       const { error } = await supabase
         .from('projects')
@@ -203,26 +218,29 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
         return;
       }
 
-      setProjects({
-        ...projects,
-        [activeTab]: [...projects[activeTab], newProject],
-      });
+        setProjects({
+          ...projects,
+          [activeTab]: [...projects[activeTab], newProject],
+        });
+        
+        toast.success("Project added successfully");
+      }
       
-      toast.success("Project added successfully");
+      setNewProject({
+        title: "",
+        type: "Personal",
+        startMonth: "",
+        endMonth: "",
+        skills: [],
+        github: "",
+        description: "",
+      });
+      setSkillInput("");
+      setEditingProject(null);
+      setIsAddDialogOpen(false);
+    } finally {
+      setIsUpdating(false);
     }
-    
-    setNewProject({
-      title: "",
-      type: "Personal",
-      startMonth: "",
-      endMonth: "",
-      skills: [],
-      github: "",
-      description: "",
-    });
-    setSkillInput("");
-    setEditingProject(null);
-    setIsAddDialogOpen(false);
   };
 
   const handleRemoveProject = async (category: string, projectTitle: string) => {
@@ -521,15 +539,15 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                       setEditingProject(null);
                       setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
                       setSkillInput("");
-                    }}>
+                    }} disabled={isUpdating}>
                       Cancel
                     </Button>
                     <Button 
-                      onClick={handleAddProject} 
-                      disabled={!newProject.title || !newProject.description}
+                      onClick={handleAddProject}
+                      disabled={!newProject.title || !newProject.description || isUpdating}
                       type="button"
                     >
-                      {editingProject ? 'Update Project' : 'Add Project'}
+                      {isUpdating ? 'Updating...' : (editingProject ? 'Update' : 'Add')} Project
                     </Button>
                   </div>
                       </DialogContent>

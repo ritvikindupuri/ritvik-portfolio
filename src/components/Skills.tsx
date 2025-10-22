@@ -85,6 +85,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   const [editingSkill, setEditingSkill] = useState<{ name: string; category: string } | null>(null);
   const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchSkills();
@@ -146,33 +147,47 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   const handleAddSkill = async () => {
     if (!newSkill.name || !newSkill.logo) return;
     
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    if (editingSkill) {
-      // Update existing skill
-      const { error } = await supabase
-        .from('skills')
-        .update({
-          name: newSkill.name,
-          icon: newSkill.logo,
-          level: newSkill.level,
-          description: newSkill.description,
-          link: newSkill.link
-        })
-        .eq('user_id', user.id)
-        .eq('name', editingSkill.name)
-        .eq('category', editingSkill.category);
-
-      if (error) {
-        toast.error("Failed to update skill");
-        console.error('Error updating skill:', error);
+    setIsUpdating(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in");
         return;
       }
 
-      await fetchSkills();
-      toast.success("Skill updated successfully");
-    } else {
+      if (editingSkill) {
+        // Update existing skill - use ID instead of name for more reliable updates
+        const { data: existingSkill } = await supabase
+          .from('skills')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('name', editingSkill.name)
+          .eq('category', editingSkill.category)
+          .single();
+
+        if (existingSkill) {
+          const { error } = await supabase
+            .from('skills')
+            .update({
+              name: newSkill.name,
+              icon: newSkill.logo,
+              level: newSkill.level,
+              description: newSkill.description,
+              link: newSkill.link
+            })
+            .eq('id', existingSkill.id);
+
+          if (error) {
+            toast.error("Failed to update skill");
+            console.error('Error updating skill:', error);
+            return;
+          }
+
+          await fetchSkills();
+          toast.success("Skill updated successfully");
+        }
+      } else {
       // Insert new skill
       const { error } = await supabase
         .from('skills')
@@ -192,20 +207,23 @@ export const Skills = ({ isOwner }: SkillsProps) => {
         return;
       }
 
-      const updatedCategories = skillCategories.map((cat) =>
-        cat.id === activeTab
-          ? { ...cat, skills: [...cat.skills, newSkill] }
-          : cat
-      );
+        const updatedCategories = skillCategories.map((cat) =>
+          cat.id === activeTab
+            ? { ...cat, skills: [...cat.skills, newSkill] }
+            : cat
+        );
+        
+        setSkillCategories(updatedCategories);
+        toast.success("Skill added successfully");
+      }
       
-      setSkillCategories(updatedCategories);
-      toast.success("Skill added successfully");
+      setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+      setUploadedLogo("");
+      setEditingSkill(null);
+      setIsAddDialogOpen(false);
+    } finally {
+      setIsUpdating(false);
     }
-    
-    setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
-    setUploadedLogo("");
-    setEditingSkill(null);
-    setIsAddDialogOpen(false);
   };
 
   const handleRemoveSkill = async (categoryId: string, skillName: string) => {
@@ -457,10 +475,10 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                           </Button>
                           <Button 
                             onClick={handleAddSkill} 
-                            disabled={!newSkill.name || !newSkill.logo}
+                            disabled={!newSkill.name || !newSkill.logo || isUpdating}
                             type="button"
                           >
-                            {editingSkill ? 'Update Skill' : 'Add Skill'}
+                            {isUpdating ? 'Updating...' : (editingSkill ? 'Update' : 'Add')} Skill
                           </Button>
                         </div>
                       </DialogContent>

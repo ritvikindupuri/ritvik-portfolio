@@ -54,6 +54,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
   });
   const [tagInput, setTagInput] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchDocumentation();
@@ -112,44 +113,53 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
   const handleAddDocument = async () => {
     if (!newDoc.title || !newDoc.projectName || !newDoc.description) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    setIsUpdating(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in");
+        return;
+      }
 
-    const { error } = await supabase
-      .from('documentation')
-      .insert({
-        user_id: user.id,
-        title: newDoc.title,
-        description: newDoc.description,
-        url: newDoc.fileUrl || "#",
-        category: newDoc.projectName
+      const { error } = await supabase
+        .from('documentation')
+        .insert({
+          user_id: user.id,
+          title: newDoc.title,
+          description: newDoc.description,
+          url: newDoc.fileUrl || "#",
+          category: newDoc.projectName
+        });
+
+      if (error) {
+        toast.error("Failed to add documentation");
+        console.error('Error adding documentation:', error);
+        return;
+      }
+
+      const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      
+      setDocuments([
+        ...documents,
+        { ...newDoc, uploadDate: newDoc.uploadDate || currentDate },
+      ]);
+      
+      setNewDoc({
+        title: "",
+        projectName: "",
+        description: "",
+        fileUrl: "",
+        uploadDate: "",
+        tags: [],
       });
-
-    if (error) {
-      toast.error("Failed to add documentation");
-      console.error('Error adding documentation:', error);
-      return;
+      setTagInput("");
+      setUploadedFile(null);
+      setIsAddDialogOpen(false);
+      toast.success("Documentation added successfully");
+    } finally {
+      setIsUpdating(false);
     }
-
-    const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    
-    setDocuments([
-      ...documents,
-      { ...newDoc, uploadDate: newDoc.uploadDate || currentDate },
-    ]);
-    
-    setNewDoc({
-      title: "",
-      projectName: "",
-      description: "",
-      fileUrl: "",
-      uploadDate: "",
-      tags: [],
-    });
-    setTagInput("");
-    setUploadedFile(null);
-    setIsAddDialogOpen(false);
-    toast.success("Documentation added successfully");
   };
 
   const handleRemoveDocument = async (docTitle: string) => {
@@ -402,15 +412,15 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
                       setTagInput("");
                       setUploadedFile(null);
-                    }}>
+                    }} disabled={isUpdating}>
                       Cancel
                     </Button>
                     <Button 
                       onClick={handleAddDocument} 
-                      disabled={!newDoc.title || !newDoc.projectName || !newDoc.description}
+                      disabled={!newDoc.title || !newDoc.projectName || !newDoc.description || isUpdating}
                       type="button"
                     >
-                      Upload Documentation
+                      {isUpdating ? 'Uploading...' : 'Upload Documentation'}
                     </Button>
                   </div>
                 </DialogContent>
