@@ -96,38 +96,38 @@ const Index = () => {
         </div>
         
         <div className="relative bg-background">
-          <Hero isOwner={isOwner || !!user} />
+          <Hero isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <About isOwner={isOwner || !!user} />
+          <About isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <Skills isOwner={isOwner || !!user} />
+          <Skills isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <Certifications isOwner={isOwner || !!user} />
+          <Certifications isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <Documentation isOwner={isOwner || !!user} />
+          <Documentation isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <Experience isOwner={isOwner || !!user} />
+          <Experience isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <Projects isOwner={isOwner || !!user} />
+          <Projects isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
           <Contact />
 
           {/* Chatbot - Only for guests */}
-          <PortfolioChatbot isOwner={isOwner || !!user} />
+          <PortfolioChatbot isOwner={isOwner} />
 
           {/* Footer */}
           <footer className="py-8 border-t border-primary/20 bg-gradient-to-b from-background to-card/30">
