@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Ritvik Indupuri Project Portfolio
 
 ## Project info
 
