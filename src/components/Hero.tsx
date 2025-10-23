@@ -466,7 +466,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
           >
             <div className="flex items-center justify-center text-xl md:text-2xl">
               <div className="flex items-center gap-3 px-8 py-4 bg-card/30 backdrop-blur-sm rounded-2xl border border-primary/20">
-                <span className="font-mono font-medium">Cybersecurity Major at Purdue</span>
+                <span className="font-mono font-medium">Cybersecurity Major</span>
               </div>
             </div>
             
