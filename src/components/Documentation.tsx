@@ -203,7 +203,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
               Technical Documentation
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">
-              Comprehensive technical documentation for all my projects
+              Comprehensive technical documentation for some of my notable projects
             </p>
             <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>

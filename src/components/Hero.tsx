@@ -246,13 +246,11 @@ export const Hero = ({ isOwner }: HeroProps) => {
   }, []);
 
   const fetchProfileImage = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
+    // Fetch the first profile (owner's profile) for display
     const { data, error } = await supabase
       .from('profiles')
       .select('profile_image_url')
-      .eq('id', user.id)
+      .limit(1)
       .single();
 
     if (data?.profile_image_url) {
@@ -466,14 +464,9 @@ export const Hero = ({ isOwner }: HeroProps) => {
             transition={{ delay: 0.6, duration: 0.8 }}
             className="space-y-10 pt-6"
           >
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 text-xl md:text-2xl">
-              <div className="flex items-center gap-3 px-6 py-3 bg-card/30 backdrop-blur-sm rounded-2xl border border-primary/20">
-                <span className="text-primary font-semibold">Major:</span>
-                <span className="font-mono font-medium">Cybersecurity</span>
-              </div>
-              <div className="flex items-center gap-3 px-6 py-3 bg-card/30 backdrop-blur-sm rounded-2xl border border-primary/20">
-                <span className="text-primary font-semibold">Minor:</span>
-                <span className="font-mono font-medium">AI/ML</span>
+            <div className="flex items-center justify-center text-xl md:text-2xl">
+              <div className="flex items-center gap-3 px-8 py-4 bg-card/30 backdrop-blur-sm rounded-2xl border border-primary/20">
+                <span className="font-mono font-medium">Cybersecurity Major at Purdue</span>
               </div>
             </div>
             
