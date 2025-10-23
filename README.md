@@ -1,73 +1,83 @@
-# Ritvik Indupuri Project Portfolio
+# Ritvik Indupuri's Project Portfolio
 
-## Project info
+**[View Live Demo](https://ritvik-indupuri-portfolio.lovable.app/)**
 
-**URL**: https://lovable.dev/projects/06d7459b-aa63-4f16-a831-b182889b2c82
+---
 
-## How can I edit this code?
+## 🚀 About This Project
 
-There are several ways of editing your application.
+Welcome to my personal project portfolio! This application showcases my skills and the projects I've built. It's designed to be a clean, fast, and responsive platform where you can learn more about my work in Cloud Security , cybersecurity, and Artificial Intelligence (AI).
 
-**Use Lovable**
+*(Feel free to add 1-2 more sentences describing the main goal or purpose of your portfolio)*
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/06d7459b-aa63-4f16-a831-b182889b2c82) and start prompting.
+## ✨ Features
 
-Changes made via Lovable will be committed automatically to this repo.
+* **Dynamic Project Display:** Lists all my key projects with descriptions, tech stacks, and links.
+* **Responsive Design:** Fully responsive layout built with Tailwind CSS for a seamless experience on all devices.
+* **Interactive UI:** Modern user interface components from shadcn-ui.
+* **(Example Feature):** Backend integration with Supabase for... *(e.g., a contact form, a guestbook, tracking views?)*
+* *(Add more features as you see fit)*
 
-**Use your preferred IDE**
+## 🛠️ Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+This project is built with a modern, full-stack tech stack:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+* **Frontend:**
+    * [React](https://reactjs.org/)
+    * [Vite](https://vitejs.dev/)
+    * [TypeScript](https://www.typescriptlang.org/)
+* **Styling:**
+    * [Tailwind CSS](https://tailwindcss.com/)
+    * [shadcn-ui](https://ui.shadcn.com/)
+* **Backend & Database:**
+    * [Supabase](https://supabase.com/) - Used for backend services (e.g., database, auth, storage).
 
-Follow these steps:
+## 🏁 Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+To get a local copy up and running, follow these simple steps.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
 
-# Step 3: Install the necessary dependencies.
-npm i
+Make sure you have [Node.js](https://nodejs.org/) (version 18.x or higher recommended) and [npm](https://www.npmjs.com/) installed on your machine.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### Installation & Running Locally
 
-**Edit a file directly in GitHub**
+1.  **Clone the repository:**
+    ```sh
+    git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
+    ```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+2.  **Navigate to the project directory:**
+    ```sh
+    cd your-repo-name
+    ```
 
-**Use GitHub Codespaces**
+3.  **Install dependencies:**
+    ```sh
+    npm install
+    ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+4.  **Set up environment variables:**
+    This project requires environment variables to connect to Supabase. Create a file named `.env.local` in the root of the project and add the following:
 
-## What technologies are used for this project?
+    ```.env
+    VITE_SUPABASE_URL="httpsYOUR_SUPABASE_PROJECT_URL"
+    VITE_SUPABASE_ANON_KEY="your_supabase_anon_key"
+    ```
+    *You can find these keys in your Supabase project's API settings.*
 
-This project is built with:
+5.  **Run the development server:**
+    ```sh
+    npm run dev
+    ```
+    Open [http://localhost:5173](http://localhost:5173) (or the port specified in your terminal) to view it in your browser.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🚀 Deployment
 
-## How can I deploy this project?
+This application is ready to be deployed! The easiest way to deploy a Vite + React application is by using a static hosting provider like:
 
-Simply open [Lovable](https://lovable.dev/projects/06d7459b-aa63-4f16-a831-b182889b2c82) and click on Share -> Publish.
+* [Vercel](https://vercel.com/)
+* [Netlify](https://www.netlify.com/)
+* [GitHub Pages](https://pages.github.com/)
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+These platforms will typically detect that you are using Vite, build the project, and deploy it from your main branch automatically. Just connect your GitHub repository and follow their setup instructions.
