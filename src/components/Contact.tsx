@@ -8,6 +8,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const contactFormSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(1, "Name is required")
+    .max(100, "Name must be less than 100 characters"),
+  email: z.string()
+    .trim()
+    .email("Invalid email address")
+    .max(255, "Email must be less than 255 characters"),
+  message: z.string()
+    .trim()
+    .min(1, "Message is required")
+    .max(2000, "Message must be less than 2000 characters"),
+});
 
 export const Contact = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
@@ -50,8 +66,11 @@ export const Contact = () => {
     setIsSending(true);
 
     try {
+      // Validate form data
+      const validatedData = contactFormSchema.parse(formData);
+
       const { data, error } = await supabase.functions.invoke('send-contact-email', {
-        body: formData,
+        body: validatedData,
       });
 
       if (error) throw error;
@@ -60,8 +79,12 @@ export const Contact = () => {
       setFormData({ name: "", email: "", message: "" });
       setIsEmailDialogOpen(false);
     } catch (error) {
-      console.error('Error sending email:', error);
-      toast.error("Failed to send message. Please email me directly at ritvik.indupuri@gmail.com");
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        console.error('Error sending email:', error);
+        toast.error("Failed to send message. Please email me directly at ritvik.indupuri@gmail.com");
+      }
     } finally {
       setIsSending(false);
     }
@@ -168,6 +191,7 @@ export const Contact = () => {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Your name"
+                      maxLength={100}
                       required
                     />
                   </div>
@@ -180,6 +204,7 @@ export const Contact = () => {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="your.email@example.com"
+                      maxLength={255}
                       required
                     />
                   </div>
@@ -192,8 +217,12 @@ export const Contact = () => {
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       placeholder="Your message..."
                       rows={5}
+                      maxLength={2000}
                       required
                     />
+                    <p className="text-xs text-muted-foreground text-right">
+                      {formData.message.length}/2000
+                    </p>
                   </div>
                   
                   <Button type="submit" className="w-full" disabled={isSending}>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { UserCircle, Lock } from "lucide-react";
 
 interface AccessDialogProps {
@@ -16,17 +15,10 @@ interface AccessDialogProps {
 }
 
 export const AccessDialog = ({ open, onAccessGranted }: AccessDialogProps) => {
-  const [showEmailInput, setShowEmailInput] = useState(false);
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleOwnerAccess = () => {
-    const ownerEmail = "ritvik.indupuri@gmail.com";
-    if (email.toLowerCase().trim() === ownerEmail) {
-      onAccessGranted(true);
-    } else {
-      setError("Incorrect owner email. Access denied.");
-    }
+    navigate("/auth");
   };
 
   const handleGuestAccess = () => {
@@ -46,70 +38,29 @@ export const AccessDialog = ({ open, onAccessGranted }: AccessDialogProps) => {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {!showEmailInput ? (
-            <>
-              <Button
-                onClick={handleGuestAccess}
-                variant="outline"
-                className="w-full h-16 border-border hover:border-primary/50 hover:bg-secondary/50 transition-all"
-              >
-                <UserCircle className="w-6 h-6 mr-3" />
-                <div className="text-left">
-                  <div className="font-semibold">Continue as Guest</div>
-                  <div className="text-xs text-muted-foreground">View-only access</div>
-                </div>
-              </Button>
-
-              <Button
-                onClick={() => setShowEmailInput(true)}
-                variant="default"
-                className="w-full h-16 bg-primary hover:bg-primary/90 text-primary-foreground transition-all"
-              >
-                <Lock className="w-6 h-6 mr-3" />
-                <div className="text-left">
-                  <div className="font-semibold">Continue as Owner</div>
-                  <div className="text-xs opacity-90">Full edit access</div>
-                </div>
-              </Button>
-            </>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="owner-email" className="block text-sm font-medium mb-2">
-                  Owner Email
-                </label>
-                <Input
-                  id="owner-email"
-                  type="email"
-                  placeholder="Enter owner email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setError("");
-                  }}
-                  className="bg-secondary border-border focus:border-primary"
-                />
-                {error && <p className="text-destructive text-sm mt-2">{error}</p>}
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    setShowEmailInput(false);
-                    setEmail("");
-                    setError("");
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button onClick={handleOwnerAccess} className="flex-1 bg-primary">
-                  Verify
-                </Button>
-              </div>
+          <Button
+            onClick={handleGuestAccess}
+            variant="outline"
+            className="w-full h-16 border-border hover:border-primary/50 hover:bg-secondary/50 transition-all"
+          >
+            <UserCircle className="w-6 h-6 mr-3" />
+            <div className="text-left">
+              <div className="font-semibold">Continue as Guest</div>
+              <div className="text-xs text-muted-foreground">View-only access</div>
             </div>
-          )}
+          </Button>
+
+          <Button
+            onClick={handleOwnerAccess}
+            variant="default"
+            className="w-full h-16 bg-primary hover:bg-primary/90 text-primary-foreground transition-all"
+          >
+            <Lock className="w-6 h-6 mr-3" />
+            <div className="text-left">
+              <div className="font-semibold">Sign In as Owner</div>
+              <div className="text-xs opacity-90">Full edit access</div>
+            </div>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

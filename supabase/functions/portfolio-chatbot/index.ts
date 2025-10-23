@@ -7,6 +7,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple in-memory rate limiter for chatbot
+const chatRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const CHAT_RATE_LIMIT_WINDOW = 3600000; // 1 hour in milliseconds
+const MAX_CHAT_REQUESTS_PER_HOUR = 30; // More generous for chatbot
+
+function getChatRateLimitKey(req: Request): string {
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  const realIp = req.headers.get("x-real-ip");
+  const cfConnectingIp = req.headers.get("cf-connecting-ip");
+  
+  return forwardedFor?.split(',')[0] || realIp || cfConnectingIp || "unknown";
+}
+
+function checkChatRateLimit(key: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = chatRateLimitMap.get(key);
+
+  // Clean up expired entries periodically
+  if (Math.random() < 0.1) {
+    for (const [k, v] of chatRateLimitMap.entries()) {
+      if (now > v.resetTime) {
+        chatRateLimitMap.delete(k);
+      }
+    }
+  }
+
+  if (!entry || now > entry.resetTime) {
+    chatRateLimitMap.set(key, { count: 1, resetTime: now + CHAT_RATE_LIMIT_WINDOW });
+    return { allowed: true, remaining: MAX_CHAT_REQUESTS_PER_HOUR - 1 };
+  }
+
+  if (entry.count >= MAX_CHAT_REQUESTS_PER_HOUR) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  entry.count++;
+  return { allowed: true, remaining: MAX_CHAT_REQUESTS_PER_HOUR - entry.count };
+}
+
 // Fetch portfolio data from database
 async function fetchPortfolioData() {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -173,6 +212,28 @@ serve(async (req) => {
   }
 
   try {
+    // Check rate limit
+    const rateLimitKey = getChatRateLimitKey(req);
+    const rateLimit = checkChatRateLimit(rateLimitKey);
+    
+    if (!rateLimit.allowed) {
+      console.warn(`Chatbot rate limit exceeded for IP: ${rateLimitKey}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many requests. Please try again in an hour.',
+          retryAfter: '1 hour'
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      );
+    }
+
     const { message } = await req.json();
     
     // Input validation
@@ -182,7 +243,11 @@ serve(async (req) => {
         JSON.stringify({ error: validation.error }),
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': rateLimit.remaining.toString()
+          }
         }
       );
     }
@@ -250,7 +315,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ message: assistantMessage }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'X-RateLimit-Remaining': rateLimit.remaining.toString()
+        }
       }
     );
 
