@@ -122,13 +122,43 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         return;
       }
 
+      if (!uploadedFile) {
+        toast.error("Please select a file to upload");
+        return;
+      }
+
+      // Upload the file to Lovable Cloud storage (public bucket: documentation)
+      const storagePath = `${user.id}/${Date.now()}-${uploadedFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('documentation')
+        .upload(storagePath, uploadedFile, {
+          contentType: uploadedFile.type || 'application/octet-stream',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        toast.error("File upload failed");
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from('documentation')
+        .getPublicUrl(storagePath);
+
+      const publicUrl = publicData?.publicUrl || "";
+      if (!publicUrl) {
+        toast.error("Could not get file URL");
+        return;
+      }
+
       const { error } = await supabase
         .from('documentation')
         .insert({
           user_id: user.id,
           title: newDoc.title,
           description: newDoc.description,
-          url: newDoc.fileUrl || "#",
+          url: publicUrl,
           category: newDoc.projectName
         });
 
@@ -138,13 +168,9 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         return;
       }
 
-      const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      
-      setDocuments([
-        ...documents,
-        { ...newDoc, uploadDate: newDoc.uploadDate || currentDate },
-      ]);
-      
+      // Refresh from backend so guests get a working public link
+      await fetchDocumentation();
+
       setNewDoc({
         title: "",
         projectName: "",
