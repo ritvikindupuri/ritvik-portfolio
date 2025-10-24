@@ -260,23 +260,24 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       <span className="text-sm text-muted-foreground font-mono">
                         {doc.uploadDate}
                       </span>
-                      <a
-                        href={doc.fileUrl}
-                        download={doc.title}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link"
-                        onClick={(e) => {
-                          if (doc.fileUrl === "#" || !doc.fileUrl) {
-                            e.preventDefault();
-                            toast.error("No file available for download");
-                          }
-                        }}
-                      >
-                        <FileText className="w-4 h-4" />
-                        <span>Download PDF</span>
-                        <ExternalLink className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
-                      </a>
+                      {doc.fileUrl && doc.fileUrl !== "#" ? (
+                        <a
+                          href={doc.fileUrl}
+                          download={doc.title}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link"
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>Download PDF</span>
+                          <ExternalLink className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 text-muted-foreground text-sm">
+                          <FileText className="w-4 h-4" />
+                          <span>File not available</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
