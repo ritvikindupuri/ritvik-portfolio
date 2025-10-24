@@ -29,23 +29,11 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      // If user is authenticated, automatically set as owner and hide access dialog
-      if (session?.user) {
-        setIsOwner(true);
-        setShowAccessDialog(false);
-      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      // If user is already authenticated on mount, set as owner
-      if (session?.user) {
-        setIsOwner(true);
-        setShowAccessDialog(false);
-      }
     });
 
     return () => subscription.unsubscribe();
