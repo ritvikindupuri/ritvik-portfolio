@@ -40,6 +40,13 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    if (user) {
+      setIsOwner(true);
+      setShowAccessDialog(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
       setShowAuthButton(scrollPosition < 100);

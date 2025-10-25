@@ -259,7 +259,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                         {doc.uploadDate}
                       </span>
                       <a
-                        href="https://github.com/ritvikindupuri"
+                        href={doc.fileUrl || "https://github.com/ritvikindupuri"}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link"
@@ -302,14 +302,14 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       <Plus className="w-7 h-7 text-primary" />
                     </div>
                     <span className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                      Upload Documentation
+                      Add Documentation
                     </span>
                   </motion.button>
                 </DialogTrigger>
                 
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Upload Technical Documentation</DialogTitle>
+                    <DialogTitle>Add Technical Documentation</DialogTitle>
                   </DialogHeader>
                   
                   <div className="space-y-4 py-4">

@@ -60,7 +60,7 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Account created! You're now logged in.");
-        navigate("/");
+        navigate("/", { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -69,7 +69,7 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Welcome back!");
-        navigate("/");
+        navigate("/", { replace: true });
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");
