@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { FileText, Plus, Upload, X, ExternalLink } from "lucide-react";
+import { FileText, Plus, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -122,35 +122,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         return;
       }
 
-      if (!uploadedFile) {
-        toast.error("Please select a file to upload");
-        return;
-      }
-
-      // Upload the file to Lovable Cloud storage (public bucket: documentation)
-      const storagePath = `${user.id}/${Date.now()}-${uploadedFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('documentation')
-        .upload(storagePath, uploadedFile, {
-          contentType: uploadedFile.type || 'application/octet-stream',
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        toast.error("File upload failed");
-        return;
-      }
-
-      const { data: publicData } = supabase.storage
-        .from('documentation')
-        .getPublicUrl(storagePath);
-
-      const publicUrl = publicData?.publicUrl || "";
-      if (!publicUrl) {
-        toast.error("Could not get file URL");
-        return;
-      }
+      const publicUrl = "https://github.com/ritvikindupuri";
 
       const { error } = await supabase
         .from('documentation')
@@ -370,21 +342,18 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                     </div>
                     
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Upload File (PDF, DOCX, MD)</label>
-                      <label className="cursor-pointer">
-                        <div className="border-2 border-dashed border-border rounded-lg p-6 hover:border-primary/50 transition-colors flex items-center justify-center gap-3">
-                          <Upload className="w-5 h-5 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            {uploadedFile ? uploadedFile.name : "Click to upload documentation"}
-                          </span>
-                        </div>
-                        <input
-                          type="file"
-                          accept=".pdf,.docx,.doc,.md,.txt"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                      </label>
+                      <label className="text-sm font-medium">Repository</label>
+                      <a
+                        href="https://github.com/ritvikindupuri"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium text-sm"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>View on GitHub</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <p className="text-xs text-muted-foreground">PDF uploads disabled. Link to GitHub instead.</p>
                     </div>
                     
                     <div className="space-y-2">
@@ -439,7 +408,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       disabled={!newDoc.title || !newDoc.projectName || !newDoc.description || isUpdating}
                       type="button"
                     >
-                      {isUpdating ? 'Uploading...' : 'Upload Documentation'}
+                      {isUpdating ? 'Saving...' : 'Save Documentation'}
                     </Button>
                   </div>
                 </DialogContent>

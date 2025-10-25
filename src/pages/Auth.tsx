@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Loader2, ShieldCheck, User } from "lucide-react";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [showOwnerAuth, setShowOwnerAuth] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -31,6 +32,13 @@ export default function Auth() {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.showOwnerAuth) {
+      setShowOwnerAuth(true);
+    }
+  }, [location.state]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {

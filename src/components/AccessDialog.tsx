@@ -18,7 +18,7 @@ export const AccessDialog = ({ open, onAccessGranted }: AccessDialogProps) => {
   const navigate = useNavigate();
 
   const handleOwnerAccess = () => {
-    navigate("/auth");
+    navigate("/auth", { state: { showOwnerAuth: true } });
   };
 
   const handleGuestAccess = () => {
