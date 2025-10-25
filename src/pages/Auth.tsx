@@ -18,20 +18,23 @@ export default function Auth() {
   const [password, setPassword] = useState("");
 
   useEffect(() => {
+    const state = location.state as any;
+    const forceOwnerAuth = state?.showOwnerAuth === true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (session && !forceOwnerAuth) {
         navigate("/");
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+      if (session && !forceOwnerAuth) {
         navigate("/");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, location.state]);
 
   useEffect(() => {
     const state = location.state as any;

@@ -86,7 +86,7 @@ const Index = () => {
               </Button>
             ) : (
               <Button 
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/auth", { state: { showOwnerAuth: true } })}
                 variant="outline"
                 className="gap-2 bg-background/90 backdrop-blur-sm border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
               >
