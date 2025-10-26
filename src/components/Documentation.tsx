@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { FileText, Plus, X, ExternalLink } from "lucide-react";
+import { FileText, Plus, X, ExternalLink, Edit, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ interface DocumentationProps {
 }
 
 interface Document {
+  id?: string;
   title: string;
   projectName: string;
   description: string;
@@ -44,6 +45,8 @@ const initialDocuments: Document[] = [
 export const Documentation = ({ isOwner }: DocumentationProps) => {
   const [documents, setDocuments] = useState(initialDocuments);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [newDoc, setNewDoc] = useState({
     title: "",
     projectName: "",
@@ -73,6 +76,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
 
     if (data && data.length > 0) {
       const docs = data.map(doc => ({
+        id: doc.id,
         title: doc.title,
         projectName: doc.category || "General",
         description: doc.description,
@@ -149,11 +153,11 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
     }
   };
 
-  const handleRemoveDocument = async (docTitle: string) => {
+  const handleRemoveDocument = async (docId: string) => {
     const { error } = await supabase
       .from('documentation')
       .delete()
-      .eq('title', docTitle);
+      .eq('id', docId);
 
     if (error) {
       toast.error("Failed to remove documentation");
@@ -161,8 +165,74 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
       return;
     }
 
-    setDocuments(documents.filter((d) => d.title !== docTitle));
-    toast.success(`Removed ${docTitle} documentation`);
+    setDocuments(documents.filter((d) => d.id !== docId));
+    toast.success("Documentation removed");
+  };
+
+  const handleEditDocument = (doc: Document) => {
+    setEditingDocId(doc.id || null);
+    setNewDoc({
+      title: doc.title,
+      projectName: doc.projectName,
+      description: doc.description,
+      fileUrl: doc.fileUrl,
+      uploadDate: doc.uploadDate,
+      tags: doc.tags,
+    });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleUpdateDocument = async () => {
+    if (!editingDocId || !newDoc.title || !newDoc.projectName || !newDoc.description || !newDoc.fileUrl) return;
+
+    setIsUpdating(true);
+    
+    try {
+      const { error } = await supabase
+        .from('documentation')
+        .update({
+          title: newDoc.title,
+          description: newDoc.description,
+          url: newDoc.fileUrl,
+          category: newDoc.projectName
+        })
+        .eq('id', editingDocId);
+
+      if (error) {
+        toast.error("Failed to update documentation");
+        console.error('Error updating documentation:', error);
+        return;
+      }
+
+      await fetchDocumentation();
+
+      setNewDoc({
+        title: "",
+        projectName: "",
+        description: "",
+        fileUrl: "",
+        uploadDate: "",
+        tags: [],
+      });
+      setTagInput("");
+      setEditingDocId(null);
+      setIsAddDialogOpen(false);
+      toast.success("Documentation updated successfully");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const toggleExpanded = (docId: string) => {
+    setExpandedDocs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(docId)) {
+        newSet.delete(docId);
+      } else {
+        newSet.add(docId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -209,12 +279,20 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                 
                 <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
                   {isOwner && (
-                    <button
-                      onClick={() => handleRemoveDocument(doc.title)}
-                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2 z-10"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10">
+                      <button
+                        onClick={() => handleEditDocument(doc)}
+                        className="bg-primary/10 hover:bg-primary/20 text-primary rounded-lg p-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleRemoveDocument(doc.id!)}
+                        className="bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                   
                   <div className="space-y-5 flex flex-col h-full">
@@ -226,9 +304,27 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       <h3 className="text-2xl font-bold font-sans group-hover:text-primary transition-colors mb-3 leading-tight">
                         {doc.title}
                       </h3>
-                      <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3">
-                        {doc.description}
-                      </p>
+                      <div className="space-y-2">
+                        <p className={`text-muted-foreground leading-relaxed text-sm ${expandedDocs.has(doc.id!) ? '' : 'line-clamp-3'}`}>
+                          {doc.description}
+                        </p>
+                        {doc.description.length > 150 && (
+                          <button
+                            onClick={() => toggleExpanded(doc.id!)}
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                          >
+                            {expandedDocs.has(doc.id!) ? (
+                              <>
+                                Show less <ChevronUp className="w-3 h-3" />
+                              </>
+                            ) : (
+                              <>
+                                Show more <ChevronDown className="w-3 h-3" />
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -270,6 +366,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                 if (!open) {
                   setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
                   setTagInput("");
+                  setEditingDocId(null);
                 }
               }}>
                 <DialogTrigger asChild>
@@ -296,7 +393,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                 
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Add Technical Documentation</DialogTitle>
+                    <DialogTitle>{editingDocId ? 'Edit' : 'Add'} Technical Documentation</DialogTitle>
                   </DialogHeader>
                   
                   <div className="space-y-4 py-4">
@@ -381,16 +478,16 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       setIsAddDialogOpen(false);
                       setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
                       setTagInput("");
-                      
+                      setEditingDocId(null);
                     }} disabled={isUpdating}>
                       Cancel
                     </Button>
                     <Button 
-                      onClick={handleAddDocument} 
+                      onClick={editingDocId ? handleUpdateDocument : handleAddDocument} 
                       disabled={!newDoc.title || !newDoc.projectName || !newDoc.description || !newDoc.fileUrl || isUpdating}
                       type="button"
                     >
-                      {isUpdating ? 'Saving...' : 'Save Documentation'}
+                      {isUpdating ? 'Saving...' : editingDocId ? 'Update Documentation' : 'Save Documentation'}
                     </Button>
                   </div>
                 </DialogContent>
