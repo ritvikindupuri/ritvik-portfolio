@@ -53,7 +53,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
     tags: [] as string[],
   });
   const [tagInput, setTagInput] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -84,14 +84,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploadedFile(file);
-      // In a real app, you would upload to a server/storage
-      setNewDoc({ ...newDoc, fileUrl: URL.createObjectURL(file) });
-    }
-  };
 
   const handleAddTag = () => {
     if (tagInput.trim() && !newDoc.tags.includes(tagInput.trim())) {
@@ -111,7 +103,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
   };
 
   const handleAddDocument = async () => {
-    if (!newDoc.title || !newDoc.projectName || !newDoc.description) return;
+    if (!newDoc.title || !newDoc.projectName || !newDoc.description || !newDoc.fileUrl) return;
 
     setIsUpdating(true);
     
@@ -122,15 +114,13 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         return;
       }
 
-      const publicUrl = "https://github.com/ritvikindupuri";
-
       const { error } = await supabase
         .from('documentation')
         .insert({
           user_id: user.id,
           title: newDoc.title,
           description: newDoc.description,
-          url: publicUrl,
+          url: newDoc.fileUrl,
           category: newDoc.projectName
         });
 
@@ -152,7 +142,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         tags: [],
       });
       setTagInput("");
-      setUploadedFile(null);
       setIsAddDialogOpen(false);
       toast.success("Documentation added successfully");
     } finally {
@@ -281,7 +270,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                 if (!open) {
                   setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
                   setTagInput("");
-                  setUploadedFile(null);
                 }
               }}>
                 <DialogTrigger asChild>
@@ -293,7 +281,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                     onClick={() => {
                       setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
                       setTagInput("");
-                      setUploadedFile(null);
                       setIsAddDialogOpen(true);
                     }}
                     className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[350px] group hover:bg-primary/5 transition-all duration-300"
@@ -342,18 +329,13 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                     </div>
                     
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Repository</label>
-                      <a
-                        href="https://github.com/ritvikindupuri"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium text-sm"
-                      >
-                        <FileText className="w-4 h-4" />
-                        <span>View on GitHub</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                      <p className="text-xs text-muted-foreground">PDF uploads disabled. Link to GitHub instead.</p>
+                      <label className="text-sm font-medium">GitHub URL</label>
+                      <Input
+                        placeholder="https://github.com/username/repo or direct file URL"
+                        value={newDoc.fileUrl}
+                        onChange={(e) => setNewDoc({ ...newDoc, fileUrl: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">Paste a GitHub repo, file, or release link.</p>
                     </div>
                     
                     <div className="space-y-2">
@@ -399,13 +381,13 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                       setIsAddDialogOpen(false);
                       setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
                       setTagInput("");
-                      setUploadedFile(null);
+                      
                     }} disabled={isUpdating}>
                       Cancel
                     </Button>
                     <Button 
                       onClick={handleAddDocument} 
-                      disabled={!newDoc.title || !newDoc.projectName || !newDoc.description || isUpdating}
+                      disabled={!newDoc.title || !newDoc.projectName || !newDoc.description || !newDoc.fileUrl || isUpdating}
                       type="button"
                     >
                       {isUpdating ? 'Saving...' : 'Save Documentation'}

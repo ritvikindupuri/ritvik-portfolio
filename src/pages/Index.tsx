@@ -71,38 +71,37 @@ const Index = () => {
       <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} />
       
       <div className="relative">
-        {/* Auth + Access Buttons - Top Right - Only show if access dialog hasn't been dismissed */}
-        {showAccessDialog && (
-          <div className={`fixed top-6 right-6 sm:top-8 sm:right-8 md:top-10 md:right-10 z-50 flex items-center gap-3 transition-opacity duration-300 ${showAuthButton ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        {/* Auth + Access Buttons - Top Right */}
+        <div className={`fixed top-6 right-6 sm:top-8 sm:right-8 md:top-10 md:right-10 z-50 flex items-center gap-3 transition-opacity duration-300 ${showAuthButton ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <Button 
+            onClick={() => setShowAccessDialog(true)}
+            variant="outline"
+            className="gap-2 bg-background/90 backdrop-blur-sm border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+          >
+            <Lock className="w-4 h-4" />
+            Access
+          </Button>
+          {user ? (
             <Button 
-              onClick={() => setShowAccessDialog(true)}
+              onClick={handleSignOut}
               variant="outline"
               className="gap-2 bg-background/90 backdrop-blur-sm border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
             >
-              <Lock className="w-4 h-4" />
-              Access
+              <LogOut className="w-4 h-4" />
+              Sign Out
             </Button>
-            {user ? (
-              <Button 
-                onClick={handleSignOut}
-                variant="outline"
-                className="gap-2 bg-background/90 backdrop-blur-sm border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </Button>
-            ) : (
-              <Button 
-                onClick={() => navigate("/auth", { state: { showOwnerAuth: true } })}
-                variant="outline"
-                className="gap-2 bg-background/90 backdrop-blur-sm border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
-              >
-                <LogIn className="w-4 h-4" />
-                Sign In
-              </Button>
-            )}
-          </div>
-        )}
+          ) : (
+            <Button 
+              onClick={() => navigate("/auth", { state: { showOwnerAuth: true } })}
+              variant="outline"
+              className="gap-2 bg-background/90 backdrop-blur-sm border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In
+            </Button>
+          )}
+        </div>
+        
         
         <div className="relative bg-background">
           <Hero isOwner={isOwner} />
