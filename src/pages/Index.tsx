@@ -39,12 +39,6 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      setIsOwner(true);
-      setShowAccessDialog(false);
-    }
-  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
