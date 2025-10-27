@@ -19,37 +19,47 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
-  
-  const [showAccessDialog, setShowAccessDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [guestAccessChosen, setGuestAccessChosen] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Check session storage first for guest access persistence
+    if (sessionStorage.getItem("guestAccessChosen") === "true") {
+      setGuestAccessChosen(true);
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsOwner(!!session?.user);
+      setSessionLoaded(true);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setSessionLoaded(true);
-      setShowAccessDialog(!session); // Show dialog if not logged in
-      setIsOwner(!!session?.user);
+      if (!sessionLoaded) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsOwner(!!session?.user);
+        setSessionLoaded(true);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [sessionLoaded]);
 
   const handleAccessGranted = (ownerStatus: boolean) => {
-    // This function can be simplified or removed if guest access is default
+    if (!ownerStatus) {
+      sessionStorage.setItem("guestAccessChosen", "true");
+      setGuestAccessChosen(true);
+    }
     setIsOwner(ownerStatus);
-    setShowAccessDialog(false);
   };
+
+  const shouldShowDialog = sessionLoaded && !isOwner && !guestAccessChosen;
 
   return (
     <div className="min-h-screen bg-background">
-      <AccessDialog open={showAccessDialog && !isOwner} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
+      <AccessDialog open={shouldShowDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
       
       <div className="relative">
         
