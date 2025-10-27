@@ -50,11 +50,6 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
-        if (email.toLowerCase() !== "ritvik.indupuri@gmail.com") {
-          toast.error("Sign-ups are restricted to the owner only.");
-          setLoading(false);
-          return;
-        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -65,13 +60,9 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Account created! You're now logged in.");
-        navigate("/", { replace: true });
+        localStorage.setItem("ownerAccessGranted", "1");
+        navigate("/", { replace: true, state: { ownerAccessGranted: true } });
       } else {
-        if (email.toLowerCase() !== "ritvik.indupuri@gmail.com") {
-          toast.error("Only the owner is allowed to sign in.");
-          setLoading(false);
-          return;
-        }
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -79,7 +70,8 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Welcome back!");
-        navigate("/", { replace: true });
+        localStorage.setItem("ownerAccessGranted", "1");
+        navigate("/", { replace: true, state: { ownerAccessGranted: true } });
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");
@@ -173,9 +165,7 @@ export default function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                minLength={8}
-                pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                title="Password must be at least 8 characters long and contain at least one number, one uppercase and one lowercase letter."
+                minLength={6}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>

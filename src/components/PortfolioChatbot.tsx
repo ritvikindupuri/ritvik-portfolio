@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import DOMPurify from "dompurify";
 import { MessageCircle, X, Send, Bot, User as UserIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -218,10 +217,9 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                           : 'bg-secondary text-secondary-foreground'
                       }`}
                     >
-                      <div
-                        className="text-sm leading-relaxed whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.content) }}
-                      />
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
                     </div>
                     {message.role === 'user' && (
                       <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">

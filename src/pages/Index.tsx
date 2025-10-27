@@ -14,84 +14,49 @@ import { AccessDialog } from "@/components/AccessDialog";
 import { PortfolioChatbot } from "@/components/PortfolioChatbot";
 import { Separator } from "@/components/ui/separator";
 
-import { Loader2 } from "lucide-react";
-
 const Index = () => {
+  
   const [user, setUser] = useState<User | null>(null);
-  const [_session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+  
+  const [showAccessDialog, setShowAccessDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
-  const [guestAccessChosen, setGuestAccessChosen] = useState(false);
-  const [loading, setLoading] = useState(true); // Start in a loading state
 
   useEffect(() => {
-    const checkUserStatus = async () => {
-      // Check for guest status first
-      const guest = sessionStorage.getItem("guestAccessChosen") === "true";
-      setGuestAccessChosen(guest);
-
-      // Then, check for an active Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      const owner = !!session?.user;
-      setIsOwner(owner);
-    };
+    });
 
-    checkUserStatus();
-
-    // Also, listen for auth state changes to handle logins/logouts in the same session
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setIsOwner(!!session?.user);
-      // If the user logs out, they might want to see the dialog again.
-      if (_event === "SIGNED_OUT") {
-        sessionStorage.removeItem("guestAccessChosen");
-        setGuestAccessChosen(false);
+      setSessionLoaded(true);
+      setShowAccessDialog(true); // Show dialog after session check
+
+      const ownerFlag = localStorage.getItem("ownerAccessGranted");
+      if (ownerFlag === "1") {
+        setIsOwner(true);
+        setShowAccessDialog(false);
+        localStorage.removeItem("ownerAccessGranted");
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // This effect will run whenever the owner status or guest status changes.
-  // It ensures that we only stop loading when we have a definitive answer.
-  useEffect(() => {
-    if (isOwner || guestAccessChosen) {
-      setLoading(false);
-    } else {
-      // If the user is not an owner and has not chosen guest access,
-      // we need to wait for the initial check to complete. A small delay
-      // can help prevent a flicker of the dialog before the session is confirmed.
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 250); // A small delay to be safe
-      return () => clearTimeout(timer);
-    }
-  }, [isOwner, guestAccessChosen]);
+  // Don't auto-close dialog - let user explicitly choose
+
 
   const handleAccessGranted = (ownerStatus: boolean) => {
-    if (!ownerStatus) {
-      sessionStorage.setItem("guestAccessChosen", "true");
-      setGuestAccessChosen(true);
-    }
     setIsOwner(ownerStatus);
+    setShowAccessDialog(false);
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const shouldShowDialog = !isOwner && !guestAccessChosen;
 
   return (
     <div className="min-h-screen bg-background">
-      <AccessDialog open={shouldShowDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
+      <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
       
       <div className="relative">
         
