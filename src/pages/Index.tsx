@@ -18,8 +18,9 @@ const Index = () => {
   
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
   
-  const [showAccessDialog, setShowAccessDialog] = useState(true); // Always show on mount
+  const [showAccessDialog, setShowAccessDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
@@ -31,6 +32,8 @@ const Index = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setSessionLoaded(true);
+      setShowAccessDialog(true); // Show dialog after session check
     });
 
     return () => subscription.unsubscribe();
