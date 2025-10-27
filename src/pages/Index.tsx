@@ -36,12 +36,7 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      setIsOwner(true);
-      setShowAccessDialog(false);
-    }
-  }, [user]);
+  // Don't auto-close dialog - let user explicitly choose
 
 
   const handleAccessGranted = (ownerStatus: boolean) => {
@@ -51,7 +46,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} />
+      <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
       
       <div className="relative">
         

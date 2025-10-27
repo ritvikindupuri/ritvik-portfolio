@@ -12,13 +12,20 @@ import { UserCircle, Lock } from "lucide-react";
 interface AccessDialogProps {
   open: boolean;
   onAccessGranted: (isOwner: boolean) => void;
+  isAuthenticated?: boolean;
 }
 
-export const AccessDialog = ({ open, onAccessGranted }: AccessDialogProps) => {
+export const AccessDialog = ({ open, onAccessGranted, isAuthenticated }: AccessDialogProps) => {
   const navigate = useNavigate();
 
   const handleOwnerAccess = () => {
-    navigate("/auth", { state: { showOwnerAuth: true } });
+    if (isAuthenticated) {
+      // Already signed in, grant access directly
+      onAccessGranted(true);
+    } else {
+      // Not signed in, redirect to auth page
+      navigate("/auth", { state: { showOwnerAuth: true } });
+    }
   };
 
   const handleGuestAccess = () => {
