@@ -36,9 +36,6 @@ const Index = () => {
       setUser(session?.user ?? null);
       const owner = !!session?.user;
       setIsOwner(owner);
-
-      // All checks are done, stop loading
-      setLoading(false);
     };
 
     checkUserStatus();
@@ -57,6 +54,22 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // This effect will run whenever the owner status or guest status changes.
+  // It ensures that we only stop loading when we have a definitive answer.
+  useEffect(() => {
+    if (isOwner || guestAccessChosen) {
+      setLoading(false);
+    } else {
+      // If the user is not an owner and has not chosen guest access,
+      // we need to wait for the initial check to complete. A small delay
+      // can help prevent a flicker of the dialog before the session is confirmed.
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 250); // A small delay to be safe
+      return () => clearTimeout(timer);
+    }
+  }, [isOwner, guestAccessChosen]);
 
   const handleAccessGranted = (ownerStatus: boolean) => {
     if (!ownerStatus) {
