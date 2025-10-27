@@ -60,7 +60,8 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Account created! You're now logged in.");
-        navigate("/", { replace: true });
+        localStorage.setItem("ownerAccessGranted", "1");
+        navigate("/", { replace: true, state: { ownerAccessGranted: true } });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -69,7 +70,8 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Welcome back!");
-        navigate("/", { replace: true });
+        localStorage.setItem("ownerAccessGranted", "1");
+        navigate("/", { replace: true, state: { ownerAccessGranted: true } });
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");

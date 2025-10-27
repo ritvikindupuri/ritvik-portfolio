@@ -34,6 +34,13 @@ const Index = () => {
       setUser(session?.user ?? null);
       setSessionLoaded(true);
       setShowAccessDialog(true); // Show dialog after session check
+
+      const ownerFlag = localStorage.getItem("ownerAccessGranted");
+      if (ownerFlag === "1") {
+        setIsOwner(true);
+        setShowAccessDialog(false);
+        localStorage.removeItem("ownerAccessGranted");
+      }
     });
 
     return () => subscription.unsubscribe();

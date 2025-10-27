@@ -19,13 +19,7 @@ export const AccessDialog = ({ open, onAccessGranted, isAuthenticated }: AccessD
   const navigate = useNavigate();
 
   const handleOwnerAccess = () => {
-    if (isAuthenticated) {
-      // Already signed in, grant access directly
-      onAccessGranted(true);
-    } else {
-      // Not signed in, redirect to auth page
-      navigate("/auth", { state: { showOwnerAuth: true } });
-    }
+    navigate("/auth", { state: { showOwnerAuth: true } });
   };
 
   const handleGuestAccess = () => {
