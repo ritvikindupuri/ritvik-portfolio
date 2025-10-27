@@ -14,38 +14,49 @@ import { AccessDialog } from "@/components/AccessDialog";
 import { PortfolioChatbot } from "@/components/PortfolioChatbot";
 import { Separator } from "@/components/ui/separator";
 
+import { Loader2 } from "lucide-react";
+
 const Index = () => {
-  
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [sessionLoaded, setSessionLoaded] = useState(false);
+  const [_session, setSession] = useState<Session | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [guestAccessChosen, setGuestAccessChosen] = useState(false);
+  const [loading, setLoading] = useState(true); // Start in a loading state
 
   useEffect(() => {
-    // Check session storage first for guest access persistence
-    if (sessionStorage.getItem("guestAccessChosen") === "true") {
-      setGuestAccessChosen(true);
-    }
+    const checkUserStatus = async () => {
+      // Check for guest status first
+      const guest = sessionStorage.getItem("guestAccessChosen") === "true";
+      setGuestAccessChosen(guest);
 
+      // Then, check for an active Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      setSession(session);
+      setUser(session?.user ?? null);
+      const owner = !!session?.user;
+      setIsOwner(owner);
+
+      // All checks are done, stop loading
+      setLoading(false);
+    };
+
+    checkUserStatus();
+
+    // Also, listen for auth state changes to handle logins/logouts in the same session
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsOwner(!!session?.user);
-      setSessionLoaded(true);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!sessionLoaded) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsOwner(!!session?.user);
-        setSessionLoaded(true);
+      // If the user logs out, they might want to see the dialog again.
+      if (_event === "SIGNED_OUT") {
+        sessionStorage.removeItem("guestAccessChosen");
+        setGuestAccessChosen(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [sessionLoaded]);
+  }, []);
 
   const handleAccessGranted = (ownerStatus: boolean) => {
     if (!ownerStatus) {
@@ -55,7 +66,15 @@ const Index = () => {
     setIsOwner(ownerStatus);
   };
 
-  const shouldShowDialog = sessionLoaded && !isOwner && !guestAccessChosen;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const shouldShowDialog = !isOwner && !guestAccessChosen;
 
   return (
     <div className="min-h-screen bg-background">
