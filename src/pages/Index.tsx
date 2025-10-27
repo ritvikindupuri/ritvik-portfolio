@@ -27,36 +27,29 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsOwner(!!session?.user);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setSessionLoaded(true);
-      setShowAccessDialog(true); // Show dialog after session check
-
-      const ownerFlag = localStorage.getItem("ownerAccessGranted");
-      if (ownerFlag === "1") {
-        setIsOwner(true);
-        setShowAccessDialog(false);
-        localStorage.removeItem("ownerAccessGranted");
-      }
+      setShowAccessDialog(!session); // Show dialog if not logged in
+      setIsOwner(!!session?.user);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Don't auto-close dialog - let user explicitly choose
-
-
   const handleAccessGranted = (ownerStatus: boolean) => {
+    // This function can be simplified or removed if guest access is default
     setIsOwner(ownerStatus);
     setShowAccessDialog(false);
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
+      <AccessDialog open={showAccessDialog && !isOwner} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
       
       <div className="relative">
         
