@@ -259,6 +259,9 @@ export const Skills = ({ isOwner }: SkillsProps) => {
             <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
               Skills & Expertise
             </h2>
+            <p className="text-lg text-muted-foreground font-medium">
+              Total Skills: <span className="text-primary font-bold">{skillCategories.reduce((acc, cat) => acc + cat.skills.length, 0)}</span>
+            </p>
             <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
           </div>
 
@@ -275,6 +278,9 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       >
                         <Icon className="w-5 h-5 flex-shrink-0" />
                         <span className="text-sm font-semibold">{category.label}</span>
+                        <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-bold">
+                          {category.skills.length}
+                        </span>
                       </TabsTrigger>
                     );
                   })}

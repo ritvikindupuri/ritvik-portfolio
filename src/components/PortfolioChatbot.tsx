@@ -212,19 +212,23 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                       </div>
                     )}
                     <div
-                      className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                      className={`max-w-[75%] rounded-2xl px-4 py-3 ${
                         message.role === 'user'
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary text-secondary-foreground'
                       }`}
                     >
-                      <p 
-                        className="text-sm leading-relaxed whitespace-pre-wrap"
+                      <div 
+                        className="text-sm leading-relaxed space-y-2 [&>p]:mb-2 [&>p:last-child]:mb-0 [&_br]:block [&_br]:my-1"
                         dangerouslySetInnerHTML={{ 
-                          __html: DOMPurify.sanitize(message.content, {
-                            ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'br', 'p'],
-                            ALLOWED_ATTR: []
-                          })
+                          __html: DOMPurify.sanitize(
+                            message.content
+                              .split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join(''),
+                            {
+                              ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'br', 'p', 'ul', 'ol', 'li'],
+                              ALLOWED_ATTR: []
+                            }
+                          )
                         }}
                       />
                     </div>
