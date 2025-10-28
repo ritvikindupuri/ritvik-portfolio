@@ -42,15 +42,12 @@ const Index = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setSessionLoaded(true);
-      
-      // Check role on initial load
+
+      // Always show dialog on load; role still checked to set edit mode
       if (session?.user) {
-        checkUserRole(session.user.id).then(() => {
-          setShowAccessDialog(false);
-        });
-      } else {
-        setShowAccessDialog(true);
+        checkUserRole(session.user.id);
       }
+      setShowAccessDialog(true);
     });
 
     return () => subscription.unsubscribe();
@@ -73,9 +70,6 @@ const Index = () => {
       }
 
       setIsOwner(!!data);
-      if (data) {
-        setShowAccessDialog(false);
-      }
     } catch (error) {
       console.error('Error checking role:', error);
       setIsOwner(false);
