@@ -49,6 +49,13 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      // SECURITY: Only allow ritvik.indupuri@gmail.com to sign up/in as owner
+      if (email.toLowerCase() !== 'ritvik.indupuri@gmail.com') {
+        toast.error("Only the portfolio owner can sign in here. Please continue as guest.");
+        setLoading(false);
+        return;
+      }
+
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
           email,
@@ -60,8 +67,7 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Account created! You're now logged in.");
-        localStorage.setItem("ownerAccessGranted", "1");
-        navigate("/", { replace: true, state: { ownerAccessGranted: true } });
+        navigate("/", { replace: true });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -70,8 +76,7 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Welcome back!");
-        localStorage.setItem("ownerAccessGranted", "1");
-        navigate("/", { replace: true, state: { ownerAccessGranted: true } });
+        navigate("/", { replace: true });
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");

@@ -5,6 +5,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Content-Security-Policy': "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'self';",
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
 // Simple in-memory rate limiter for chatbot
@@ -149,7 +153,7 @@ CURRENT PORTFOLIO INFORMATION:
 
 **PROFILE**
 Name: ${profile.full_name || 'Ritvik Indupuri'}
-Education: ${profile.major || 'Cybersecurity'}${profile.minor ? ` with Minor in ${profile.minor}` : ''} at ${profile.university || 'Purdue University'}
+Education: ${profile.major || 'Cybersecurity'} at ${profile.university || 'Purdue University'}
 Years: ${profile.years || '2024-2028'}
 Bio: ${profile.bio || 'Passionate about cybersecurity and technology'}
 LinkedIn: ${profile.linkedin_url || 'https://www.linkedin.com/in/ritvik-indupuri-4b6037288/'}

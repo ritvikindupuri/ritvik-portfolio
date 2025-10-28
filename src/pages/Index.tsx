@@ -27,24 +27,60 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Check role when session changes
+      if (session?.user) {
+        setTimeout(() => {
+          checkUserRole(session.user.id);
+        }, 0);
+      } else {
+        setIsOwner(false);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setSessionLoaded(true);
-      setShowAccessDialog(true); // Show dialog after session check
-
-      const ownerFlag = localStorage.getItem("ownerAccessGranted");
-      if (ownerFlag === "1") {
-        setIsOwner(true);
-        setShowAccessDialog(false);
-        localStorage.removeItem("ownerAccessGranted");
+      
+      // Check role on initial load
+      if (session?.user) {
+        checkUserRole(session.user.id).then(() => {
+          setShowAccessDialog(false);
+        });
+      } else {
+        setShowAccessDialog(true);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // SECURITY: Check user role from database (not localStorage)
+  const checkUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'owner')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking role:', error);
+        setIsOwner(false);
+        return;
+      }
+
+      setIsOwner(!!data);
+      if (data) {
+        setShowAccessDialog(false);
+      }
+    } catch (error) {
+      console.error('Error checking role:', error);
+      setIsOwner(false);
+    }
+  };
 
   // Don't auto-close dialog - let user explicitly choose
 

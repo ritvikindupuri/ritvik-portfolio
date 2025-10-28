@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -217,9 +218,15 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                           : 'bg-secondary text-secondary-foreground'
                       }`}
                     >
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                      <p 
+                        className="text-sm leading-relaxed whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ 
+                          __html: DOMPurify.sanitize(message.content, {
+                            ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'br', 'p'],
+                            ALLOWED_ATTR: []
+                          })
+                        }}
+                      />
                     </div>
                     {message.role === 'user' && (
                       <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">

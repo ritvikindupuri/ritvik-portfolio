@@ -6,6 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Content-Security-Policy": "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'self';",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
 };
 
 interface ContactEmailRequest {
