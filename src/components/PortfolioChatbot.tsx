@@ -188,11 +188,36 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                       }`}
                     >
                       <div 
-                        className="text-sm leading-relaxed space-y-2 [&>p]:mb-2 [&>p:last-child]:mb-0 [&_br]:block [&_br]:my-1"
+                        className="text-sm leading-relaxed [&>p]:mb-3 [&>p:last-child]:mb-0 [&_br]:block [&_br]:my-1 [&_strong]:font-semibold [&_ul]:space-y-2 [&_ul]:mt-2"
                         dangerouslySetInnerHTML={{ 
                           __html: DOMPurify.sanitize(
                             message.content
-                              .split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join(''),
+                              // Convert **text** to <strong>text</strong>
+                              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                              // Split by double newlines for paragraphs
+                              .split('\n\n')
+                              .map(p => {
+                                // Check if paragraph contains bullet points
+                                if (p.includes('•')) {
+                                  const lines = p.split('\n');
+                                  const bullets = lines.filter(l => l.trim().startsWith('•'));
+                                  const nonBullets = lines.filter(l => !l.trim().startsWith('•'));
+                                  
+                                  let html = '';
+                                  if (nonBullets.length > 0) {
+                                    html += `<p>${nonBullets.join('<br>')}</p>`;
+                                  }
+                                  if (bullets.length > 0) {
+                                    html += '<ul>' + bullets.map(b => 
+                                      `<li>${b.replace(/^•\s*/, '')}</li>`
+                                    ).join('') + '</ul>';
+                                  }
+                                  return html;
+                                }
+                                // Regular paragraph with line breaks
+                                return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+                              })
+                              .join(''),
                             {
                               ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'br', 'p', 'ul', 'ol', 'li'],
                               ALLOWED_ATTR: []
