@@ -24,7 +24,6 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
     return null;
   }
 
-  const STORAGE_KEY = 'portfolio_chatbot_history';
   const initialMessage: Message = {
     role: 'assistant',
     content: "Hi! I'm here to answer questions about Ritvik Indupuri's background, skills, and experience. What would you like to know?",
@@ -37,35 +36,6 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Load chat history from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Convert timestamp strings back to Date objects
-        const messagesWithDates = parsed.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }));
-        if (messagesWithDates.length > 0) {
-          setMessages(messagesWithDates);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load chat history:', error);
-    }
-  }, []);
-
-  // Save messages to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch (error) {
-      console.error('Failed to save chat history:', error);
-    }
-  }, [messages]);
-
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
@@ -75,7 +45,6 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
 
   const handleClearChat = () => {
     setMessages([initialMessage]);
-    localStorage.removeItem(STORAGE_KEY);
     toast.success('Chat history cleared');
   };
 
