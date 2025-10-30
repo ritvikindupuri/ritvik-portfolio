@@ -18,18 +18,18 @@ export default function Auth() {
   const [password, setPassword] = useState("");
 
   useEffect(() => {
-    const state = location.state as any;
-    const forceOwnerAuth = state?.showOwnerAuth === true;
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && !forceOwnerAuth) {
-        navigate("/");
+      if (session && event === 'SIGNED_IN') {
+        navigate("/", { replace: true });
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      const state = location.state as any;
+      const forceOwnerAuth = state?.showOwnerAuth === true;
+      
       if (session && !forceOwnerAuth) {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     });
 
@@ -67,7 +67,7 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Account created! You're now logged in.");
-        navigate("/", { replace: true });
+        // Auth state change listener will handle navigation
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -76,7 +76,7 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Welcome back!");
-        navigate("/", { replace: true });
+        // Auth state change listener will handle navigation
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");
