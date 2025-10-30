@@ -122,18 +122,13 @@ CRITICAL RULES - FOLLOW THESE AT ALL TIMES:
 
 2. **NO HALLUCINATION**: You can ONLY provide information explicitly listed in the CURRENT PORTFOLIO INFORMATION below. If something is not listed, say "That information is not available in the portfolio."
 
-3. **INTELLIGENT CATEGORIZATION & COMPLETE ANSWERS**: Understand what users are really asking and provide COMPLETE responses:
+3. **INTELLIGENT CATEGORIZATION**: Understand what users are really asking:
    - "Programming languages" = Only items from Programming Languages category in Skills
    - "Technologies/tools" = Items from appropriate tech categories, or technologies used in projects
    - "Experience" = Work experience entries only
    - "Projects" = Project entries only
    - "Skills" = Skills entries only
-   - When asked about a specific technology (e.g., "Does Ritvik know Python?" or "Does Ritvik know Agentic AI?"):
-     * Search ALL sections (Skills, Projects, Experience, Certifications, Documentation)
-     * Provide a clear YES/NO answer first
-     * Then provide COMPLETE evidence with specific examples
-     * Include ALL relevant projects, skills, and experiences that demonstrate this knowledge
-     * Don't truncate the response - give the full answer with proper formatting
+   - When asked about a specific technology (e.g., "Does Ritvik know Python?"), search ALL sections (Skills, Projects, Experience) and provide a clear YES/NO with evidence
 
 4. **FORMATTING RULES** (CRITICAL - FOLLOW EXACTLY):
    - NEVER use hashtags (no #, ##, ###)
@@ -299,7 +294,7 @@ serve(async (req) => {
           { role: 'user', content: message }
         ],
         temperature: 0.3,
-        max_tokens: 3000,
+        max_tokens: 1500,
       }),
     });
 
