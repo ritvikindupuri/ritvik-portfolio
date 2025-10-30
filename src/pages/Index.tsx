@@ -33,10 +33,8 @@ const Index = () => {
         setTimeout(() => {
           checkUserRole(session.user.id);
         }, 0);
-        setShowAccessDialog(false);
       } else {
         setIsOwner(false);
-        setShowAccessDialog(true);
       }
     });
 
@@ -45,12 +43,11 @@ const Index = () => {
       setUser(session?.user ?? null);
       setSessionLoaded(true);
 
+      // Always show dialog on load; role still checked to set edit mode
       if (session?.user) {
         checkUserRole(session.user.id);
-        setShowAccessDialog(false);
-      } else {
-        setShowAccessDialog(true);
       }
+      setShowAccessDialog(true);
     });
 
     return () => subscription.unsubscribe();
