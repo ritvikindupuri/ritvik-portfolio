@@ -47,6 +47,7 @@ const Index = () => {
 
       if (session?.user) {
         checkUserRole(session.user.id);
+        setShowAccessDialog(false);
       } else {
         setShowAccessDialog(true);
       }
