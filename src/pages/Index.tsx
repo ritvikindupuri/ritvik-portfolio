@@ -22,6 +22,8 @@ const Index = () => {
   const [sessionLoaded, setSessionLoaded] = useState(false);
   
   const [showAccessDialog, setShowAccessDialog] = useState(false);
+  // CRITICAL: isOwner should ONLY be true when authenticated user has owner role
+  // Defaults to false so chatbot is visible for guests
   const [isOwner, setIsOwner] = useState(false);
 
   const navigate = useNavigate();
@@ -32,12 +34,14 @@ const Index = () => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Check role when session changes
+      // CRITICAL: Only check owner role if user is authenticated
+      // Guests (no session) should always have isOwner = false
       if (session?.user) {
         setTimeout(() => {
           checkUserRole(session.user.id);
         }, 0);
       } else {
+        // No session = guest = chatbot visible
         setIsOwner(false);
       }
     });
@@ -68,8 +72,15 @@ const Index = () => {
   }, []);
 
   // SECURITY: Check user role from database (not localStorage)
+  // CRITICAL: This should ONLY be called for authenticated users
   const checkUserRole = async (userId: string) => {
     try {
+      // Extra safety check: if no userId, ensure isOwner is false
+      if (!userId) {
+        setIsOwner(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -83,9 +94,12 @@ const Index = () => {
         return;
       }
 
+      // Only set true if data exists (user has owner role)
+      // Otherwise explicitly set false (chatbot visible)
       setIsOwner(!!data);
     } catch (error) {
       console.error('Error checking role:', error);
+      // On error, default to false (guest = chatbot visible)
       setIsOwner(false);
     }
   };
@@ -94,6 +108,8 @@ const Index = () => {
 
 
   const handleAccessGranted = (ownerStatus: boolean) => {
+    // When guest continues, ownerStatus = false, chatbot will be visible
+    // When owner signs in (via Auth page), ownerStatus will be checked via checkUserRole
     setIsOwner(ownerStatus);
     setShowAccessDialog(false);
   };
