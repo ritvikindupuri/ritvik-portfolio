@@ -23,13 +23,13 @@ export default function Auth() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && !forceOwnerAuth) {
-        navigate("/");
+        navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && !forceOwnerAuth) {
-        navigate("/");
+        navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
       }
     });
 
@@ -67,7 +67,7 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Account created! You're now logged in.");
-        navigate("/", { replace: true });
+        navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -76,7 +76,7 @@ export default function Auth() {
 
         if (error) throw error;
         toast.success("Welcome back!");
-        navigate("/", { replace: true });
+        navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");

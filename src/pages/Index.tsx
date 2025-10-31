@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -23,6 +24,9 @@ const Index = () => {
   const [showAccessDialog, setShowAccessDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
 
+  const navigate = useNavigate();
+  const location = useLocation() as any;
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
@@ -43,11 +47,21 @@ const Index = () => {
       setUser(session?.user ?? null);
       setSessionLoaded(true);
 
-      // Always show dialog on load; role still checked to set edit mode
+      // Check role if a user is present
       if (session?.user) {
         checkUserRole(session.user.id);
       }
-      setShowAccessDialog(true);
+
+      // Show dialog on every fresh load unless explicitly skipped once after auth redirect
+      const state = location.state as any;
+      const skipWelcomeOnce = state?.skipWelcomeOnce === true;
+      if (skipWelcomeOnce) {
+        setShowAccessDialog(false);
+        // Clear the state so it only skips once
+        navigate(location.pathname, { replace: true });
+      } else {
+        setShowAccessDialog(true);
+      }
     });
 
     return () => subscription.unsubscribe();
