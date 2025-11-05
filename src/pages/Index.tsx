@@ -10,6 +10,7 @@ import { Certifications } from "@/components/Certifications";
 import { Documentation } from "@/components/Documentation";
 import Experience from "@/components/Experience";
 import { Projects } from "@/components/Projects";
+import { FeaturedProjects } from "@/components/FeaturedProjects";
 import { Contact } from "@/components/Contact";
 import { AccessDialog } from "@/components/AccessDialog";
 import { PortfolioChatbot } from "@/components/PortfolioChatbot";
@@ -146,6 +147,10 @@ const Index = () => {
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
           <Projects isOwner={isOwner} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
+          <FeaturedProjects isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           

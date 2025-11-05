@@ -179,11 +179,13 @@ export type Database = {
           github_url: string | null
           id: string
           image_url: string | null
+          is_featured: boolean | null
           live_url: string | null
           start_date: string | null
           technologies: string[] | null
           title: string
           user_id: string
+          youtube_url: string | null
         }
         Insert: {
           category?: string | null
@@ -193,11 +195,13 @@ export type Database = {
           github_url?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean | null
           live_url?: string | null
           start_date?: string | null
           technologies?: string[] | null
           title: string
           user_id: string
+          youtube_url?: string | null
         }
         Update: {
           category?: string | null
@@ -207,11 +211,13 @@ export type Database = {
           github_url?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean | null
           live_url?: string | null
           start_date?: string | null
           technologies?: string[] | null
           title?: string
           user_id?: string
+          youtube_url?: string | null
         }
         Relationships: []
       }
