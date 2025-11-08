@@ -49,15 +49,8 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      // SECURITY: Only allow ritvik.indupuri@gmail.com to sign up/in as owner
-      if (email.toLowerCase() !== 'ritvik.indupuri@gmail.com') {
-        toast.error("Only the portfolio owner can sign in here. Please continue as guest.");
-        setLoading(false);
-        return;
-      }
-
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -66,15 +59,69 @@ export default function Auth() {
         });
 
         if (error) throw error;
+
+        // SECURITY: Check if user has owner role (assigned server-side by database trigger)
+        if (authData.user) {
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', authData.user.id)
+            .eq('role', 'owner')
+            .maybeSingle();
+
+          if (roleError) {
+            console.error('Role check error:', roleError);
+            await supabase.auth.signOut();
+            toast.error("Authentication failed. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          if (!roleData) {
+            // User doesn't have owner role - sign them out
+            await supabase.auth.signOut();
+            toast.error("Only the portfolio owner can sign up here. Please continue as guest.");
+            setLoading(false);
+            return;
+          }
+        }
+
         toast.success("Account created! You're now logged in.");
         navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (error) throw error;
+
+        // SECURITY: Verify user has owner role from database
+        if (authData.user) {
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', authData.user.id)
+            .eq('role', 'owner')
+            .maybeSingle();
+
+          if (roleError) {
+            console.error('Role check error:', roleError);
+            await supabase.auth.signOut();
+            toast.error("Authentication failed. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          if (!roleData) {
+            // User doesn't have owner role - sign them out
+            await supabase.auth.signOut();
+            toast.error("Only the portfolio owner can sign in here. Please continue as guest.");
+            setLoading(false);
+            return;
+          }
+        }
+
         toast.success("Welcome back!");
         navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
       }
