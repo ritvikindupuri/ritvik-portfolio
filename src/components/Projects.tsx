@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield } from "lucide-react";
+import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ProjectsProps {
   isOwner: boolean;
 }
 
 interface Project {
+  id?: string;
   title: string;
   type: string;
   startMonth: string;
@@ -23,7 +27,129 @@ interface Project {
   skills: string[];
   github: string;
   description: string;
+  display_order?: number;
 }
+
+
+interface SortableProjectProps {
+  project: Project;
+  category: string;
+  isOwner: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+}
+
+const SortableProject = ({ project, category, isOwner, onEdit, onRemove }: SortableProjectProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id! });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group relative h-full"
+    >
+      <div className="relative bg-gradient-to-br from-card via-card/98 to-card/85 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-8 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl overflow-hidden">
+        {isOwner && (
+          <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+            <button
+              {...attributes}
+              {...listeners}
+              className="bg-muted/80 hover:bg-muted text-foreground rounded-xl p-2.5 backdrop-blur-sm cursor-grab active:cursor-grabbing"
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {isOwner && (
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
+            <button
+              onClick={onEdit}
+              className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            </button>
+            <button
+              onClick={onRemove}
+              className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        
+        <div className="relative z-10 space-y-5 flex flex-col h-full">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-2">
+              <h3 className="text-2xl md:text-3xl font-bold font-sans bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight">
+                {project.title}
+              </h3>
+              <div className="h-1 bg-gradient-to-r from-primary via-accent to-transparent rounded-full w-3/5" />
+            </div>
+            {project.type === "Purdue" && (
+              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg">
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png"
+                  alt="Purdue"
+                  className="w-7 h-7 object-contain"
+                />
+              </div>
+            )}
+          </div>
+
+          <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3 border-l-2 border-primary/30 pl-4">{project.description}</p>
+
+          <div className="flex items-center gap-3 text-sm font-mono bg-primary/5 rounded-xl p-3 border border-primary/20">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <span className="text-primary font-semibold">{project.startMonth}</span>
+            </div>
+            <div className="flex-1 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
+            <div className="flex items-center gap-2">
+              <span className="text-accent font-semibold">{project.endMonth}</span>
+              <div className="w-2 h-2 rounded-full bg-accent" />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {project.skills.map((skill) => (
+              <Badge key={skill} variant="secondary" className="font-mono text-xs px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 text-primary hover:from-primary/20 hover:to-accent/20 border border-primary/30 shadow-sm">
+                {skill}
+              </Badge>
+            ))}
+          </div>
+
+          {/* GitHub Link */}
+          {project.github && (
+            <a
+              href={project.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-medium text-sm mt-auto group/link bg-primary/5 hover:bg-primary/10 px-5 py-3 rounded-xl border border-primary/20 hover:border-primary/40"
+            >
+              <Github className="w-5 h-5" />
+              <span>View Source Code</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const initialProjects: Record<string, Project[]> = {
   security: [
@@ -113,6 +239,8 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
     const { data, error } = await supabase
       .from('projects')
       .select('*')
+      .or('is_featured.is.null,is_featured.eq.false')
+      .order('display_order', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -129,13 +257,15 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
       data.forEach(project => {
         const proj: Project = {
+          id: project.id,
           title: project.title,
           type: "Personal",
           startMonth: project.start_date || "",
           endMonth: project.end_date || "",
           skills: project.technologies || [],
           github: project.github_url || "",
-          description: project.description
+          description: project.description,
+          display_order: project.display_order || 0
         };
 
         // Use saved category, fallback to 'security' if not set
@@ -152,6 +282,46 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
       setProjects(categorizedProjects);
     }
   };
+
+  const handleDragEnd = async (event: DragEndEvent, category: string) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = projects[category].findIndex(p => p.id === active.id);
+    const newIndex = projects[category].findIndex(p => p.id === over.id);
+
+    const newOrder = arrayMove(projects[category], oldIndex, newIndex);
+    
+    setProjects({
+      ...projects,
+      [category]: newOrder
+    });
+
+    // Save the new order to database
+    try {
+      const updates = newOrder.map((project, index) => 
+        supabase
+          .from('projects')
+          .update({ display_order: index })
+          .eq('id', project.id)
+      );
+      
+      await Promise.all(updates);
+      toast.success("Order updated successfully");
+    } catch (error) {
+      console.error('Error updating order:', error);
+      toast.error("Failed to update order");
+      fetchProjects(); // Revert on error
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleAddProject = async () => {
     if (!newProject.title || !newProject.description) return;
@@ -323,122 +493,59 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
 
             {Object.entries(projects).map(([key, projectList]) => (
               <TabsContent key={key} value={key} className="space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
-                  {projectList.map((project) => (
-                    <div
-                      key={project.title}
-                      className="group relative h-full"
-                    >
-                      <div className="relative bg-gradient-to-br from-card via-card/98 to-card/85 backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-8 hover:border-primary/50 transition-all duration-300 h-full flex flex-col shadow-2xl overflow-hidden">
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleDragEnd(event, key)}
+                >
+                  <SortableContext
+                    items={projectList.filter(p => p.id).map(p => p.id!)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
+                      {projectList.filter(p => p.id).map((project) => (
+                        <SortableProject
+                          key={project.id}
+                          project={project}
+                          category={key}
+                          isOwner={isOwner}
+                          onEdit={() => {
+                            setEditingProject(project.title);
+                            setNewProject(project);
+                            setIsAddDialogOpen(true);
+                          }}
+                          onRemove={() => handleRemoveProject(key, project.title)}
+                        />
+                      ))}
 
-                        {isOwner && (
-                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
-                            <button
-                              onClick={() => {
-                                setEditingProject(project.title);
-                                setNewProject(project);
-                                setIsAddDialogOpen(true);
-                              }}
-                              className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                            </button>
-                            <button
-                              onClick={() => handleRemoveProject(key, project.title)}
-                              className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-                        
-                        <div className="relative z-10 space-y-5 flex flex-col h-full">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 space-y-2">
-                              <h3 className="text-2xl md:text-3xl font-bold font-sans bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight">
-                                {project.title}
-                              </h3>
-                              <div className="h-1 bg-gradient-to-r from-primary via-accent to-transparent rounded-full w-3/5" />
-                            </div>
-                            {project.type === "Purdue" && (
-                              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg">
-                                <img
-                                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png"
-                                  alt="Purdue"
-                                  className="w-7 h-7 object-contain"
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3 border-l-2 border-primary/30 pl-4">{project.description}</p>
-
-                          <div className="flex items-center gap-3 text-sm font-mono bg-primary/5 rounded-xl p-3 border border-primary/20">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-primary" />
-                              <span className="text-primary font-semibold">{project.startMonth}</span>
-                            </div>
-                            <div className="flex-1 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
-                            <div className="flex items-center gap-2">
-                              <span className="text-accent font-semibold">{project.endMonth}</span>
-                              <div className="w-2 h-2 rounded-full bg-accent" />
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            {project.skills.map((skill) => (
-                              <Badge key={skill} variant="secondary" className="font-mono text-xs px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 text-primary hover:from-primary/20 hover:to-accent/20 border border-primary/30 shadow-sm">
-                                {skill}
-                              </Badge>
-                            ))}
-                          </div>
-
-                          {/* GitHub Link */}
-                          {project.github && (
-                            <a
-                              href={project.github}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-medium text-sm mt-auto group/link bg-primary/5 hover:bg-primary/10 px-5 py-3 rounded-xl border border-primary/20 hover:border-primary/40"
-                            >
-                              <Github className="w-5 h-5" />
-                              <span>View Source Code</span>
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Add Project Button - Owner Only */}
-                  {isOwner && activeTab === key && (
-                    <Dialog open={isAddDialogOpen && activeTab === key} onOpenChange={(open) => {
-                      setIsAddDialogOpen(open);
-                      if (!open) {
-                        setEditingProject(null);
-                        setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
-                        setSkillInput("");
-                      }
-                    }}>
-                      <DialogTrigger asChild>
-                        <button 
-                          onClick={() => {
+                      {/* Add Project Button - Owner Only */}
+                      {isOwner && activeTab === key && (
+                        <Dialog open={isAddDialogOpen && activeTab === key} onOpenChange={(open) => {
+                          setIsAddDialogOpen(open);
+                          if (!open) {
                             setEditingProject(null);
                             setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
                             setSkillInput("");
-                            setIsAddDialogOpen(true);
-                          }}
-                          className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[400px] group hover:bg-primary/5 transition-all duration-300"
-                        >
-                          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <Plus className="w-7 h-7 text-primary" />
-                          </div>
-                          <span className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                            Add New Project
-                          </span>
-                        </button>
-                      </DialogTrigger>
+                          }
+                        }}>
+                          <DialogTrigger asChild>
+                            <button 
+                              onClick={() => {
+                                setEditingProject(null);
+                                setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
+                                setSkillInput("");
+                                setIsAddDialogOpen(true);
+                              }}
+                              className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[400px] group hover:bg-primary/5 transition-all duration-300"
+                            >
+                              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                <Plus className="w-7 h-7 text-primary" />
+                              </div>
+                              <span className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                                Add New Project
+                              </span>
+                            </button>
+                          </DialogTrigger>
                       
                       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
@@ -550,10 +657,12 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                       {isUpdating ? 'Updating...' : (editingProject ? 'Update' : 'Add')} Project
                     </Button>
                   </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </TabsContent>
             ))}
           </Tabs>
