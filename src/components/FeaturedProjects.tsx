@@ -26,6 +26,130 @@ interface FeaturedProject {
   end_date?: string;
 }
 
+interface SortableFeaturedProjectProps {
+  project: FeaturedProject;
+  isOwner: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+  getYoutubeEmbedUrl: (url: string) => string;
+}
+
+const SortableFeaturedProject = ({ 
+  project, 
+  isOwner, 
+  onEdit, 
+  onRemove, 
+  getYoutubeEmbedUrl 
+}: SortableFeaturedProjectProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style}
+      className="group relative bg-gradient-to-br from-card via-card/95 to-card/80 backdrop-blur-xl rounded-2xl border border-border/50 hover:border-primary/30 transition-all duration-500 overflow-hidden shadow-elegant hover:shadow-glow"
+    >
+      {isOwner && (
+        <div className="absolute top-4 left-4 z-10 flex gap-2">
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-2 bg-background/80 backdrop-blur-sm rounded-lg hover:bg-background transition-colors cursor-grab active:cursor-grabbing"
+          >
+            <GripVertical className="w-5 h-5 text-muted-foreground" />
+          </button>
+          <button
+            onClick={onEdit}
+            className="p-2 bg-background/80 backdrop-blur-sm rounded-lg hover:bg-background transition-colors"
+          >
+            <Plus className="w-5 h-5 text-primary" />
+          </button>
+          <button
+            onClick={onRemove}
+            className="p-2 bg-background/80 backdrop-blur-sm rounded-lg hover:bg-background transition-colors"
+          >
+            <X className="w-5 h-5 text-destructive" />
+          </button>
+        </div>
+      )}
+
+      <div className="aspect-video w-full overflow-hidden rounded-t-2xl">
+        <iframe
+          src={getYoutubeEmbedUrl(project.youtube_url)}
+          title={project.title}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+
+      <div className="p-6 space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+              {project.title}
+            </h3>
+            {(project.start_date || project.end_date) && (
+              <p className="text-sm text-muted-foreground">
+                {project.start_date} {project.end_date && `- ${project.end_date}`}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {project.youtube_url && (
+              <a
+                href={project.youtube_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+              >
+                <ExternalLink className="w-5 h-5 text-primary" />
+              </a>
+            )}
+            {project.github_url && (
+              <a
+                href={project.github_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+              >
+                <Github className="w-5 h-5 text-primary" />
+              </a>
+            )}
+          </div>
+        </div>
+
+        <p className="text-muted-foreground leading-relaxed">
+          {project.description}
+        </p>
+
+        {project.technologies.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {project.technologies.map((tech) => (
+              <Badge key={tech} variant="secondary" className="text-xs">
+                {tech}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const FeaturedProjects = ({ isOwner }: FeaturedProjectsProps) => {
   const [projects, setProjects] = useState<FeaturedProject[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
