@@ -1,42 +1,227 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Award, Plus, Upload, X } from "lucide-react";
+import { Award, Plus, Upload, X, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface CertificationsProps {
   isOwner: boolean;
 }
 
-const initialCertifications = [
-  {
-    name: "CompTIA Security+",
-    logo: "🔒",
-    credentialId: "SEC-2024-XXX",
-    issueDate: "Jan 2024",
-    expirationDate: "Jan 2027",
-  },
-  {
-    name: "AWS Certified Cloud Practitioner",
-    logo: "☁️",
-    credentialId: "AWS-CCP-2024",
-    issueDate: "Mar 2024",
-    expirationDate: "Mar 2027",
-  },
-  {
-    name: "Certified Ethical Hacker",
-    logo: "🎯",
-    credentialId: "CEH-2024-XXX",
-    issueDate: "May 2024",
-    expirationDate: "May 2027",
-  },
-];
+interface Certification {
+  id: string;
+  name: string;
+  logo: string;
+  credentialId: string;
+  issueDate: string;
+  expirationDate: string;
+  display_order?: number;
+}
+
+interface SortableCertProps {
+  cert: Certification;
+  index: number;
+  isOwner: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+}
+
+const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: cert.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+      whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+      transition={{ 
+        delay: index * 0.15, 
+        duration: 0.6,
+        type: "spring",
+        stiffness: 100
+      }}
+      viewport={{ once: true }}
+      className="group relative"
+    >
+      <div className="relative w-72 min-h-[20rem]">
+        <motion.div
+          className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/20 via-primary/20 to-accent/20 blur-2xl"
+          animate={{
+            opacity: [0.3, 0.6, 0.3],
+            scale: [1, 1.05, 1]
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            delay: index * 0.5
+          }}
+        />
+        
+        <motion.div
+          className="relative h-full bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-8 shadow-2xl overflow-visible"
+          whileHover={{ 
+            rotateY: 5,
+            rotateX: 5,
+            scale: 1.05,
+            borderColor: "hsl(var(--accent) / 0.6)"
+          }}
+          transition={{ duration: 0.3 }}
+          style={{
+            transformStyle: "preserve-3d"
+          }}
+        >
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-4 right-4 w-32 h-32 border border-accent rounded-full" />
+            <div className="absolute bottom-4 left-4 w-24 h-24 border border-primary rounded-full" />
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-accent/50" 
+              style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }} 
+            />
+          </div>
+
+          {isOwner && (
+            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
+              <button
+                {...attributes}
+                {...listeners}
+                className="p-2 bg-background/80 backdrop-blur-sm rounded-lg hover:bg-background transition-colors cursor-grab active:cursor-grabbing"
+              >
+                <GripVertical className="w-5 h-5 text-muted-foreground" />
+              </button>
+              <button
+                onClick={onEdit}
+                className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              </button>
+              <button
+                onClick={onRemove}
+                className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          
+          <div className="relative z-10 h-full flex flex-col items-center justify-between text-center">
+            <motion.div 
+              className="relative"
+              whileHover={{ scale: 1.1, rotate: 360 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="w-24 h-24 flex items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 rounded-2xl border-2 border-accent/40 shadow-glow relative overflow-hidden">
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/30 to-transparent"
+                  animate={{
+                    y: ["-100%", "200%"]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                    ease: "linear"
+                  }}
+                />
+                {cert.logo.startsWith('data:') ? (
+                  <img src={cert.logo} alt={cert.name} className="w-16 h-16 object-contain relative z-10" />
+                ) : (
+                  <span className="text-5xl relative z-10">{cert.logo}</span>
+                )}
+              </div>
+            </motion.div>
+
+            <div className="space-y-3 flex-1 flex flex-col justify-center">
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent leading-tight px-2">
+                {cert.name}
+              </h3>
+              
+              <motion.div 
+                className="w-16 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto rounded-full"
+                animate={{
+                  width: ["64px", "96px", "64px"]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+            </div>
+
+            <div className="space-y-2.5 w-full">
+              {cert.credentialId && (
+                <div className="bg-accent/10 backdrop-blur-sm rounded-xl p-3 border border-accent/20">
+                  <p className="text-xs text-accent/80 font-semibold mb-1">CREDENTIAL ID</p>
+                  <p className="font-mono text-xs text-foreground/90 break-all">{cert.credentialId}</p>
+                </div>
+              )}
+              
+              {(cert.issueDate || cert.expirationDate) && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {cert.issueDate && (
+                    <div className="bg-primary/10 rounded-lg p-2.5 border border-primary/20">
+                      <p className="text-primary/70 font-semibold mb-1">ISSUED</p>
+                      <p className="font-mono text-foreground/90 text-xs">{cert.issueDate}</p>
+                    </div>
+                  )}
+                  {cert.expirationDate && (
+                    <div className="bg-primary/10 rounded-lg p-2.5 border border-primary/20">
+                      <p className="text-primary/70 font-semibold mb-1">EXPIRES</p>
+                      <p className="font-mono text-foreground/90 text-xs">{cert.expirationDate}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-accent/40 rounded-tl-lg" />
+            <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-accent/40 rounded-tr-lg" />
+            <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-primary/40 rounded-bl-lg" />
+            <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-primary/40 rounded-br-lg" />
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+};
+
+const initialCertifications: Certification[] = [];
 
 export const Certifications = ({ isOwner }: CertificationsProps) => {
-  const [certifications, setCertifications] = useState(initialCertifications);
+  const [certifications, setCertifications] = useState<Certification[]>(initialCertifications);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCert, setEditingCert] = useState<string | null>(null);
   const [newCert, setNewCert] = useState({
@@ -48,6 +233,13 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
   });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     fetchCertifications();
   }, []);
@@ -56,7 +248,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
     const { data, error } = await supabase
       .from('certifications')
       .select('*')
-      .order('date', { ascending: false });
+      .order('display_order', { ascending: true });
 
     if (error) {
       console.error('Error fetching certifications:', error);
@@ -65,13 +257,42 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
 
     if (data && data.length > 0) {
       const certs = data.map(cert => ({
+        id: cert.id,
         name: cert.name,
         logo: cert.image_url || "🏆",
         credentialId: cert.credential_url || "",
         issueDate: cert.date ? new Date(cert.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
-        expirationDate: cert.expiration_date ? new Date(cert.expiration_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ""
+        expirationDate: cert.expiration_date ? new Date(cert.expiration_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
+        display_order: cert.display_order
       }));
       setCertifications(certs);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = certifications.findIndex(cert => cert.id === active.id);
+    const newIndex = certifications.findIndex(cert => cert.id === over.id);
+
+    const newCerts = arrayMove(certifications, oldIndex, newIndex);
+    setCertifications(newCerts);
+
+    try {
+      const updates = newCerts.map((cert, index) => 
+        supabase
+          .from('certifications')
+          .update({ display_order: index })
+          .eq('id', cert.id)
+      );
+      
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error updating certification order:', error);
+      toast.error('Failed to save order');
+      fetchCertifications();
     }
   };
 
@@ -231,176 +452,38 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           <div className="relative max-w-6xl mx-auto">
             {/* Main certification showcase */}
             <div className="flex flex-wrap justify-center items-center gap-8 lg:gap-12">
-              {certifications.map((cert, index) => (
-                <motion.div
-                  key={cert.name}
-                  initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
-                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-                  transition={{ 
-                    delay: index * 0.15, 
-                    duration: 0.6,
-                    type: "spring",
-                    stiffness: 100
-                  }}
-                  viewport={{ once: true }}
-                  className="group relative"
-                  style={{
-                    perspective: "1000px"
-                  }}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={certifications.map(c => c.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  {/* Hexagonal shape container */}
-                  <div className="relative w-72 min-h-[20rem]">
-                    {/* Animated glow background */}
-                    <motion.div
-                      className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/20 via-primary/20 to-accent/20 blur-2xl"
-                      animate={{
-                        opacity: [0.3, 0.6, 0.3],
-                        scale: [1, 1.05, 1]
+                  {certifications.map((cert, index) => (
+                    <SortableCert
+                      key={cert.id}
+                      cert={cert}
+                      index={index}
+                      isOwner={isOwner}
+                      onEdit={() => {
+                        setEditingCert(cert.name);
+                        setNewCert({
+                          name: cert.name,
+                          logo: cert.logo,
+                          credentialId: cert.credentialId,
+                          issueDate: cert.issueDate,
+                          expirationDate: cert.expirationDate
+                        });
+                        setUploadedLogo(cert.logo);
+                        setIsAddDialogOpen(true);
                       }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        delay: index * 0.5
-                      }}
+                      onRemove={() => handleRemoveCert(cert.name)}
                     />
-                    
-                    {/* Main card with 3D effect */}
-                    <motion.div
-                      className="relative h-full bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-8 shadow-2xl overflow-visible"
-                      whileHover={{ 
-                        rotateY: 5,
-                        rotateX: 5,
-                        scale: 1.05,
-                        borderColor: "hsl(var(--accent) / 0.6)"
-                      }}
-                      transition={{ duration: 0.3 }}
-                      style={{
-                        transformStyle: "preserve-3d"
-                      }}
-                    >
-                      {/* Animated circuit pattern overlay */}
-                      <div className="absolute inset-0 opacity-10">
-                        <div className="absolute top-4 right-4 w-32 h-32 border border-accent rounded-full" />
-                        <div className="absolute bottom-4 left-4 w-24 h-24 border border-primary rounded-full" />
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-accent/50" 
-                          style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }} 
-                        />
-                      </div>
-
-                      {isOwner && (
-                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
-                          <button
-                            onClick={() => {
-                              setEditingCert(cert.name);
-                              setNewCert({
-                                name: cert.name,
-                                logo: cert.logo,
-                                credentialId: cert.credentialId,
-                                issueDate: cert.issueDate,
-                                expirationDate: cert.expirationDate
-                              });
-                              setUploadedLogo(cert.logo);
-                              setIsAddDialogOpen(true);
-                            }}
-                            className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                          </button>
-                          <button
-                            onClick={() => handleRemoveCert(cert.name)}
-                            className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                      
-                      <div className="relative z-10 h-full flex flex-col items-center justify-between text-center">
-                        {/* Logo with holographic effect */}
-                        <motion.div 
-                          className="relative"
-                          whileHover={{ scale: 1.1, rotate: 360 }}
-                          transition={{ duration: 0.6 }}
-                        >
-                          <div className="w-24 h-24 flex items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 rounded-2xl border-2 border-accent/40 shadow-glow relative overflow-hidden">
-                            {/* Scanning light effect */}
-                            <motion.div
-                              className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/30 to-transparent"
-                              animate={{
-                                y: ["-100%", "200%"]
-                              }}
-                              transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                repeatDelay: 1,
-                                ease: "linear"
-                              }}
-                            />
-                            {cert.logo.startsWith('data:') ? (
-                              <img src={cert.logo} alt={cert.name} className="w-16 h-16 object-contain relative z-10" />
-                            ) : (
-                              <span className="text-5xl relative z-10">{cert.logo}</span>
-                            )}
-                          </div>
-                        </motion.div>
-
-                        {/* Certification name with gradient */}
-                        <div className="space-y-3 flex-1 flex flex-col justify-center">
-                          <h3 className="text-2xl font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent leading-tight px-2">
-                            {cert.name}
-                          </h3>
-                          
-                          {/* Divider line */}
-                          <motion.div 
-                            className="w-16 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto rounded-full"
-                            animate={{
-                              width: ["64px", "96px", "64px"]
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut"
-                            }}
-                          />
-                        </div>
-
-                        {/* Info section with better spacing */}
-                        <div className="space-y-2.5 w-full">
-                          {cert.credentialId && (
-                            <div className="bg-accent/10 backdrop-blur-sm rounded-xl p-3 border border-accent/20">
-                              <p className="text-xs text-accent/80 font-semibold mb-1">CREDENTIAL ID</p>
-                              <p className="font-mono text-xs text-foreground/90 break-all">{cert.credentialId}</p>
-                            </div>
-                          )}
-                          
-                          {(cert.issueDate || cert.expirationDate) && (
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              {cert.issueDate && (
-                                <div className="bg-primary/10 rounded-lg p-2.5 border border-primary/20">
-                                  <p className="text-primary/70 font-semibold mb-1">ISSUED</p>
-                                  <p className="font-mono text-foreground/90 text-xs">{cert.issueDate}</p>
-                                </div>
-                              )}
-                              {cert.expirationDate && (
-                                <div className="bg-primary/10 rounded-lg p-2.5 border border-primary/20">
-                                  <p className="text-primary/70 font-semibold mb-1">EXPIRES</p>
-                                  <p className="font-mono text-foreground/90 text-xs">{cert.expirationDate}</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Corner accents */}
-                        <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-accent/40 rounded-tl-lg" />
-                        <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-accent/40 rounded-tr-lg" />
-                        <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-primary/40 rounded-bl-lg" />
-                        <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-primary/40 rounded-br-lg" />
-                      </div>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              ))}
+                  ))}
+                </SortableContext>
+              </DndContext>
 
               {/* Add Certification Button - Owner Only */}
               {isOwner && (

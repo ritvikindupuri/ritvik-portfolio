@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, MapPin, Plus, X } from "lucide-react";
+import { Briefcase, MapPin, Plus, X, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -10,6 +10,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ExperienceProps {
   isOwner: boolean;
@@ -25,7 +42,118 @@ interface ExperienceEntry {
   is_current: boolean;
   description: string[];
   skills: string[];
+  display_order?: number;
 }
+
+interface SortableExperienceProps {
+  exp: ExperienceEntry;
+  index: number;
+  isOwner: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+  formatDateRange: (startDate: string, endDate: string | null, isCurrent: boolean) => string;
+}
+
+const SortableExperience = ({ exp, index, isOwner, onEdit, onRemove, formatDateRange }: SortableExperienceProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: exp.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      initial={{ opacity: 0, x: -30 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="relative pl-16 group"
+    >
+      {/* Enhanced Timeline dot with icon */}
+      <div className="absolute left-0 top-3 w-11 h-11 rounded-full bg-gradient-cyber border-4 border-background flex items-center justify-center shadow-glow z-10">
+        <Briefcase className="w-5 h-5 text-background" />
+      </div>
+      
+      <div className="relative">
+        <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 shadow-lg hover:shadow-glow">
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold group-hover:text-primary transition-colors mb-2 leading-tight">{exp.title}</h3>
+              <p className="text-lg font-semibold text-primary mb-2">{exp.company}</p>
+            </div>
+            {isOwner && (
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                <button
+                  {...attributes}
+                  {...listeners}
+                  className="p-2 bg-background/80 backdrop-blur-sm rounded-lg hover:bg-background transition-colors cursor-grab active:cursor-grabbing"
+                >
+                  <GripVertical className="w-5 h-5 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={onEdit}
+                  className="p-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                </button>
+                <button
+                  onClick={onRemove}
+                  className="p-2 bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 mb-6">
+            {exp.location && (
+              <p className="flex items-center text-muted-foreground text-sm">
+                <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                {exp.location}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground font-medium">
+              {formatDateRange(exp.start_date, exp.end_date || null, exp.is_current)}
+            </p>
+          </div>
+
+          {exp.description && exp.description.length > 0 && (
+            <ul className="space-y-3 mb-6 list-none">
+              {exp.description.map((item, idx) => (
+                <li key={idx} className="flex gap-3 text-sm text-foreground/90 leading-relaxed">
+                  <span className="text-primary mt-1.5 flex-shrink-0">▸</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {exp.skills && exp.skills.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {exp.skills.map((skill) => (
+                <Badge key={skill} variant="secondary" className="text-xs">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 const Experience = ({ isOwner }: ExperienceProps) => {
   const [experiences, setExperiences] = useState<ExperienceEntry[]>([]);
@@ -43,6 +171,13 @@ const Experience = ({ isOwner }: ExperienceProps) => {
   });
   const [skillInput, setSkillInput] = useState("");
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     fetchExperiences();
   }, []);
@@ -51,7 +186,7 @@ const Experience = ({ isOwner }: ExperienceProps) => {
     const { data, error } = await supabase
       .from("experience")
       .select("*")
-      .order("start_date", { ascending: false });
+      .order("display_order", { ascending: true });
 
     if (error) {
       console.error("Error fetching experiences:", error);
@@ -60,6 +195,33 @@ const Experience = ({ isOwner }: ExperienceProps) => {
 
     if (data) {
       setExperiences(data);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = experiences.findIndex(exp => exp.id === active.id);
+    const newIndex = experiences.findIndex(exp => exp.id === over.id);
+
+    const newExps = arrayMove(experiences, oldIndex, newIndex);
+    setExperiences(newExps);
+
+    try {
+      const updates = newExps.map((exp, index) => 
+        supabase
+          .from('experience')
+          .update({ display_order: index })
+          .eq('id', exp.id)
+      );
+      
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error updating experience order:', error);
+      toast.error('Failed to save order');
+      fetchExperiences();
     }
   };
 
@@ -412,95 +574,42 @@ const Experience = ({ isOwner }: ExperienceProps) => {
           <div className="absolute left-[21px] top-0 bottom-0 w-[3px] bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full" />
           
           <div className="space-y-10 pb-8">
-            {experiences.map((exp, index) => (
-              <motion.div
-                key={exp.id}
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative pl-16 group"
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={experiences.map(e => e.id)}
+                strategy={verticalListSortingStrategy}
               >
-                {/* Enhanced Timeline dot with icon */}
-                <div className="absolute left-0 top-3 w-11 h-11 rounded-full bg-gradient-cyber border-4 border-background flex items-center justify-center shadow-glow z-10">
-                  <Briefcase className="w-5 h-5 text-background" />
-                </div>
-                
-                <div className="relative">
-                  
-                  
-                  <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 shadow-lg hover:shadow-glow">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-2xl font-bold group-hover:text-primary transition-colors mb-2 leading-tight">{exp.title}</h3>
-                        <p className="text-lg font-semibold text-primary mb-2">{exp.company}</p>
-                      </div>
-                      {isOwner && (
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingExperience(exp.id);
-                              setNewExperience({
-                                title: exp.title,
-                                company: exp.company,
-                                location: exp.location || "",
-                                start_date: exp.start_date,
-                                end_date: exp.end_date || "",
-                                is_current: exp.is_current,
-                                description: exp.description,
-                                skills: exp.skills,
-                              });
-                              setIsAddDialogOpen(true);
-                            }}
-                            className="bg-primary/10 hover:bg-primary/20 text-primary rounded-lg p-2"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                          </button>
-                          <button
-                            onClick={() => handleRemoveExperience(exp.id)}
-                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground font-mono mb-3 bg-primary/5 px-3 py-1.5 rounded-lg w-fit">
-                      {formatDateRange(exp.start_date, exp.end_date, exp.is_current)}
-                    </p>
-                    
-                    {exp.location && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-2 mb-5">
-                        <MapPin size={16} className="text-primary" />
-                        {exp.location}
-                      </p>
-                    )}
-                    
-                    {exp.description && exp.description.length > 0 && (
-                      <ul className="space-y-3 mb-5">
-                        {exp.description.map((desc, idx) => (
-                          <li key={idx} className="flex gap-3 text-muted-foreground leading-relaxed text-sm">
-                            <span className="text-primary mt-1 text-lg">•</span>
-                            <span>{desc}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    
-                    {exp.skills && exp.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-4 border-t border-border/50">
-                        {exp.skills.map((skill) => (
-                          <Badge key={skill} variant="secondary" className="font-mono text-xs px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                {experiences.map((exp, index) => (
+                  <SortableExperience
+                    key={exp.id}
+                    exp={exp}
+                    index={index}
+                    isOwner={isOwner}
+                    onEdit={() => {
+                      setEditingExperience(exp.id);
+                      setNewExperience({
+                        title: exp.title,
+                        company: exp.company,
+                        location: exp.location || "",
+                        start_date: exp.start_date,
+                        end_date: exp.end_date || "",
+                        is_current: exp.is_current,
+                        description: exp.description,
+                        skills: exp.skills,
+                      });
+                      setSkillInput("");
+                      setIsAddDialogOpen(true);
+                    }}
+                    onRemove={() => handleRemoveExperience(exp.id)}
+                    formatDateRange={formatDateRange}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         </div>
       </motion.div>

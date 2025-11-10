@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { FileText, Plus, X, ExternalLink, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Plus, X, ExternalLink, Edit, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -8,39 +8,167 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface DocumentationProps {
   isOwner: boolean;
 }
 
 interface Document {
-  id?: string;
+  id: string;
   title: string;
   projectName: string;
   description: string;
   fileUrl: string;
   uploadDate: string;
   tags: string[];
+  display_order?: number;
 }
 
-const initialDocuments: Document[] = [
-  {
-    title: "Network Security Architecture",
-    projectName: "Enterprise NIDS",
-    description: "Comprehensive documentation covering the network intrusion detection system architecture, implementation details, and deployment guide.",
-    fileUrl: "#",
-    uploadDate: "Dec 2024",
-    tags: ["Network Security", "Architecture", "Python"],
-  },
-  {
-    title: "Cloud Infrastructure Design",
-    projectName: "AWS Secure Deploy",
-    description: "Technical documentation for secure cloud infrastructure deployment including IAM policies, VPC configuration, and security best practices.",
-    fileUrl: "#",
-    uploadDate: "Nov 2024",
-    tags: ["AWS", "Cloud Security", "Infrastructure"],
-  },
-];
+interface SortableDocProps {
+  doc: Document;
+  isOwner: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+  isExpanded: boolean;
+  toggleExpanded: () => void;
+}
+
+const SortableDoc = ({ doc, isOwner, onEdit, onRemove, isExpanded, toggleExpanded }: SortableDocProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: doc.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const truncatedDescription = doc.description.length > 200
+    ? doc.description.substring(0, 200) + "..."
+    : doc.description;
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="group relative bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl border border-border/50 hover:border-primary/30 rounded-2xl p-8 shadow-elegant hover:shadow-glow transition-all duration-300"
+    >
+      {isOwner && (
+        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10">
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-2 bg-background/80 backdrop-blur-sm rounded-lg hover:bg-background transition-colors cursor-grab active:cursor-grabbing"
+          >
+            <GripVertical className="w-5 h-5 text-muted-foreground" />
+          </button>
+          <button
+            onClick={onEdit}
+            className="p-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onRemove}
+            className="p-2 bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      
+      <div className="flex items-start gap-6">
+        <div className="flex-shrink-0">
+          <div className="w-16 h-16 rounded-xl bg-gradient-cyber flex items-center justify-center shadow-glow">
+            <FileText className="w-8 h-8 text-background" />
+          </div>
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold group-hover:text-primary transition-colors mb-2 leading-tight">
+                {doc.title}
+              </h3>
+              <p className="text-sm text-muted-foreground font-medium">
+                {doc.projectName} · {doc.uploadDate}
+              </p>
+            </div>
+          </div>
+          
+          <p className="text-muted-foreground leading-relaxed mb-4">
+            {isExpanded ? doc.description : truncatedDescription}
+          </p>
+          
+          {doc.description.length > 200 && (
+            <button
+              onClick={toggleExpanded}
+              className="text-primary hover:text-accent transition-colors text-sm font-medium flex items-center gap-1 mb-4"
+            >
+              {isExpanded ? (
+                <>
+                  Show Less <ChevronUp className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  Read More <ChevronDown className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
+          
+          {doc.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {doc.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+          
+          <a
+            href={doc.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-primary hover:text-accent transition-colors font-medium text-sm"
+          >
+            <ExternalLink className="w-4 h-4" />
+            View Documentation
+          </a>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const initialDocuments: Document[] = [];
 
 export const Documentation = ({ isOwner }: DocumentationProps) => {
   const [documents, setDocuments] = useState(initialDocuments);
@@ -59,6 +187,13 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
   
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     fetchDocumentation();
   }, []);
@@ -67,7 +202,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
     const { data, error } = await supabase
       .from('documentation')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('display_order', { ascending: true });
 
     if (error) {
       console.error('Error fetching documentation:', error);
@@ -82,9 +217,37 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         description: doc.description,
         fileUrl: doc.url,
         uploadDate: doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
-        tags: []
+        tags: [],
+        display_order: doc.display_order
       }));
       setDocuments(docs);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = documents.findIndex(doc => doc.id === active.id);
+    const newIndex = documents.findIndex(doc => doc.id === over.id);
+
+    const newDocs = arrayMove(documents, oldIndex, newIndex);
+    setDocuments(newDocs);
+
+    try {
+      const updates = newDocs.map((doc, index) => 
+        supabase
+          .from('documentation')
+          .update({ display_order: index })
+          .eq('id', doc.id)
+      );
+      
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error updating documentation order:', error);
+      toast.error('Failed to save order');
+      fetchDocumentation();
     }
   };
 
@@ -266,98 +429,28 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-            {documents.map((doc, index) => (
-              <motion.div
-                key={doc.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.08, duration: 0.4 }}
-                viewport={{ once: true }}
-                className="group relative"
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={documents.map(d => d.id)}
+                strategy={verticalListSortingStrategy}
               >
-                
-                
-                <div className="relative bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 hover:border-primary/40 transition-all duration-300 h-full flex flex-col shadow-lg hover:shadow-glow">
-                  {isOwner && (
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10">
-                      <button
-                        onClick={() => handleEditDocument(doc)}
-                        className="bg-primary/10 hover:bg-primary/20 text-primary rounded-lg p-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveDocument(doc.id!)}
-                        className="bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg p-2"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                  
-                  <div className="space-y-5 flex flex-col h-full">
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-mono mb-3 bg-primary/10 px-3 py-1.5 rounded-lg w-fit">
-                        <FileText className="w-4 h-4 text-primary" />
-                        <span className="font-semibold text-primary">{doc.projectName}</span>
-                      </div>
-                      <h3 className="text-2xl font-bold font-sans group-hover:text-primary transition-colors mb-3 leading-tight">
-                        {doc.title}
-                      </h3>
-                      <div className="space-y-2">
-                        <p className={`text-muted-foreground leading-relaxed text-sm ${expandedDocs.has(doc.id!) ? '' : 'line-clamp-3'}`}>
-                          {doc.description}
-                        </p>
-                        {doc.description.length > 150 && (
-                          <button
-                            onClick={() => toggleExpanded(doc.id!)}
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-                          >
-                            {expandedDocs.has(doc.id!) ? (
-                              <>
-                                Show less <ChevronUp className="w-3 h-3" />
-                              </>
-                            ) : (
-                              <>
-                                Show more <ChevronDown className="w-3 h-3" />
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {doc.tags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="px-3 py-1 text-xs font-mono bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-auto">
-                      <span className="text-sm text-muted-foreground font-mono">
-                        {doc.uploadDate}
-                      </span>
-                      <a
-                        href={doc.fileUrl || "https://github.com/ritvikindupuri"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-semibold text-sm group/link"
-                      >
-                        <FileText className="w-4 h-4" />
-                        <span>View on GitHub</span>
-                        <ExternalLink className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                {documents.map((doc) => (
+                  <SortableDoc
+                    key={doc.id}
+                    doc={doc}
+                    isOwner={isOwner}
+                    onEdit={() => handleEditDocument(doc)}
+                    onRemove={() => handleRemoveDocument(doc.id)}
+                    isExpanded={expandedDocs.has(doc.id)}
+                    toggleExpanded={() => toggleExpanded(doc.id)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
 
             {/* Add Documentation Button - Owner Only */}
             {isOwner && (
