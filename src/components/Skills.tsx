@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server } from "lucide-react";
+import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,10 +87,12 @@ interface SortableSkillProps {
   isOwner: boolean;
   onEdit: () => void;
   onRemove: () => void;
+  onMove: (targetCategoryId: string) => void;
   getLevelColor: (level: string) => string;
+  categories: { id: string; label: string }[];
 }
 
-const SortableSkill = ({ skill, categoryId, isOwner, onEdit, onRemove, getLevelColor }: SortableSkillProps) => {
+const SortableSkill = ({ skill, categoryId, isOwner, onEdit, onRemove, onMove, getLevelColor, categories }: SortableSkillProps) => {
   const {
     attributes,
     listeners,
@@ -117,18 +120,41 @@ const SortableSkill = ({ skill, categoryId, isOwner, onEdit, onRemove, getLevelC
             >
               <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
-            <button
-              onClick={onEdit}
-              className="bg-primary/20 hover:bg-primary/30 text-primary rounded-lg p-1.5"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-            </button>
-            <button
-              onClick={onRemove}
-              className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg p-1.5"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="bg-background/80 backdrop-blur-sm hover:bg-background rounded-lg p-1.5">
+                  <MoreVertical className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-background border-border z-50" align="end">
+                <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer">
+                    Move to...
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="bg-background border-border z-50">
+                    {categories
+                      .filter(cat => cat.id !== categoryId)
+                      .map(cat => (
+                        <DropdownMenuItem 
+                          key={cat.id}
+                          onClick={() => onMove(cat.id)}
+                          className="cursor-pointer"
+                        >
+                          {cat.label}
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuItem onClick={onRemove} className="cursor-pointer text-destructive focus:text-destructive">
+                  <X className="w-3.5 h-3.5 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
         
@@ -440,6 +466,46 @@ export const Skills = ({ isOwner }: SkillsProps) => {
     toast.success(`Removed ${skillName} from skills`);
   };
 
+  const handleMoveSkill = async (skillId: string, fromCategory: string, toCategory: string, skillName: string) => {
+    const fromCat = skillCategories.find(cat => cat.id === fromCategory);
+    const toCat = skillCategories.find(cat => cat.id === toCategory);
+    
+    if (!fromCat || !toCat) return;
+
+    const skill = fromCat.skills.find(s => s.id === skillId);
+    if (!skill) return;
+
+    const sourceSkills: Skill[] = fromCat.skills.filter(s => s.id !== skillId) as Skill[];
+    const targetSkills: Skill[] = [...toCat.skills, skill];
+
+    setSkillCategories(skillCategories.map(cat => {
+      if (cat.id === fromCategory) return { ...cat, skills: sourceSkills };
+      if (cat.id === toCategory) return { ...cat, skills: targetSkills };
+      return cat;
+    }));
+
+    try {
+      await supabase
+        .from('skills')
+        .update({ category: toCategory })
+        .eq('id', skillId);
+
+      const sourceUpdates = sourceSkills.map((s: Skill, index: number) => 
+        supabase.from('skills').update({ display_order: index }).eq('id', s.id)
+      );
+      const targetUpdates = targetSkills.map((s: Skill, index: number) => 
+        supabase.from('skills').update({ display_order: index }).eq('id', s.id)
+      );
+      
+      await Promise.all([...sourceUpdates, ...targetUpdates]);
+      toast.success(`Moved ${skillName} to ${toCat.label}`);
+    } catch (error) {
+      console.error('Error moving skill:', error);
+      toast.error('Failed to move skill');
+      fetchSkills();
+    }
+  };
+
   return (
     <section id="skills-section" className="py-32 px-4 bg-card/20 relative overflow-hidden">
       <div className="container mx-auto max-w-7xl relative z-10">
@@ -497,6 +563,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                           skill={skill}
                           categoryId={category.id}
                           isOwner={isOwner}
+                          categories={skillCategories.map(cat => ({ id: cat.id, label: cat.label }))}
                           onEdit={() => {
                             setEditingSkill({ name: skill.name, category: category.id });
                             setNewSkill({
@@ -510,6 +577,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                             setIsAddDialogOpen(true);
                           }}
                           onRemove={() => handleRemoveSkill(category.id, skill.name)}
+                          onMove={(targetCategoryId) => handleMoveSkill(skill.id, category.id, targetCategoryId, skill.name)}
                           getLevelColor={getLevelColor}
                         />
                       ))}
