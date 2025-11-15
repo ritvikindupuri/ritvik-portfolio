@@ -57,6 +57,12 @@ const initialSkillCategories = [
     skills: [] as Skill[],
   },
   {
+    id: "devops",
+    label: "DevOps & Infrastructure",
+    icon: Cloud,
+    skills: [] as Skill[],
+  },
+  {
     id: "security",
     label: "Cybersecurity Tools",
     icon: Lock,
@@ -220,38 +226,94 @@ export const Skills = ({ isOwner }: SkillsProps) => {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent, categoryId: string) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || active.id === over.id) return;
+    if (!over) return;
 
-    const category = skillCategories.find(cat => cat.id === categoryId);
-    if (!category) return;
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
-    const oldIndex = category.skills.findIndex(skill => skill.id === active.id);
-    const newIndex = category.skills.findIndex(skill => skill.id === over.id);
+    // Find which categories the active and over items belong to
+    let sourceCategory = null;
+    let targetCategory = null;
+    let activeSkill = null;
 
-    const newSkills = arrayMove(category.skills, oldIndex, newIndex);
-    
-    // Update state immediately for smooth UX
-    setSkillCategories(skillCategories.map(cat => 
-      cat.id === categoryId ? { ...cat, skills: newSkills } : cat
-    ));
+    for (const cat of skillCategories) {
+      const foundActive = cat.skills.find(s => s.id === activeId);
+      if (foundActive) {
+        sourceCategory = cat;
+        activeSkill = foundActive;
+      }
+      const foundOver = cat.skills.find(s => s.id === overId);
+      if (foundOver) {
+        targetCategory = cat;
+      }
+    }
 
-    // Update database with new order
-    try {
-      const updates = newSkills.map((skill, index) => 
-        supabase
-          .from('skills')
-          .update({ display_order: index })
-          .eq('id', skill.id)
-      );
+    if (!sourceCategory || !targetCategory || !activeSkill) return;
+
+    // Same category reordering
+    if (sourceCategory.id === targetCategory.id) {
+      const oldIndex = sourceCategory.skills.findIndex(skill => skill.id === activeId);
+      const newIndex = sourceCategory.skills.findIndex(skill => skill.id === overId);
+
+      if (oldIndex === newIndex) return;
+
+      const newSkills: Skill[] = arrayMove(sourceCategory.skills, oldIndex, newIndex) as Skill[];
       
-      await Promise.all(updates);
-    } catch (error) {
-      console.error('Error updating skill order:', error);
-      toast.error('Failed to save order');
-      fetchSkills(); // Revert on error
+      setSkillCategories(skillCategories.map(cat => 
+        cat.id === sourceCategory.id ? { ...cat, skills: newSkills } : cat
+      ));
+
+      try {
+        const updates = newSkills.map((skill: Skill, index: number) => 
+          supabase
+            .from('skills')
+            .update({ display_order: index })
+            .eq('id', skill.id)
+        );
+        await Promise.all(updates);
+      } catch (error) {
+        console.error('Error updating skill order:', error);
+        toast.error('Failed to save order');
+        fetchSkills();
+      }
+    } else {
+      // Cross-category move
+      const sourceSkills: Skill[] = sourceCategory.skills.filter(s => s.id !== activeId) as Skill[];
+      const targetIndex = targetCategory.skills.findIndex(s => s.id === overId);
+      const targetSkills: Skill[] = [...targetCategory.skills];
+      targetSkills.splice(targetIndex + 1, 0, activeSkill);
+
+      setSkillCategories(skillCategories.map(cat => {
+        if (cat.id === sourceCategory.id) return { ...cat, skills: sourceSkills };
+        if (cat.id === targetCategory.id) return { ...cat, skills: targetSkills };
+        return cat;
+      }));
+
+      try {
+        // Update category for moved skill
+        await supabase
+          .from('skills')
+          .update({ category: targetCategory.id })
+          .eq('id', activeId);
+
+        // Update display_order for both categories
+        const sourceUpdates = sourceSkills.map((skill: Skill, index: number) => 
+          supabase.from('skills').update({ display_order: index }).eq('id', skill.id)
+        );
+        const targetUpdates = targetSkills.map((skill: Skill, index: number) => 
+          supabase.from('skills').update({ display_order: index }).eq('id', skill.id)
+        );
+        
+        await Promise.all([...sourceUpdates, ...targetUpdates]);
+        toast.success(`Moved to ${targetCategory.label}`);
+      } catch (error) {
+        console.error('Error moving skill:', error);
+        toast.error('Failed to move skill');
+        fetchSkills();
+      }
     }
   };
 
@@ -417,13 +479,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                 </TabsList>
               </div>
 
-            {skillCategories.map((category) => (
-              <TabsContent key={category.id} value={category.id} className="space-y-8">
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={(event) => handleDragEnd(event, category.id)}
-                >
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              {skillCategories.map((category) => (
+                <TabsContent key={category.id} value={category.id} className="space-y-8">
                   <SortableContext
                     items={category.skills.map(s => s.id)}
                     strategy={verticalListSortingStrategy}
@@ -576,9 +638,9 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                     )}
                     </div>
                   </SortableContext>
-                </DndContext>
-              </TabsContent>
-            ))}
+                </TabsContent>
+              ))}
+            </DndContext>
           </Tabs>
         </div>
       </div>
