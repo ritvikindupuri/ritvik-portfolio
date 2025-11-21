@@ -47,7 +47,7 @@ const initialSkillCategories = [
   },
   {
     id: "web",
-    label: "Web Development & AI",
+    label: "Web Development",
     icon: Globe,
     skills: [] as Skill[],
   },
