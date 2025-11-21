@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server, MoreVertical } from "lucide-react";
+import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server, MoreVertical, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -67,6 +67,12 @@ const initialSkillCategories = [
     id: "security",
     label: "Cybersecurity Tools",
     icon: Lock,
+    skills: [] as Skill[],
+  },
+  {
+    id: "ai",
+    label: "AI Systems",
+    icon: Brain,
     skills: [] as Skill[],
   },
 ];
