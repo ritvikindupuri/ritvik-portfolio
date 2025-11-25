@@ -15,7 +15,7 @@ export const About = ({ isOwner }: AboutProps) => {
     "I am a passionate cybersecurity student at Purdue University, dedicated to protecting digital assets and building secure systems. My journey in cybersecurity is driven by curiosity and a commitment to staying ahead of emerging threats."
   );
   const [closingText, setClosingText] = useState(
-    "I'm constantly learning and applying my knowledge through hands-on projects, exploring everything from penetration testing to security automation. My goal is to contribute to making the digital world safer for everyone."
+    "I'm constantly learning and applying my knowledge through hands-on projects, exploring everything from penetration testing to security automation. I'm particularly passionate about working in defense, where I can leverage my skills to protect critical infrastructure and contribute to national security. My goal is to make a meaningful impact in safeguarding our digital future."
   );
   const [interests, setInterests] = useState([
     {
