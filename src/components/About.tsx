@@ -12,10 +12,10 @@ export const About = ({ isOwner }: AboutProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingInterests, setIsEditingInterests] = useState(false);
   const [aboutText, setAboutText] = useState(
-    "I am a passionate cybersecurity student at Purdue University, dedicated to protecting digital assets and building secure systems. My journey in cybersecurity is driven by curiosity and a commitment to staying ahead of emerging threats."
+    "I am a cybersecurity student at Purdue University focused on cloud security, threat detection, and defense operations. My work centers on protecting critical infrastructure through hands-on experience with security operations, compliance frameworks, and adversary simulation."
   );
   const [closingText, setClosingText] = useState(
-    "I'm constantly learning and applying my knowledge through hands-on projects, exploring everything from penetration testing to security automation. I'm particularly passionate about working in defense, where I can leverage my skills to protect critical infrastructure and contribute to national security. My goal is to make a meaningful impact in safeguarding our digital future."
+    "I'm driven by a mission to contribute to national security through cybersecurity excellence. My focus on space domain awareness, MITRE ATT&CK-mapped threat detection, and federal compliance standards aligns directly with defense sector priorities. I'm eager to leverage my technical skills in threat hunting, incident response, and secure cloud architecture to protect critical systems and support national defense objectives."
   );
   const [interests, setInterests] = useState([
     {

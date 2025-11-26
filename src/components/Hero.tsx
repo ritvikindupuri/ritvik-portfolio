@@ -466,7 +466,15 @@ export const Hero = ({ isOwner }: HeroProps) => {
           >
             <div className="flex items-center justify-center text-xl md:text-2xl">
               <div className="flex items-center gap-3 px-8 py-4 bg-card/30 backdrop-blur-sm rounded-2xl border border-primary/20">
-                <span className="font-mono font-medium">Cybersecurity Major</span>
+                <span className="font-mono font-medium">Cloud Security & Defense Systems</span>
+              </div>
+            </div>
+            
+            {/* Clearance Eligibility Badge */}
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-3 px-8 py-4 bg-primary/10 backdrop-blur-sm rounded-2xl border border-primary/30 shadow-glow">
+                <Lock className="w-6 h-6 text-primary" />
+                <span className="font-mono font-medium text-primary">Security Clearance Eligible • U.S. Citizen</span>
               </div>
             </div>
             
