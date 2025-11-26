@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server, MoreVertical, Brain, Shield } from "lucide-react";
+import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server, MoreVertical, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -33,12 +33,6 @@ interface SkillsProps {
 }
 
 const initialSkillCategories = [
-  {
-    id: "defense",
-    label: "Defense & Compliance",
-    icon: Shield,
-    skills: [] as Skill[],
-  },
   {
     id: "programming",
     label: "Programming Languages",
