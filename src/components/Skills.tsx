@@ -186,23 +186,24 @@ const SortableSkill = ({ skill, categoryId, isOwner, onEdit, onRemove, onMove, g
             </p>
           )}
           
-          {/* Proficiency Badge */}
-          <span className={`text-sm font-semibold font-sans px-4 py-1.5 rounded-full ${getLevelColor(skill.level)}`}>
-            {skill.level}
-          </span>
+          {/* Proficiency Badge and Link Row */}
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-semibold font-sans px-4 py-1.5 rounded-full ${getLevelColor(skill.level)}`}>
+              {skill.level}
+            </span>
+            {skill.link && (
+              <a
+                href={skill.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative z-10 inline-flex items-center gap-1.5 text-xs text-primary hover:text-accent transition-colors font-medium group/link"
+              >
+                <ExternalLink className="w-3 h-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                <span>View Project</span>
+              </a>
+            )}
+          </div>
         </div>
-        
-        {skill.link && (
-          <a
-            href={skill.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative z-10 inline-flex items-center gap-2 text-xs text-primary hover:text-accent transition-colors font-medium group/link"
-          >
-            <ExternalLink className="w-3 h-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
-            <span>Learn More</span>
-          </a>
-        )}
       </div>
     </div>
   );
