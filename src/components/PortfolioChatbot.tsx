@@ -62,8 +62,17 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
     setIsLoading(true);
 
     try {
+      // Build conversation history for context (exclude the message we just added)
+      const conversationHistory = messages.map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
       const { data, error } = await supabase.functions.invoke('portfolio-chatbot', {
-        body: { message: userMessage.content }
+        body: { 
+          message: userMessage.content,
+          conversationHistory 
+        }
       });
 
       if (error) {

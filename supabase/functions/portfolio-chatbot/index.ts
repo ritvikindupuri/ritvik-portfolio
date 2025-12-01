@@ -276,7 +276,7 @@ serve(async (req) => {
       );
     }
 
-    const { message } = await req.json();
+    const { message, conversationHistory } = await req.json();
     
     // Input validation
     const validation = validateInput(message);
@@ -303,7 +303,27 @@ serve(async (req) => {
     const portfolioData = await fetchPortfolioData();
     const systemPrompt = generateSystemPrompt(portfolioData);
 
-    // Call Lovable AI Gateway
+    // Build messages array with conversation history
+    const messages: { role: string; content: string }[] = [
+      { role: 'system', content: systemPrompt }
+    ];
+
+    // Add conversation history if provided (limit to last 10 exchanges to stay within context)
+    if (conversationHistory && Array.isArray(conversationHistory)) {
+      const recentHistory = conversationHistory.slice(-20); // Last 20 messages (10 exchanges)
+      for (const msg of recentHistory) {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          messages.push({ role: msg.role, content: msg.content });
+        }
+      }
+    }
+
+    // Add current message
+    messages.push({ role: 'user', content: message });
+
+    console.log(`Processing chatbot request with ${messages.length - 1} history messages`);
+
+    // Call Lovable AI Gateway with Gemini Pro for better reasoning
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -311,13 +331,10 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
+        model: 'google/gemini-2.5-pro',
+        messages,
         temperature: 0.5,
-        max_tokens: 2500,
+        max_tokens: 3000,
       }),
     });
 
