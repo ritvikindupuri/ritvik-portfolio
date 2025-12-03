@@ -77,6 +77,11 @@ const initialSkillCategories = [
   },
 ];
 
+interface ProjectLink {
+  name: string;
+  url: string;
+}
+
 interface Skill {
   id: string;
   name: string;
@@ -84,6 +89,7 @@ interface Skill {
   logo: string;
   description: string;
   link: string;
+  projectLinks: ProjectLink[];
   display_order?: number;
 }
 
@@ -186,23 +192,28 @@ const SortableSkill = ({ skill, categoryId, isOwner, onEdit, onRemove, onMove, g
             </p>
           )}
           
-          {/* Proficiency Badge and Link Row */}
-          <div className="flex items-center gap-3">
-            <span className={`text-sm font-semibold font-sans px-4 py-1.5 rounded-full ${getLevelColor(skill.level)}`}>
-              {skill.level}
-            </span>
-            {skill.link && (
-              <a
-                href={skill.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative z-10 inline-flex items-center gap-1.5 text-xs text-primary hover:text-accent transition-colors font-medium group/link"
-              >
-                <ExternalLink className="w-3 h-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
-                <span>View Project</span>
-              </a>
-            )}
-          </div>
+          {/* Proficiency Badge */}
+          <span className={`text-sm font-semibold font-sans px-4 py-1.5 rounded-full ${getLevelColor(skill.level)}`}>
+            {skill.level}
+          </span>
+
+          {/* Project Links */}
+          {skill.projectLinks && skill.projectLinks.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+              {skill.projectLinks.map((link, index) => (
+                <a
+                  key={index}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative z-10 inline-flex items-center gap-1.5 text-xs text-primary hover:text-accent transition-colors font-medium group/link bg-primary/10 px-3 py-1.5 rounded-full"
+                >
+                  <ExternalLink className="w-3 h-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                  <span>{link.name || 'Project'}</span>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -214,7 +225,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   const [skillCategories, setSkillCategories] = useState(initialSkillCategories);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<{ name: string; category: string } | null>(null);
-  const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+  const [newSkill, setNewSkill] = useState({ name: "", level: "Intermediate", logo: "", description: "", link: "", projectLinks: [] as ProjectLink[] });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -252,6 +263,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
             logo: skill.icon || "",
             description: skill.description ?? "",
             link: skill.link ?? "",
+            projectLinks: (skill.project_links as ProjectLink[]) || [],
             display_order: skill.display_order
           }))
       }));
@@ -405,7 +417,8 @@ export const Skills = ({ isOwner }: SkillsProps) => {
               icon: newSkill.logo,
               level: newSkill.level,
               description: newSkill.description,
-              link: newSkill.link
+              link: newSkill.link,
+              project_links: newSkill.projectLinks as unknown as any
             })
             .eq('id', existingSkill.id);
 
@@ -429,7 +442,8 @@ export const Skills = ({ isOwner }: SkillsProps) => {
             icon: newSkill.logo,
             level: newSkill.level,
             description: newSkill.description,
-            link: newSkill.link
+            link: newSkill.link,
+            project_links: newSkill.projectLinks as unknown as any
           });
 
         if (error) {
@@ -442,7 +456,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
         toast.success("Skill added successfully");
       }
       
-      setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+      setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "", projectLinks: [] });
       setUploadedLogo("");
       setEditingSkill(null);
       setIsAddDialogOpen(false);
@@ -578,7 +592,8 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                               level: skill.level,
                               logo: skill.logo,
                               description: skill.description,
-                              link: skill.link
+                              link: skill.link,
+                              projectLinks: skill.projectLinks || []
                             });
                             setUploadedLogo(skill.logo);
                             setIsAddDialogOpen(true);
@@ -595,7 +610,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       setIsAddDialogOpen(open);
                       if (!open) {
                         setEditingSkill(null);
-                        setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+                        setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "", projectLinks: [] });
                         setUploadedLogo("");
                       }
                     }}>
@@ -603,7 +618,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                         <button 
                           onClick={() => {
                             setEditingSkill(null);
-                            setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+                            setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "", projectLinks: [] });
                             setUploadedLogo("");
                             setIsAddDialogOpen(true);
                           }}
@@ -681,13 +696,61 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                             />
                           </div>
                           
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Project Link (optional)</label>
-                            <Input
-                              placeholder="https://github.com/username/repo"
-                              value={newSkill.link}
-                              onChange={(e) => setNewSkill({ ...newSkill, link: e.target.value })}
-                            />
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <label className="text-sm font-medium">Project Links (optional)</label>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setNewSkill({
+                                  ...newSkill,
+                                  projectLinks: [...newSkill.projectLinks, { name: '', url: '' }]
+                                })}
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Add Link
+                              </Button>
+                            </div>
+                            {newSkill.projectLinks.map((link, index) => (
+                              <div key={index} className="flex gap-2 items-start">
+                                <div className="flex-1 space-y-2">
+                                  <Input
+                                    placeholder="Project name"
+                                    value={link.name}
+                                    onChange={(e) => {
+                                      const updated = [...newSkill.projectLinks];
+                                      updated[index] = { ...updated[index], name: e.target.value };
+                                      setNewSkill({ ...newSkill, projectLinks: updated });
+                                    }}
+                                  />
+                                  <Input
+                                    placeholder="https://github.com/username/repo"
+                                    value={link.url}
+                                    onChange={(e) => {
+                                      const updated = [...newSkill.projectLinks];
+                                      updated[index] = { ...updated[index], url: e.target.value };
+                                      setNewSkill({ ...newSkill, projectLinks: updated });
+                                    }}
+                                  />
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="mt-1"
+                                  onClick={() => {
+                                    const updated = newSkill.projectLinks.filter((_, i) => i !== index);
+                                    setNewSkill({ ...newSkill, projectLinks: updated });
+                                  }}
+                                >
+                                  <X className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                            {newSkill.projectLinks.length === 0 && (
+                              <p className="text-xs text-muted-foreground">No project links added yet</p>
+                            )}
                           </div>
                         </div>
 
@@ -695,7 +758,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                           <Button variant="outline" onClick={() => {
                             setIsAddDialogOpen(false);
                             setEditingSkill(null);
-                            setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "" });
+                            setNewSkill({ name: "", level: "Intermediate", logo: "", description: "", link: "", projectLinks: [] });
                             setUploadedLogo("");
                           }}>
                             Cancel
