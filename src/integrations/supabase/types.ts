@@ -244,6 +244,7 @@ export type Database = {
           level: string | null
           link: string | null
           name: string
+          project_links: Json | null
           user_id: string
         }
         Insert: {
@@ -256,6 +257,7 @@ export type Database = {
           level?: string | null
           link?: string | null
           name: string
+          project_links?: Json | null
           user_id: string
         }
         Update: {
@@ -268,6 +270,7 @@ export type Database = {
           level?: string | null
           link?: string | null
           name?: string
+          project_links?: Json | null
           user_id?: string
         }
         Relationships: []
