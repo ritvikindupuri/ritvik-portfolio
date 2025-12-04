@@ -79,10 +79,16 @@ async function fetchPortfolioData() {
 function generateSystemPrompt(data: any): string {
   const profile = data.profile || {};
   
-  // Format skills by category
+  // Format skills by category with project links
   const skillsByCategory = data.skills.reduce((acc: any, skill: any) => {
     if (!acc[skill.category]) acc[skill.category] = [];
-    acc[skill.category].push(`${skill.name} (${skill.level})`);
+    let skillEntry = `${skill.name} (${skill.level})`;
+    // Add project links if available
+    if (skill.project_links && Array.isArray(skill.project_links) && skill.project_links.length > 0) {
+      const projectNames = skill.project_links.map((p: any) => p.name || 'Project').join(', ');
+      skillEntry += ` [Projects: ${projectNames}]`;
+    }
+    acc[skill.category].push(skillEntry);
     return acc;
   }, {});
 
