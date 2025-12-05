@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Camera, Github, Linkedin, Cloud, Lock, ZoomIn, ZoomOut, X } from "lucide-react";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
@@ -56,173 +56,184 @@ const TypewriterText = () => {
   return (
     <span className="inline-block">
       {beforeName}
-      {name && <span className="bg-gradient-cyber bg-clip-text text-transparent">{name}</span>}
-      {isTyping && <span className="animate-pulse ml-1">|</span>}
+      {name && <span className="text-gradient-cyber">{name}</span>}
+      {isTyping && <span className="animate-pulse ml-1 text-primary">|</span>}
     </span>
   );
 };
 
-const CloudSecurityBackground = () => {
-  // Create scattered nodes for a more organic cybersecurity network feel
-  const nodes = Array.from({ length: 60 }, (_, i) => ({
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    id: i,
-    size: 2 + Math.random() * 3
-  }));
+const NeuralNetworkBackground = () => {
+  // Neural network layers - create nodes in a layered structure
+  const layers = [
+    { nodes: 4, x: 10 },
+    { nodes: 6, x: 25 },
+    { nodes: 8, x: 40 },
+    { nodes: 8, x: 55 },
+    { nodes: 6, x: 70 },
+    { nodes: 4, x: 85 },
+  ];
 
-  // Connect nearby nodes
-  const connections = nodes.flatMap((node, i) => {
-    return nodes
-      .slice(i + 1)
-      .filter(other => {
-        const dx = node.x - other.x;
-        const dy = node.y - other.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < 20; // Only connect nearby nodes
-      })
-      .map(other => ({ from: node, to: other }));
-  });
+  const allNodes = layers.flatMap((layer, layerIndex) =>
+    Array.from({ length: layer.nodes }, (_, i) => ({
+      x: layer.x + (Math.random() - 0.5) * 8,
+      y: 15 + (i / (layer.nodes - 1 || 1)) * 70 + (Math.random() - 0.5) * 5,
+      layerIndex,
+      id: `${layerIndex}-${i}`,
+      size: 2 + Math.random() * 2,
+    }))
+  );
+
+  // Connect nodes between adjacent layers
+  const connections: { from: typeof allNodes[0]; to: typeof allNodes[0] }[] = [];
+  for (let i = 0; i < layers.length - 1; i++) {
+    const currentLayer = allNodes.filter((n) => n.layerIndex === i);
+    const nextLayer = allNodes.filter((n) => n.layerIndex === i + 1);
+    currentLayer.forEach((node) => {
+      nextLayer.forEach((nextNode) => {
+        if (Math.random() > 0.4) {
+          connections.push({ from: node, to: nextNode });
+        }
+      });
+    });
+  }
 
   return (
-    <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
+    <div className="absolute inset-0 overflow-hidden opacity-30 pointer-events-none">
       <svg className="absolute inset-0 w-full h-full">
         <defs>
-          {/* Animated gradient for data flow */}
-          <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-            <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+          {/* Cyan to purple gradient */}
+          <linearGradient id="neuralGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="hsl(var(--cyber-glow))" />
+            <stop offset="100%" stopColor="hsl(var(--cyber-purple))" />
           </linearGradient>
           
-          {/* Glow filter for nodes */}
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          {/* Glow filter */}
+          <filter id="neuralGlow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
             <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
-        
-        {/* Network connection lines */}
+
+        {/* Neural connections */}
         {connections.map((conn, i) => (
-          <g key={`connection-${i}`}>
+          <g key={`conn-${i}`}>
             <line
               x1={`${conn.from.x}%`}
               y1={`${conn.from.y}%`}
               x2={`${conn.to.x}%`}
               y2={`${conn.to.y}%`}
-              stroke="hsl(var(--primary))"
+              stroke="url(#neuralGradient)"
               strokeWidth="1"
-              strokeOpacity="0.2"
+              strokeOpacity="0.15"
             />
-            {/* Animated data flow on some connections */}
-            {i % 3 === 0 && (
-              <motion.line
-                x1={`${conn.from.x}%`}
-                y1={`${conn.from.y}%`}
-                x2={`${conn.to.x}%`}
-                y2={`${conn.to.y}%`}
-                stroke="hsl(var(--primary))"
-                strokeWidth="2"
-                strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ 
-                  pathLength: [0, 1, 0],
-                  opacity: [0, 0.6, 0]
+            {/* Animated data pulse */}
+            {i % 4 === 0 && (
+              <motion.circle
+                r="3"
+                fill="hsl(var(--cyber-glow))"
+                filter="url(#neuralGlow)"
+                initial={{ 
+                  cx: `${conn.from.x}%`, 
+                  cy: `${conn.from.y}%`,
+                  opacity: 0 
+                }}
+                animate={{
+                  cx: [`${conn.from.x}%`, `${conn.to.x}%`],
+                  cy: [`${conn.from.y}%`, `${conn.to.y}%`],
+                  opacity: [0, 0.8, 0],
                 }}
                 transition={{
-                  duration: 2 + Math.random() * 2,
+                  duration: 1.5 + Math.random(),
                   repeat: Infinity,
                   delay: Math.random() * 3,
-                  ease: "linear"
+                  ease: "easeInOut",
                 }}
               />
             )}
           </g>
         ))}
-        
-        {/* Network nodes - particles */}
-        {nodes.map((node, i) => (
-          <g key={`node-${i}`}>
-            {/* Node glow */}
+
+        {/* Neural nodes */}
+        {allNodes.map((node, i) => (
+          <g key={`node-${node.id}`}>
+            {/* Outer glow */}
             <motion.circle
               cx={`${node.x}%`}
               cy={`${node.y}%`}
-              r={node.size * 2}
-              fill="hsl(var(--primary))"
-              opacity="0.15"
-              filter="url(#glow)"
+              r={node.size * 3}
+              fill={node.layerIndex % 2 === 0 ? "hsl(var(--cyber-glow))" : "hsl(var(--cyber-purple))"}
+              opacity="0.1"
+              filter="url(#neuralGlow)"
               animate={{
-                r: [node.size * 2, node.size * 3, node.size * 2],
-                opacity: [0.15, 0.3, 0.15]
+                r: [node.size * 3, node.size * 4, node.size * 3],
+                opacity: [0.1, 0.25, 0.1],
               }}
               transition={{
                 duration: 2 + Math.random() * 2,
                 repeat: Infinity,
                 delay: Math.random() * 2,
-                ease: "easeInOut"
+                ease: "easeInOut",
               }}
             />
-            {/* Main node */}
+            {/* Core node */}
             <circle
               cx={`${node.x}%`}
               cy={`${node.y}%`}
               r={node.size}
-              fill="hsl(var(--primary))"
-              opacity="0.6"
+              fill={node.layerIndex % 2 === 0 ? "hsl(var(--cyber-glow))" : "hsl(var(--cyber-purple))"}
+              opacity="0.7"
             />
           </g>
         ))}
       </svg>
-      
-      {/* Floating cloud icons */}
-      {Array.from({ length: 5 }).map((_, i) => (
+
+      {/* Floating ML/Cyber icons */}
+      {Array.from({ length: 3 }).map((_, i) => (
         <motion.div
-          key={`cloud-${i}`}
+          key={`brain-${i}`}
           className="absolute"
           style={{
-            left: `${20 + i * 20}%`,
-            top: `${20 + (i % 2) * 30}%`,
+            left: `${20 + i * 30}%`,
+            top: `${15 + (i % 2) * 60}%`,
           }}
           animate={{
-            y: [-10, 10, -10],
-            x: [-5, 5, -5],
-            opacity: [0.3, 0.6, 0.3]
+            y: [-15, 15, -15],
+            opacity: [0.2, 0.5, 0.2],
           }}
           transition={{
-            duration: 4 + i,
+            duration: 5 + i,
             repeat: Infinity,
-            delay: i * 0.5,
-            ease: "easeInOut"
+            delay: i * 0.7,
+            ease: "easeInOut",
           }}
         >
-          <Cloud className="w-6 h-6 text-primary" style={{ filter: 'drop-shadow(0 0 8px hsl(var(--primary) / 0.5))' }} />
+          <Brain className="w-8 h-8 text-cyber-purple" style={{ filter: 'drop-shadow(0 0 12px hsl(var(--cyber-purple) / 0.6))' }} />
         </motion.div>
       ))}
-      
-      {/* Security lock icons */}
-      {Array.from({ length: 4 }).map((_, i) => (
+
+      {Array.from({ length: 3 }).map((_, i) => (
         <motion.div
           key={`lock-${i}`}
           className="absolute"
           style={{
-            left: `${15 + i * 25}%`,
-            top: `${30 + (i % 2) * 25}%`,
+            left: `${10 + i * 35}%`,
+            top: `${40 + (i % 2) * 30}%`,
           }}
           animate={{
-            scale: [1, 1.15, 1],
-            opacity: [0.4, 0.7, 0.4]
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
           }}
           transition={{
-            duration: 3 + i * 0.5,
+            duration: 4 + i * 0.5,
             repeat: Infinity,
-            delay: i * 0.3,
-            ease: "easeInOut"
+            delay: i * 0.5,
+            ease: "easeInOut",
           }}
         >
-          <Lock className="w-5 h-5 text-accent" style={{ filter: 'drop-shadow(0 0 6px hsl(var(--accent) / 0.5))' }} />
+          <Lock className="w-6 h-6 text-primary" style={{ filter: 'drop-shadow(0 0 10px hsl(var(--cyber-glow) / 0.6))' }} />
         </motion.div>
       ))}
     </div>
@@ -359,8 +370,8 @@ export const Hero = ({ isOwner }: HeroProps) => {
       />
       <div className="absolute inset-0 bg-gradient-hero" />
       
-      {/* Cloud Security Background Animation */}
-      <CloudSecurityBackground />
+      {/* Neural Network Background Animation */}
+      <NeuralNetworkBackground />
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6 py-20 text-center">
@@ -372,11 +383,13 @@ export const Hero = ({ isOwner }: HeroProps) => {
         >
           {/* Profile Picture */}
           <div className="relative inline-block group">
-            <div className="w-56 h-56 mx-auto rounded-full overflow-hidden border-4 border-primary shadow-glow bg-secondary/50 flex items-center justify-center">
+            <div className="w-56 h-56 mx-auto rounded-full overflow-hidden border-2 border-primary/50 bg-secondary/30 flex items-center justify-center relative">
+              {/* Animated glow ring */}
+              <div className="absolute inset-0 rounded-full animate-neural-pulse" />
               {profileImage ? (
-                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                <img src={profileImage} alt="Profile" className="w-full h-full object-cover relative z-10" />
               ) : (
-                <Camera className="w-20 h-20 text-muted-foreground" />
+                <Camera className="w-20 h-20 text-muted-foreground relative z-10" />
               )}
             </div>
             {isOwner && (

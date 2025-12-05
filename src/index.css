@@ -2,61 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Cyber-ML Hybrid Design System
+   Blends cybersecurity aesthetics with machine learning/AI neural network visuals
+   All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* Core Colors - Professional Cybersecurity Theme */
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
+    /* Core Colors - Deep Neural Network Dark */
+    --background: 230 25% 4%;
+    --foreground: 210 40% 96%;
 
-    --card: 222 40% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 230 25% 7%;
+    --card-foreground: 210 40% 96%;
 
-    --popover: 222 40% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 230 25% 9%;
+    --popover-foreground: 210 40% 96%;
 
-    /* Primary - Cyber Blue */
-    --primary: 199 89% 48%;
-    --primary-foreground: 222 47% 5%;
+    /* Primary - Neural Cyan */
+    --primary: 185 100% 50%;
+    --primary-foreground: 230 25% 4%;
 
-    /* Secondary - Dark Slate */
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary - Deep Slate */
+    --secondary: 230 20% 14%;
+    --secondary-foreground: 210 40% 96%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 230 20% 14%;
+    --muted-foreground: 220 15% 55%;
 
-    /* Accent - Matrix Green */
-    --accent: 142 76% 36%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent - ML Magenta/Purple */
+    --accent: 280 85% 60%;
+    --accent-foreground: 210 40% 96%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 96%;
 
     /* Borders & Inputs */
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 199 89% 48%;
+    --border: 230 20% 18%;
+    --input: 230 20% 14%;
+    --ring: 185 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Cyber Theme Colors */
-    --cyber-glow: 199 89% 48%;
-    --cyber-purple: 271 81% 56%;
-    --cyber-matrix: 142 76% 36%;
+    /* Cyber-ML Theme Colors */
+    --cyber-glow: 185 100% 50%;
+    --cyber-purple: 280 85% 60%;
+    --cyber-matrix: 160 100% 45%;
+    --neural-pink: 330 85% 60%;
+    --data-blue: 210 100% 60%;
     
     /* Gradients */
-    --gradient-cyber: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(271 81% 56%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(222 47% 5% / 0.95) 0%, hsl(222 47% 5%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(222 40% 8%) 0%, hsl(217 33% 17% / 0.3) 100%);
+    --gradient-cyber: linear-gradient(135deg, hsl(185 100% 50%) 0%, hsl(280 85% 60%) 100%);
+    --gradient-neural: linear-gradient(135deg, hsl(280 85% 60%) 0%, hsl(330 85% 60%) 100%);
+    --gradient-hero: radial-gradient(ellipse at 50% 0%, hsl(230 25% 12%) 0%, hsl(230 25% 4%) 70%);
+    --gradient-card: linear-gradient(145deg, hsl(230 25% 9%) 0%, hsl(230 25% 6%) 100%);
+    --gradient-glow: radial-gradient(circle, hsl(185 100% 50% / 0.15) 0%, transparent 70%);
     
     /* Shadows */
-    --shadow-glow: 0 0 30px hsl(199 89% 48% / 0.4);
-    --shadow-card: 0 8px 32px hsl(222 47% 5% / 0.4);
-    --shadow-elegant: 0 20px 60px -10px hsl(199 89% 48% / 0.2);
+    --shadow-glow: 0 0 40px hsl(185 100% 50% / 0.3);
+    --shadow-purple: 0 0 40px hsl(280 85% 60% / 0.3);
+    --shadow-card: 0 8px 32px hsl(230 25% 2% / 0.6);
+    --shadow-elegant: 0 20px 60px -10px hsl(185 100% 50% / 0.15);
     
     /* Spacing */
     --spacing-section: 8rem;
@@ -65,20 +71,21 @@ All colors MUST be HSL.
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-glow: all 0.5s ease;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 230 25% 7%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 185 100% 50%;
+    --sidebar-primary-foreground: 230 25% 4%;
+    --sidebar-accent: 230 20% 14%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 230 20% 18%;
+    --sidebar-ring: 185 100% 50%;
   }
 
   .dark {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
+    --background: 230 25% 4%;
+    --foreground: 210 40% 96%;
   }
 }
 
@@ -89,14 +96,187 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-  }
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  @keyframes gridMove {
-    0% {
-      transform: translateY(0);
-    }
-    100% {
-      transform: translateY(50px);
-    }
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
+  }
+}
+
+@layer utilities {
+  /* Cyber-ML Glow Effects */
+  .glow-cyan {
+    box-shadow: 0 0 20px hsl(185 100% 50% / 0.4), 0 0 40px hsl(185 100% 50% / 0.2);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px hsl(280 85% 60% / 0.4), 0 0 40px hsl(280 85% 60% / 0.2);
+  }
+
+  .glow-text-cyan {
+    text-shadow: 0 0 20px hsl(185 100% 50% / 0.6), 0 0 40px hsl(185 100% 50% / 0.3);
+  }
+
+  .glow-text-purple {
+    text-shadow: 0 0 20px hsl(280 85% 60% / 0.6), 0 0 40px hsl(280 85% 60% / 0.3);
+  }
+
+  /* Neural network grid pattern */
+  .neural-grid {
+    background-image: 
+      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Gradient text */
+  .text-gradient-cyber {
+    background: var(--gradient-cyber);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-neural {
+    background: var(--gradient-neural);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animated border gradient */
+  .border-gradient {
+    position: relative;
+  }
+
+  .border-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--gradient-cyber);
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+  }
+
+  .border-gradient:hover::before {
+    opacity: 1;
+  }
+
+  /* Data flow animation */
+  .data-flow {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(185 100% 50% / 0.1),
+      hsl(280 85% 60% / 0.1),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: dataFlow 3s ease-in-out infinite;
+  }
+
+  /* Scan line effect */
+  .scan-lines::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(var(--background) / 0.03) 2px,
+      hsl(var(--background) / 0.03) 4px
+    );
+    pointer-events: none;
+  }
+}
+
+/* Keyframe Animations */
+@keyframes dataFlow {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes neural-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(185 100% 50% / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(185 100% 50% / 0.6), 0 0 40px hsl(280 85% 60% / 0.3);
+  }
+}
+
+@keyframes gridMove {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(40px);
+  }
+}
+
+@keyframes typewriter {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}

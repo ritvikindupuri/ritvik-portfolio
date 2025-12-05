@@ -365,13 +365,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   const getLevelColor = (level: string) => {
     switch (level) {
       case "Advanced":
-        return "bg-green-500 text-white";
+        return "bg-primary/20 text-primary border border-primary/30";
       case "Intermediate":
-        return "bg-amber-500 text-white";
+        return "bg-accent/20 text-accent border border-accent/30";
       case "Beginner":
-        return "bg-blue-500 text-white";
+        return "bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/30";
       default:
-        return "bg-primary text-primary-foreground";
+        return "bg-primary/20 text-primary border border-primary/30";
     }
   };
 
@@ -535,13 +535,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-glow">
               <Code className="w-10 h-10 text-primary" />
             </div>
-            <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+            <h2 className="text-6xl md:text-7xl font-bold font-sans text-gradient-cyber">
               Skills & Expertise
             </h2>
             <p className="text-lg text-muted-foreground font-medium">
               Total Skills: <span className="text-primary font-bold">{skillCategories.reduce((acc, cat) => acc + cat.skills.length, 0)}</span>
             </p>
-            <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
+            <div className="w-32 h-1.5 bg-gradient-to-r from-primary to-accent mx-auto rounded-full shadow-glow" />
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">

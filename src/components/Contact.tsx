@@ -112,7 +112,7 @@ export const Contact = () => {
             <Mail className="w-8 h-8 text-primary" />
           </motion.div>
           
-          <h2 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-cyber bg-clip-text text-transparent">
+          <h2 className="text-5xl md:text-6xl font-bold mb-4 text-gradient-cyber">
             Get In Touch
           </h2>
           
