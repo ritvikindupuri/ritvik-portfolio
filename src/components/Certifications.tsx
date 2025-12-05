@@ -442,10 +442,10 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
             >
               <Award className="w-10 h-10 text-accent" />
             </motion.div>
-            <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+            <h2 className="text-6xl md:text-7xl font-bold font-sans text-gradient-cyber">
               Certifications
             </h2>
-            <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
+            <div className="w-32 h-1.5 bg-gradient-to-r from-primary to-accent mx-auto rounded-full shadow-glow" />
           </div>
 
           {/* Hexagonal Grid Layout - Unique & Eye-catching */}

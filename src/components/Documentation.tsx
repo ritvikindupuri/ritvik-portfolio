@@ -419,13 +419,13 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
             >
               <FileText className="w-10 h-10 text-primary" />
             </motion.div>
-            <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+            <h2 className="text-6xl md:text-7xl font-bold font-sans text-gradient-cyber">
               Technical Documentation
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">
               Comprehensive technical documentation for some of my notable projects
             </p>
-            <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
+            <div className="w-32 h-1.5 bg-gradient-to-r from-primary to-accent mx-auto rounded-full shadow-glow" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">

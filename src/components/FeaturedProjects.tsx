@@ -359,13 +359,13 @@ export const FeaturedProjects = ({ isOwner }: FeaturedProjectsProps) => {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-glow">
             <Youtube className="w-10 h-10 text-primary" />
           </div>
-          <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+          <h2 className="text-6xl md:text-7xl font-bold font-sans text-gradient-cyber">
             Featured Projects
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Projects that have been featured on YouTube
           </p>
-          <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
+          <div className="w-32 h-1.5 bg-gradient-to-r from-primary to-accent mx-auto rounded-full shadow-glow" />
         </div>
 
         <DndContext

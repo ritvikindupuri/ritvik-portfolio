@@ -59,10 +59,10 @@ export const About = ({ isOwner }: AboutProps) => {
             >
               <User className="w-8 h-8 text-primary" />
             </motion.div>
-            <h2 className="text-5xl md:text-6xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+            <h2 className="text-5xl md:text-6xl font-bold font-sans text-gradient-cyber">
               About Me
             </h2>
-            <div className="w-24 h-1 bg-gradient-cyber mx-auto rounded-full" />
+            <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full" />
           </div>
 
           {/* Main Content Card */}
@@ -127,9 +127,9 @@ export const About = ({ isOwner }: AboutProps) => {
                     };
                     const Icon = iconMap[interest.icon];
                     const gradients = [
-                      "from-blue-500/20 to-cyan-500/20",
-                      "from-purple-500/20 to-pink-500/20",
-                      "from-green-500/20 to-emerald-500/20"
+                      "from-primary/20 to-cyber-purple/20",
+                      "from-cyber-purple/20 to-accent/20",
+                      "from-accent/20 to-primary/20"
                     ];
                     
                     return (

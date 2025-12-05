@@ -403,10 +403,10 @@ const Experience = ({ isOwner }: ExperienceProps) => {
           >
             <Briefcase className="w-10 h-10 text-primary" />
           </motion.div>
-          <h2 className="text-6xl md:text-7xl font-bold font-sans bg-gradient-cyber bg-clip-text text-transparent">
+          <h2 className="text-6xl md:text-7xl font-bold font-sans text-gradient-cyber">
             Experience
           </h2>
-          <div className="w-32 h-1.5 bg-gradient-cyber mx-auto rounded-full shadow-glow" />
+          <div className="w-32 h-1.5 bg-gradient-to-r from-primary to-accent mx-auto rounded-full shadow-glow" />
         </div>
         
         <div className="flex justify-end mb-12">
