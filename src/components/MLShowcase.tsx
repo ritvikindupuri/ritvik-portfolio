@@ -82,98 +82,6 @@ const frameworks = [
   "Other"
 ];
 
-// Framework logo SVGs - actual ML framework icons
-const FrameworkLogo = ({ framework }: { framework: string | null }) => {
-  const getLogoSvg = () => {
-    switch (framework?.toLowerCase()) {
-      case "pytorch":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <path fill="#EE4C2C" d="M16.1 2.3l-8.6 8.6c-3.4 3.4-3.4 8.9 0 12.3 3.4 3.4 8.9 3.4 12.3 0l8.6-8.6-2.8-2.8-8.6 8.6c-1.6 1.6-4.1 1.6-5.7 0-1.6-1.6-1.6-4.1 0-5.7l8.6-8.6-3.8-3.8zm5.4 4.2a1.9 1.9 0 110 3.8 1.9 1.9 0 010-3.8z"/>
-          </svg>
-        );
-      case "tensorflow":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <path fill="#FF6F00" d="M16 2L4 9v14l12 7 12-7V9L16 2zm0 4l8 4.7v9.3L16 25l-8-5V10.7L16 6z"/>
-            <path fill="#FF6F00" d="M16 10v10l6-3.5v-3L16 10z"/>
-          </svg>
-        );
-      case "scikit-learn":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <circle cx="16" cy="16" r="12" fill="#F7931E" opacity="0.9"/>
-            <circle cx="11" cy="13" r="3" fill="#3499CD"/>
-            <circle cx="21" cy="13" r="3" fill="#3499CD"/>
-            <circle cx="16" cy="21" r="3" fill="#3499CD"/>
-            <path d="M11 13L16 21M21 13L16 21M11 13L21 13" stroke="#fff" strokeWidth="1.5" fill="none"/>
-          </svg>
-        );
-      case "keras":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <path fill="#D00000" d="M6 4h6v24H6zM14 4l8 12-8 12h7l8-12-8-12z"/>
-          </svg>
-        );
-      case "hugging face":
-        return (
-          <span className="text-2xl">🤗</span>
-        );
-      case "opencv":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <circle cx="10" cy="22" r="6" fill="#FF0000" opacity="0.9"/>
-            <circle cx="22" cy="22" r="6" fill="#00FF00" opacity="0.9"/>
-            <circle cx="16" cy="10" r="6" fill="#0000FF" opacity="0.9"/>
-          </svg>
-        );
-      case "spacy":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <path fill="#09A3D5" d="M16 4C9.4 4 4 9.4 4 16s5.4 12 12 12 12-5.4 12-12S22.6 4 16 4zm0 20c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"/>
-            <circle cx="16" cy="16" r="4" fill="#09A3D5"/>
-          </svg>
-        );
-      case "xgboost":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <path fill="#189FDD" d="M6 6l10 10L6 26h4l8-8v8h4v-8l8 8h4L24 16 34 6h-4l-8 8V6h-4v8L10 6z"/>
-          </svg>
-        );
-      case "lightgbm":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <path fill="#02569B" d="M16 2L4 8v16l12 6 12-6V8L16 2z"/>
-            <path fill="#40C4FF" d="M16 6l8 4v12l-8 4-8-4V10l8-4z"/>
-            <circle cx="16" cy="16" r="4" fill="#fff"/>
-          </svg>
-        );
-      case "jax":
-        return (
-          <svg viewBox="0 0 32 32" className="w-7 h-7">
-            <text x="4" y="24" fill="#5C6BC0" fontWeight="bold" fontSize="18" fontFamily="monospace">JAX</text>
-          </svg>
-        );
-      default:
-        return (
-          <Brain className="w-6 h-6 text-primary" />
-        );
-    }
-  };
-
-  return (
-    <motion.div
-      className="w-14 h-14 rounded-2xl bg-background/90 backdrop-blur-sm flex items-center justify-center shadow-lg border border-border/50"
-      animate={{ 
-        scale: [1, 1.03, 1],
-      }}
-      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-    >
-      {getLogoSvg()}
-    </motion.div>
-  );
-};
-
 const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -192,86 +100,75 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const getModelTypeColor = (type: string | null) => {
-    switch (type) {
-      case "NLP":
-        return "bg-primary/20 text-primary border-primary/30";
-      case "Computer Vision":
-        return "bg-accent/20 text-accent border-accent/30";
-      case "Classification":
-        return "bg-neural-pink/20 text-neural-pink border-neural-pink/30";
-      case "Reinforcement Learning":
-        return "bg-cyber-matrix/20 text-cyber-matrix border-cyber-matrix/30";
-      case "Generative AI":
-        return "bg-data-blue/20 text-data-blue border-data-blue/30";
-      case "Anomaly Detection":
-        return "bg-primary/20 text-primary border-primary/30";
-      default:
-        return "bg-primary/20 text-primary border-primary/30";
-    }
-  };
-
-  const shouldShowMore = model.description.length > 100;
-  const displayDescription = isExpanded ? model.description : model.description.slice(0, 100);
+  const shouldShowMore = model.description.length > 120;
+  const displayDescription = isExpanded ? model.description : model.description.slice(0, 120);
 
   return (
-    <div ref={setNodeRef} style={style} className="group relative">
-      <div className="relative bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-500 hover:shadow-glow">
-        {/* Header with gradient and framework icon */}
-        <div className="relative h-28 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent overflow-hidden">
-          <div className="absolute inset-0 neural-grid opacity-30" />
-          
-          {/* Framework logo - top left */}
-          <div className="absolute top-3 left-4">
-            <FrameworkLogo framework={model.framework} />
-          </div>
-          
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-            <Badge className={`${getModelTypeColor(model.model_type)} border`}>
-              {model.model_type || "ML Model"}
-            </Badge>
-            {model.framework && (
-              <span className="text-xs font-medium text-primary/80 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                {model.framework}
+    <motion.div 
+      ref={setNodeRef} 
+      style={style} 
+      className="group relative"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="relative bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md border border-border/40 rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_rgba(0,255,255,0.15)]">
+        {/* Subtle top accent line */}
+        <div className="h-0.5 bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+        
+        <div className="p-6 space-y-5">
+          {/* Top row: Model type + Framework + Owner controls */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                {model.model_type || "ML Model"}
               </span>
+              {model.framework && (
+                <>
+                  <span className="text-border">•</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {model.framework}
+                  </span>
+                </>
+              )}
+            </div>
+            
+            {isOwner && (
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                <button
+                  {...attributes}
+                  {...listeners}
+                  className="bg-secondary/50 rounded-lg p-1.5 cursor-grab active:cursor-grabbing hover:bg-secondary"
+                >
+                  <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="bg-secondary/50 hover:bg-secondary rounded-lg p-1.5">
+                      <MoreVertical className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-background border-border z-50" align="end">
+                    <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onRemove} className="cursor-pointer text-destructive focus:text-destructive">
+                      <X className="w-3.5 h-3.5 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
-          
-          {isOwner && (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5 z-10">
-              <button
-                {...attributes}
-                {...listeners}
-                className="bg-background/80 backdrop-blur-sm rounded-lg p-1.5 cursor-grab active:cursor-grabbing hover:bg-background"
-              >
-                <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="bg-background/80 backdrop-blur-sm hover:bg-background rounded-lg p-1.5">
-                    <MoreVertical className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-background border-border z-50" align="end">
-                  <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onRemove} className="cursor-pointer text-destructive focus:text-destructive">
-                    <X className="w-3.5 h-3.5 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-        </div>
 
-        <div className="p-5 space-y-4">
           {/* Title */}
-          <h3 className="text-lg font-bold text-foreground leading-tight">{model.title}</h3>
+          <h3 className="text-xl font-bold text-foreground leading-snug tracking-tight">
+            {model.title}
+          </h3>
           
-          {/* Description with expand/collapse */}
-          <div className="space-y-1">
+          {/* Description */}
+          <div className="space-y-2">
             <p className="text-sm text-muted-foreground leading-relaxed">
               {displayDescription}
               {shouldShowMore && !isExpanded && "..."}
@@ -281,7 +178,7 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors font-medium"
               >
-                {isExpanded ? "Show less" : "More"}
+                {isExpanded ? "Less" : "More"}
                 <motion.span
                   animate={{ rotate: isExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
@@ -292,21 +189,21 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
             )}
           </div>
 
-          {/* Dataset - Clean styling */}
+          {/* Dataset */}
           {model.dataset && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-secondary/50 border border-border/30">
-              <Database className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-              <span className="text-xs text-muted-foreground leading-relaxed">{model.dataset}</span>
-            </div>
+            <p className="text-xs text-muted-foreground/80 italic">
+              Data: {model.dataset}
+            </p>
           )}
 
-          {/* Metrics */}
+          {/* Metrics - Sleek horizontal layout */}
           {model.metrics && Object.keys(model.metrics).length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {Object.entries(model.metrics).map(([key, value]) => (
-                <div key={key} className="bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5">
-                  <span className="text-xs text-muted-foreground">{key}: </span>
-                  <span className="text-sm font-semibold text-primary">{value}</span>
+                <div key={key} className="relative overflow-hidden rounded-lg bg-secondary/30 p-3">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{key}</p>
+                  <p className="text-lg font-bold text-primary">{value}</p>
                 </div>
               ))}
             </div>
@@ -316,52 +213,57 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
           {model.technologies && model.technologies.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {model.technologies.map((tech, i) => (
-                <span key={i} className="text-xs px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
+                <span 
+                  key={i} 
+                  className="text-[11px] px-2.5 py-1 rounded-full bg-secondary/50 text-muted-foreground border border-border/50 font-medium"
+                >
                   {tech}
                 </span>
               ))}
             </div>
           )}
 
-          {/* Links */}
-          <div className="flex gap-4 pt-2 border-t border-border/30">
-            {model.github_url && (
-              <a
-                href={model.github_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Github className="w-4 h-4" />
-                Code
-              </a>
-            )}
-            {model.demo_url && (
-              <a
-                href={model.demo_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Demo
-              </a>
-            )}
-            {model.paper_url && (
-              <a
-                href={model.paper_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                Paper
-              </a>
-            )}
-          </div>
+          {/* Links - Bottom row */}
+          {(model.github_url || model.demo_url || model.paper_url) && (
+            <div className="flex gap-4 pt-4 border-t border-border/20">
+              {model.github_url && (
+                <a
+                  href={model.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <Github className="w-4 h-4" />
+                  Code
+                </a>
+              )}
+              {model.demo_url && (
+                <a
+                  href={model.demo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Demo
+                </a>
+              )}
+              {model.paper_url && (
+                <a
+                  href={model.paper_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  Paper
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
