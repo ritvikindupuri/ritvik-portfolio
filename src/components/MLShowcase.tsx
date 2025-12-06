@@ -119,20 +119,11 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
         <div className="p-6 space-y-5">
           {/* Top row: Model type + Framework + Owner controls */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
-                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-                  {model.model_type || "ML Model"}
-                </span>
-              </div>
-              {model.framework && (
-                <div className="px-3 py-1.5 rounded-full bg-secondary/60 border border-border/50">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    {model.framework}
-                  </span>
-                </div>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-primary font-semibold">{model.model_type || "ML Model"}</span>
+              {model.framework && <span className="mx-2 text-border">·</span>}
+              {model.framework && <span>{model.framework}</span>}
+            </p>
             
             {isOwner && (
               <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
