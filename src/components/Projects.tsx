@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical } from "lucide-react";
+import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,8 @@ interface SortableProjectProps {
 }
 
 const SortableProject = ({ project, category, isOwner, onEdit, onRemove }: SortableProjectProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   const {
     attributes,
     listeners,
@@ -54,6 +56,9 @@ const SortableProject = ({ project, category, isOwner, onEdit, onRemove }: Sorta
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const shouldShowMore = project.description.length > 120;
+  const displayDescription = isExpanded ? project.description : project.description.slice(0, 120);
 
   return (
     <div
@@ -110,7 +115,20 @@ const SortableProject = ({ project, category, isOwner, onEdit, onRemove }: Sorta
             )}
           </div>
 
-          <p className="text-muted-foreground leading-relaxed text-sm line-clamp-3 border-l-2 border-primary/30 pl-4">{project.description}</p>
+          <div className="space-y-2">
+            <p className="text-muted-foreground leading-relaxed text-sm border-l-2 border-primary/30 pl-4">
+              {displayDescription}
+              {shouldShowMore && !isExpanded && "..."}
+            </p>
+            {shouldShowMore && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors font-medium ml-4"
+              >
+                {isExpanded ? "Show less" : "Read more"}
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center gap-3 text-sm font-mono bg-primary/5 rounded-xl p-3 border border-primary/20">
             <div className="flex items-center gap-2">
