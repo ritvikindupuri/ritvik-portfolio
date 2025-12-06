@@ -82,50 +82,94 @@ const frameworks = [
   "Other"
 ];
 
-// Model icon mapping - intelligent based on model type
-const ModelTypeIcon = ({ modelType, framework }: { modelType: string | null; framework: string | null }) => {
-  const getIconAndColor = () => {
-    // Priority: model type first, then framework
-    switch (modelType?.toLowerCase()) {
-      case "nlp":
-        return { icon: <MessageSquare className="w-5 h-5" />, gradient: "from-primary to-data-blue" };
-      case "computer vision":
-        return { icon: <Eye className="w-5 h-5" />, gradient: "from-accent to-neural-pink" };
-      case "classification":
-        return { icon: <Layers className="w-5 h-5" />, gradient: "from-neural-pink to-accent" };
-      case "anomaly detection":
-        return { icon: <Search className="w-5 h-5" />, gradient: "from-primary to-cyber-matrix" };
-      case "reinforcement learning":
-        return { icon: <Cpu className="w-5 h-5" />, gradient: "from-cyber-matrix to-primary" };
-      case "generative ai":
-        return { icon: <Sparkles className="w-5 h-5" />, gradient: "from-data-blue to-accent" };
-      case "time series":
-        return { icon: <Clock className="w-5 h-5" />, gradient: "from-primary to-neural-pink" };
-      case "clustering":
-        return { icon: <Database className="w-5 h-5" />, gradient: "from-accent to-primary" };
-      case "regression":
-        return { icon: <Layers className="w-5 h-5" />, gradient: "from-neural-pink to-data-blue" };
+// Framework logo SVGs - actual ML framework icons
+const FrameworkLogo = ({ framework }: { framework: string | null }) => {
+  const getLogoSvg = () => {
+    switch (framework?.toLowerCase()) {
+      case "pytorch":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <path fill="#EE4C2C" d="M16.1 2.3l-8.6 8.6c-3.4 3.4-3.4 8.9 0 12.3 3.4 3.4 8.9 3.4 12.3 0l8.6-8.6-2.8-2.8-8.6 8.6c-1.6 1.6-4.1 1.6-5.7 0-1.6-1.6-1.6-4.1 0-5.7l8.6-8.6-3.8-3.8zm5.4 4.2a1.9 1.9 0 110 3.8 1.9 1.9 0 010-3.8z"/>
+          </svg>
+        );
+      case "tensorflow":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <path fill="#FF6F00" d="M16 2L4 9v14l12 7 12-7V9L16 2zm0 4l8 4.7v9.3L16 25l-8-5V10.7L16 6z"/>
+            <path fill="#FF6F00" d="M16 10v10l6-3.5v-3L16 10z"/>
+          </svg>
+        );
+      case "scikit-learn":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <circle cx="16" cy="16" r="12" fill="#F7931E" opacity="0.9"/>
+            <circle cx="11" cy="13" r="3" fill="#3499CD"/>
+            <circle cx="21" cy="13" r="3" fill="#3499CD"/>
+            <circle cx="16" cy="21" r="3" fill="#3499CD"/>
+            <path d="M11 13L16 21M21 13L16 21M11 13L21 13" stroke="#fff" strokeWidth="1.5" fill="none"/>
+          </svg>
+        );
+      case "keras":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <path fill="#D00000" d="M6 4h6v24H6zM14 4l8 12-8 12h7l8-12-8-12z"/>
+          </svg>
+        );
+      case "hugging face":
+        return (
+          <span className="text-2xl">🤗</span>
+        );
+      case "opencv":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <circle cx="10" cy="22" r="6" fill="#FF0000" opacity="0.9"/>
+            <circle cx="22" cy="22" r="6" fill="#00FF00" opacity="0.9"/>
+            <circle cx="16" cy="10" r="6" fill="#0000FF" opacity="0.9"/>
+          </svg>
+        );
+      case "spacy":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <path fill="#09A3D5" d="M16 4C9.4 4 4 9.4 4 16s5.4 12 12 12 12-5.4 12-12S22.6 4 16 4zm0 20c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"/>
+            <circle cx="16" cy="16" r="4" fill="#09A3D5"/>
+          </svg>
+        );
+      case "xgboost":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <path fill="#189FDD" d="M6 6l10 10L6 26h4l8-8v8h4v-8l8 8h4L24 16 34 6h-4l-8 8V6h-4v8L10 6z"/>
+          </svg>
+        );
+      case "lightgbm":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <path fill="#02569B" d="M16 2L4 8v16l12 6 12-6V8L16 2z"/>
+            <path fill="#40C4FF" d="M16 6l8 4v12l-8 4-8-4V10l8-4z"/>
+            <circle cx="16" cy="16" r="4" fill="#fff"/>
+          </svg>
+        );
+      case "jax":
+        return (
+          <svg viewBox="0 0 32 32" className="w-7 h-7">
+            <text x="4" y="24" fill="#5C6BC0" fontWeight="bold" fontSize="18" fontFamily="monospace">JAX</text>
+          </svg>
+        );
       default:
-        return { icon: <Brain className="w-5 h-5" />, gradient: "from-primary to-accent" };
+        return (
+          <Brain className="w-6 h-6 text-primary" />
+        );
     }
   };
 
-  const { icon, gradient } = getIconAndColor();
-
   return (
     <motion.div
-      className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg`}
+      className="w-14 h-14 rounded-2xl bg-background/90 backdrop-blur-sm flex items-center justify-center shadow-lg border border-border/50"
       animate={{ 
-        scale: [1, 1.05, 1],
-        boxShadow: [
-          "0 4px 20px rgba(0, 255, 255, 0.2)",
-          "0 8px 30px rgba(0, 255, 255, 0.4)",
-          "0 4px 20px rgba(0, 255, 255, 0.2)"
-        ]
+        scale: [1, 1.03, 1],
       }}
-      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
     >
-      {icon}
+      {getLogoSvg()}
     </motion.div>
   );
 };
@@ -177,9 +221,9 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
         <div className="relative h-28 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent overflow-hidden">
           <div className="absolute inset-0 neural-grid opacity-30" />
           
-          {/* Model type icon - top left with animation */}
+          {/* Framework logo - top left */}
           <div className="absolute top-3 left-4">
-            <ModelTypeIcon modelType={model.model_type} framework={model.framework} />
+            <FrameworkLogo framework={model.framework} />
           </div>
           
           <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
