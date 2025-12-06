@@ -82,45 +82,50 @@ const frameworks = [
   "Other"
 ];
 
-// Framework icon mapping with animated effects
-const FrameworkIcon = ({ framework }: { framework: string | null }) => {
-  const getIcon = () => {
-    switch (framework?.toLowerCase()) {
-      case "pytorch":
-        return <Cpu className="w-5 h-5" />;
-      case "tensorflow":
-        return <Layers className="w-5 h-5" />;
-      case "scikit-learn":
-        return <Search className="w-5 h-5" />;
-      case "keras":
-        return <Brain className="w-5 h-5" />;
-      case "hugging face":
-        return <MessageSquare className="w-5 h-5" />;
-      case "opencv":
-        return <Eye className="w-5 h-5" />;
-      case "spacy":
-        return <MessageSquare className="w-5 h-5" />;
-      case "xgboost":
-      case "lightgbm":
-        return <Sparkles className="w-5 h-5" />;
+// Model icon mapping - intelligent based on model type
+const ModelTypeIcon = ({ modelType, framework }: { modelType: string | null; framework: string | null }) => {
+  const getIconAndColor = () => {
+    // Priority: model type first, then framework
+    switch (modelType?.toLowerCase()) {
+      case "nlp":
+        return { icon: <MessageSquare className="w-5 h-5" />, gradient: "from-primary to-data-blue" };
+      case "computer vision":
+        return { icon: <Eye className="w-5 h-5" />, gradient: "from-accent to-neural-pink" };
+      case "classification":
+        return { icon: <Layers className="w-5 h-5" />, gradient: "from-neural-pink to-accent" };
+      case "anomaly detection":
+        return { icon: <Search className="w-5 h-5" />, gradient: "from-primary to-cyber-matrix" };
+      case "reinforcement learning":
+        return { icon: <Cpu className="w-5 h-5" />, gradient: "from-cyber-matrix to-primary" };
+      case "generative ai":
+        return { icon: <Sparkles className="w-5 h-5" />, gradient: "from-data-blue to-accent" };
+      case "time series":
+        return { icon: <Clock className="w-5 h-5" />, gradient: "from-primary to-neural-pink" };
+      case "clustering":
+        return { icon: <Database className="w-5 h-5" />, gradient: "from-accent to-primary" };
+      case "regression":
+        return { icon: <Layers className="w-5 h-5" />, gradient: "from-neural-pink to-data-blue" };
       default:
-        return <Brain className="w-5 h-5" />;
+        return { icon: <Brain className="w-5 h-5" />, gradient: "from-primary to-accent" };
     }
   };
 
+  const { icon, gradient } = getIconAndColor();
+
   return (
     <motion.div
-      className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary border border-primary/30"
+      className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg`}
       animate={{ 
+        scale: [1, 1.05, 1],
         boxShadow: [
-          "0 0 0 0 rgba(0, 255, 255, 0)",
-          "0 0 20px 2px rgba(0, 255, 255, 0.3)",
-          "0 0 0 0 rgba(0, 255, 255, 0)"
+          "0 4px 20px rgba(0, 255, 255, 0.2)",
+          "0 8px 30px rgba(0, 255, 255, 0.4)",
+          "0 4px 20px rgba(0, 255, 255, 0.2)"
         ]
       }}
-      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
     >
-      {getIcon()}
+      {icon}
     </motion.div>
   );
 };
@@ -172,9 +177,9 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
         <div className="relative h-28 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent overflow-hidden">
           <div className="absolute inset-0 neural-grid opacity-30" />
           
-          {/* Framework icon - top right with animation */}
-          <div className="absolute top-4 left-4">
-            <FrameworkIcon framework={model.framework} />
+          {/* Model type icon - top left with animation */}
+          <div className="absolute top-3 left-4">
+            <ModelTypeIcon modelType={model.model_type} framework={model.framework} />
           </div>
           
           <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
@@ -523,7 +528,7 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
             ML Model Showcase
           </h2>
           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">
-            Machine learning projects demonstrating practical AI implementations
+            End-to-end machine learning solutions from data to deployment
           </p>
           <div className="w-32 h-1.5 bg-gradient-to-r from-accent to-neural-pink mx-auto rounded-full" />
         </div>
