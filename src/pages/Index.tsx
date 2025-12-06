@@ -15,6 +15,7 @@ import { Contact } from "@/components/Contact";
 import { AccessDialog } from "@/components/AccessDialog";
 import { PortfolioChatbot } from "@/components/PortfolioChatbot";
 import { Separator } from "@/components/ui/separator";
+import { MLShowcase } from "@/components/MLShowcase";
 
 const Index = () => {
   
@@ -126,19 +127,15 @@ const Index = () => {
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <About isOwner={isOwner} />
-          
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
-          
           <Skills isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <Certifications isOwner={isOwner} />
+          <MLShowcase isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <Documentation isOwner={isOwner} />
+          <FeaturedProjects isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
@@ -150,7 +147,15 @@ const Index = () => {
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <FeaturedProjects isOwner={isOwner} />
+          <Certifications isOwner={isOwner} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
+          <Documentation isOwner={isOwner} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
+          <About isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           

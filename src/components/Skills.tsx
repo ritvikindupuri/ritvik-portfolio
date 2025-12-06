@@ -365,13 +365,13 @@ export const Skills = ({ isOwner }: SkillsProps) => {
   const getLevelColor = (level: string) => {
     switch (level) {
       case "Advanced":
-        return "bg-primary/20 text-primary border border-primary/30";
+        return "bg-neural-pink/20 text-neural-pink border border-neural-pink/40 shadow-[0_0_12px_hsl(330_85%_60%/0.3)]";
       case "Intermediate":
-        return "bg-accent/20 text-accent border border-accent/30";
+        return "bg-accent/20 text-accent border border-accent/40 shadow-[0_0_12px_hsl(280_85%_60%/0.3)]";
       case "Beginner":
-        return "bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/30";
+        return "bg-primary/20 text-primary border border-primary/40 shadow-[0_0_12px_hsl(185_100%_50%/0.3)]";
       default:
-        return "bg-primary/20 text-primary border border-primary/30";
+        return "bg-accent/20 text-accent border border-accent/40";
     }
   };
 

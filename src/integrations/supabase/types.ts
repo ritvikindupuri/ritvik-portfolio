@@ -131,6 +131,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_models: {
+        Row: {
+          created_at: string
+          dataset: string | null
+          demo_url: string | null
+          description: string
+          display_order: number | null
+          framework: string | null
+          github_url: string | null
+          id: string
+          image_url: string | null
+          metrics: Json | null
+          model_type: string | null
+          paper_url: string | null
+          technologies: string[] | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dataset?: string | null
+          demo_url?: string | null
+          description: string
+          display_order?: number | null
+          framework?: string | null
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          metrics?: Json | null
+          model_type?: string | null
+          paper_url?: string | null
+          technologies?: string[] | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dataset?: string | null
+          demo_url?: string | null
+          description?: string
+          display_order?: number | null
+          framework?: string | null
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          metrics?: Json | null
+          model_type?: string | null
+          paper_url?: string | null
+          technologies?: string[] | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           bio: string | null
