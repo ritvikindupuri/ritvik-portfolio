@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Brain, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical } from "lucide-react";
+import { Brain, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, Database, Cpu, Eye, MessageSquare, Sparkles, Clock, Search, Layers } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,7 +82,52 @@ const frameworks = [
   "Other"
 ];
 
+// Framework icon mapping with animated effects
+const FrameworkIcon = ({ framework }: { framework: string | null }) => {
+  const getIcon = () => {
+    switch (framework?.toLowerCase()) {
+      case "pytorch":
+        return <Cpu className="w-5 h-5" />;
+      case "tensorflow":
+        return <Layers className="w-5 h-5" />;
+      case "scikit-learn":
+        return <Search className="w-5 h-5" />;
+      case "keras":
+        return <Brain className="w-5 h-5" />;
+      case "hugging face":
+        return <MessageSquare className="w-5 h-5" />;
+      case "opencv":
+        return <Eye className="w-5 h-5" />;
+      case "spacy":
+        return <MessageSquare className="w-5 h-5" />;
+      case "xgboost":
+      case "lightgbm":
+        return <Sparkles className="w-5 h-5" />;
+      default:
+        return <Brain className="w-5 h-5" />;
+    }
+  };
+
+  return (
+    <motion.div
+      className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary border border-primary/30"
+      animate={{ 
+        boxShadow: [
+          "0 0 0 0 rgba(0, 255, 255, 0)",
+          "0 0 20px 2px rgba(0, 255, 255, 0.3)",
+          "0 0 0 0 rgba(0, 255, 255, 0)"
+        ]
+      }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    >
+      {getIcon()}
+    </motion.div>
+  );
+};
+
 const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   const {
     attributes,
     listeners,
@@ -109,21 +155,37 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
         return "bg-cyber-matrix/20 text-cyber-matrix border-cyber-matrix/30";
       case "Generative AI":
         return "bg-data-blue/20 text-data-blue border-data-blue/30";
+      case "Anomaly Detection":
+        return "bg-primary/20 text-primary border-primary/30";
       default:
         return "bg-primary/20 text-primary border-primary/30";
     }
   };
 
+  const shouldShowMore = model.description.length > 100;
+  const displayDescription = isExpanded ? model.description : model.description.slice(0, 100);
+
   return (
     <div ref={setNodeRef} style={style} className="group relative">
       <div className="relative bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-500 hover:shadow-glow">
-        {/* Header with gradient */}
-        <div className="relative h-32 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent overflow-hidden">
+        {/* Header with gradient and framework icon */}
+        <div className="relative h-28 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent overflow-hidden">
           <div className="absolute inset-0 neural-grid opacity-30" />
-          <div className="absolute bottom-4 left-4 right-4">
+          
+          {/* Framework icon - top right with animation */}
+          <div className="absolute top-4 left-4">
+            <FrameworkIcon framework={model.framework} />
+          </div>
+          
+          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
             <Badge className={`${getModelTypeColor(model.model_type)} border`}>
               {model.model_type || "ML Model"}
             </Badge>
+            {model.framework && (
+              <span className="text-xs font-medium text-primary/80 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                {model.framework}
+              </span>
+            )}
           </div>
           
           {isOwner && (
@@ -155,25 +217,39 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
           )}
         </div>
 
-        <div className="p-6 space-y-4">
-          <div>
-            <h3 className="text-xl font-bold text-foreground mb-2">{model.title}</h3>
-            <p className="text-sm text-muted-foreground line-clamp-2">{model.description}</p>
+        <div className="p-5 space-y-4">
+          {/* Title */}
+          <h3 className="text-lg font-bold text-foreground leading-tight">{model.title}</h3>
+          
+          {/* Description with expand/collapse */}
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {displayDescription}
+              {shouldShowMore && !isExpanded && "..."}
+            </p>
+            {shouldShowMore && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+              >
+                {isExpanded ? "Show less" : "More"}
+                <motion.span
+                  animate={{ rotate: isExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </motion.span>
+              </button>
+            )}
           </div>
 
-          {/* Framework & Dataset */}
-          <div className="flex flex-wrap gap-2">
-            {model.framework && (
-              <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-                {model.framework}
-              </span>
-            )}
-            {model.dataset && (
-              <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-                📊 {model.dataset}
-              </span>
-            )}
-          </div>
+          {/* Dataset - Clean styling */}
+          {model.dataset && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-secondary/50 border border-border/30">
+              <Database className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <span className="text-xs text-muted-foreground leading-relaxed">{model.dataset}</span>
+            </div>
+          )}
 
           {/* Metrics */}
           {model.metrics && Object.keys(model.metrics).length > 0 && (
@@ -199,7 +275,7 @@ const SortableModelCard = ({ model, isOwner, onEdit, onRemove }: SortableModelCa
           )}
 
           {/* Links */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-4 pt-2 border-t border-border/30">
             {model.github_url && (
               <a
                 href={model.github_url}
