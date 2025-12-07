@@ -1,6 +1,6 @@
 # Ritvik Indupuri's Personal Portfolio Website
 
-**[View Live Demo](https://ritvik-indupuri-portfolio.lovable.app/)**
+**[View Live Demo](https://ritvik-website.netlify.app/)**
 
 ---
 
