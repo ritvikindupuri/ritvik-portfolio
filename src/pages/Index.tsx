@@ -134,10 +134,35 @@ const Index = () => {
           
           <Skills isOwner={isOwner} />
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          {/* Transition: Skills → AI/ML Section */}
+          <div className="relative py-24 overflow-hidden">
+            {/* Animated gradient line */}
+            <div className="container mx-auto px-6">
+              <div className="flex items-center justify-center gap-6">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-primary/60" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
+                  <div className="relative px-8 py-3 border border-primary/30 rounded-full bg-card/50 backdrop-blur-sm">
+                    <span className="text-sm font-mono tracking-wider text-primary/80 uppercase">
+                      Applied Intelligence
+                    </span>
+                  </div>
+                </div>
+                <div className="flex-1 h-px bg-gradient-to-l from-transparent via-accent/40 to-accent/60" />
+              </div>
+              
+              {/* Subtitle */}
+              <p className="text-center mt-6 text-muted-foreground max-w-2xl mx-auto">
+                Where theory meets implementation — ML models and AI systems built to solve real-world problems
+              </p>
+            </div>
+            
+            {/* Decorative flowing lines */}
+            <div className="absolute left-1/2 top-full -translate-x-1/2 w-px h-16 bg-gradient-to-b from-primary/40 to-transparent" />
+          </div>
           
           {/* ML & LLM Showcase - Side by Side */}
-          <section className="py-32 px-4 relative overflow-hidden">
+          <section className="py-16 px-4 relative overflow-hidden">
             <div className="absolute inset-0 neural-grid opacity-5" />
             <div className="absolute top-1/4 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
             <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
