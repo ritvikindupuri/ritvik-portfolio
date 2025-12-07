@@ -61,6 +61,7 @@ export type Database = {
           display_order: number | null
           id: string
           title: string
+          upload_date: string | null
           url: string
           user_id: string
         }
@@ -71,6 +72,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           title: string
+          upload_date?: string | null
           url: string
           user_id: string
         }
@@ -81,6 +83,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           title?: string
+          upload_date?: string | null
           url?: string
           user_id?: string
         }
