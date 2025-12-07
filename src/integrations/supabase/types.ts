@@ -131,6 +131,54 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_projects: {
+        Row: {
+          created_at: string
+          demo_url: string | null
+          description: string
+          display_order: number | null
+          documentation_url: string | null
+          github_url: string | null
+          id: string
+          llm_provider: string | null
+          project_type: string | null
+          technologies: string[] | null
+          title: string
+          use_case: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          demo_url?: string | null
+          description: string
+          display_order?: number | null
+          documentation_url?: string | null
+          github_url?: string | null
+          id?: string
+          llm_provider?: string | null
+          project_type?: string | null
+          technologies?: string[] | null
+          title: string
+          use_case?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          demo_url?: string | null
+          description?: string
+          display_order?: number | null
+          documentation_url?: string | null
+          github_url?: string | null
+          id?: string
+          llm_provider?: string | null
+          project_type?: string | null
+          technologies?: string[] | null
+          title?: string
+          use_case?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ml_models: {
         Row: {
           created_at: string

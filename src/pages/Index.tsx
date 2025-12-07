@@ -16,6 +16,7 @@ import { AccessDialog } from "@/components/AccessDialog";
 import { PortfolioChatbot } from "@/components/PortfolioChatbot";
 import { Separator } from "@/components/ui/separator";
 import { MLShowcase } from "@/components/MLShowcase";
+import { LLMShowcase } from "@/components/LLMShowcase";
 
 const Index = () => {
   
@@ -131,7 +132,22 @@ const Index = () => {
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
-          <MLShowcase isOwner={isOwner} />
+          {/* ML & LLM Showcase - Side by Side */}
+          <section className="py-32 px-4 relative overflow-hidden">
+            <div className="absolute inset-0 neural-grid opacity-5" />
+            <div className="absolute top-1/4 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+            
+            <div className="container mx-auto max-w-7xl relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* ML Model Showcase */}
+                <MLShowcase isOwner={isOwner} />
+                
+                {/* LLM/AI Engineering Showcase */}
+                <LLMShowcase isOwner={isOwner} />
+              </div>
+            </div>
+          </section>
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
