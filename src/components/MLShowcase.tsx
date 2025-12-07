@@ -65,6 +65,8 @@ const modelTypes = [
   "Time Series",
   "Clustering",
   "Anomaly Detection",
+  "Embedding Classifier",
+  "Reconstruction Autoencoder",
   "Other"
 ];
 
