@@ -128,6 +128,10 @@ const Index = () => {
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
+          <About isOwner={isOwner} />
+          
+          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          
           <Skills isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
@@ -173,10 +177,6 @@ const Index = () => {
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
           <Documentation isOwner={isOwner} />
-          
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
-          
-          <About isOwner={isOwner} />
           
           <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
           
