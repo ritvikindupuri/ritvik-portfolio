@@ -197,7 +197,7 @@ const Index = () => {
           
           <SectionTransition 
             badge="Knowledge Base" 
-            subtitle="Technical documentation, research, and learning resources"
+            subtitle="Technical documentation and detailed project write-ups"
           />
           
           <Documentation isOwner={isOwner} />
