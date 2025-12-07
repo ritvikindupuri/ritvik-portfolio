@@ -160,7 +160,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Portfolio Contact <onboarding@resend.dev>",
-        to: ["ritvik.indupuri@gmail.com", "rindupur@purdue.edu"],
+        to: ["ritvik.indupuri@gmail.com"],
         reply_to: email.trim(),
         subject: `New Contact Form Message from ${name.trim()}`,
         html: `
