@@ -431,17 +431,17 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
 
   return (
     <div className="space-y-8">
-      <div className="text-center space-y-3">
+      <div className="text-center space-y-4">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 mb-3 shadow-purple">
           <Sparkles className="w-8 h-8 text-accent" />
         </div>
-        <h3 className="text-4xl md:text-5xl font-bold font-sans text-gradient-neural">
+        <h3 className="text-4xl md:text-5xl font-bold font-sans text-gradient-neural pb-1">
           AI Engineering
         </h3>
-        <p className="text-sm text-muted-foreground font-medium max-w-md mx-auto">
+        <p className="text-sm text-muted-foreground font-medium max-w-md mx-auto leading-relaxed">
           LLM integrations, RAG systems & agentic workflows
         </p>
-        <div className="w-24 h-1 bg-gradient-to-r from-accent to-neural-pink mx-auto rounded-full" />
+        <div className="w-24 h-1 bg-gradient-to-r from-accent to-neural-pink mx-auto rounded-full mt-4" />
       </div>
 
       <DndContext
