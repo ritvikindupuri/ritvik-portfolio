@@ -216,7 +216,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         projectName: doc.category || "General",
         description: doc.description,
         fileUrl: doc.url,
-        uploadDate: doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
+        uploadDate: doc.upload_date || (doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ""),
         tags: [],
         display_order: doc.display_order
       }));
@@ -288,7 +288,8 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
           title: newDoc.title,
           description: newDoc.description,
           url: newDoc.fileUrl,
-          category: newDoc.projectName
+          category: newDoc.projectName,
+          upload_date: newDoc.uploadDate || null
         });
 
       if (error) {
@@ -357,7 +358,8 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
           title: newDoc.title,
           description: newDoc.description,
           url: newDoc.fileUrl,
-          category: newDoc.projectName
+          category: newDoc.projectName,
+          upload_date: newDoc.uploadDate || null
         })
         .eq('id', editingDocId);
 
