@@ -81,14 +81,15 @@ const llmProviders = [
 ];
 
 const useCases = [
+  "Cybersecurity Threat Modeling",
+  "Automated Penetration Testing",
+  "Multi-Agent Security Analysis",
   "Document Q&A",
   "Code Assistant",
   "Data Analysis",
   "Content Generation",
   "Task Automation",
   "Knowledge Base",
-  "Customer Support",
-  "Research Assistant",
   "Workflow Orchestration",
   "Other"
 ];
