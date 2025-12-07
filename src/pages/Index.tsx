@@ -14,9 +14,9 @@ import { FeaturedProjects } from "@/components/FeaturedProjects";
 import { Contact } from "@/components/Contact";
 import { AccessDialog } from "@/components/AccessDialog";
 import { PortfolioChatbot } from "@/components/PortfolioChatbot";
-import { Separator } from "@/components/ui/separator";
 import { MLShowcase } from "@/components/MLShowcase";
 import { LLMShowcase } from "@/components/LLMShowcase";
+import { SectionTransition } from "@/components/SectionTransition";
 
 const Index = () => {
   
@@ -126,40 +126,24 @@ const Index = () => {
         <div className="relative bg-background">
           <Hero isOwner={isOwner} />
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          <SectionTransition 
+            badge="Who I Am" 
+            subtitle="Passionate about cybersecurity and machine learning — building intelligent systems for defense"
+          />
           
           <About isOwner={isOwner} />
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          <SectionTransition 
+            badge="Technical Arsenal" 
+            subtitle="Core competencies and tools I use to build secure, intelligent systems"
+          />
           
           <Skills isOwner={isOwner} />
           
-          {/* Transition: Skills → AI/ML Section */}
-          <div className="relative py-24 overflow-hidden">
-            {/* Animated gradient line */}
-            <div className="container mx-auto px-6">
-              <div className="flex items-center justify-center gap-6">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-primary/60" />
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
-                  <div className="relative px-8 py-3 border border-primary/30 rounded-full bg-card/50 backdrop-blur-sm">
-                    <span className="text-sm font-mono tracking-wider text-primary/80 uppercase">
-                      Applied Intelligence
-                    </span>
-                  </div>
-                </div>
-                <div className="flex-1 h-px bg-gradient-to-l from-transparent via-accent/40 to-accent/60" />
-              </div>
-              
-              {/* Subtitle */}
-              <p className="text-center mt-6 text-muted-foreground max-w-2xl mx-auto">
-                Where theory meets implementation — ML models and AI systems built to solve real-world problems
-              </p>
-            </div>
-            
-            {/* Decorative flowing lines */}
-            <div className="absolute left-1/2 top-full -translate-x-1/2 w-px h-16 bg-gradient-to-b from-primary/40 to-transparent" />
-          </div>
+          <SectionTransition 
+            badge="Applied Intelligence" 
+            subtitle="Where theory meets implementation — ML models and AI systems built to solve real-world problems"
+          />
           
           {/* ML & LLM Showcase - Side by Side */}
           <section className="py-16 px-4 relative overflow-hidden">
@@ -183,27 +167,45 @@ const Index = () => {
             </div>
           </section>
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          <SectionTransition 
+            badge="Flagship Work" 
+            subtitle="Highlighted projects that demonstrate end-to-end problem solving"
+          />
           
           <FeaturedProjects isOwner={isOwner} />
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          <SectionTransition 
+            badge="Professional Journey" 
+            subtitle="Real-world experience building and securing systems"
+          />
           
           <Experience isOwner={isOwner} />
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          <SectionTransition 
+            badge="Project Archive" 
+            subtitle="A comprehensive collection of technical work and explorations"
+          />
           
           <Projects isOwner={isOwner} />
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          <SectionTransition 
+            badge="Credentials" 
+            subtitle="Industry certifications validating expertise in security and technology"
+          />
           
           <Certifications isOwner={isOwner} />
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          <SectionTransition 
+            badge="Knowledge Base" 
+            subtitle="Technical documentation, research, and learning resources"
+          />
           
           <Documentation isOwner={isOwner} />
           
-          <Separator className="container mx-auto my-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px]" />
+          <SectionTransition 
+            badge="Let's Connect" 
+            subtitle="Open to opportunities in cybersecurity and machine learning"
+          />
           
           <Contact />
 
