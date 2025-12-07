@@ -56,13 +56,15 @@ async function fetchPortfolioData() {
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const [profileRes, skillsRes, experienceRes, projectsRes, certsRes, docsRes] = await Promise.all([
+  const [profileRes, skillsRes, experienceRes, projectsRes, certsRes, docsRes, mlModelsRes, llmProjectsRes] = await Promise.all([
     supabase.from('profiles').select('*').single(),
     supabase.from('skills').select('*'),
     supabase.from('experience').select('*').order('start_date', { ascending: false }),
     supabase.from('projects').select('*').order('created_at', { ascending: false }),
     supabase.from('certifications').select('*').order('date', { ascending: false }),
     supabase.from('documentation').select('*').order('created_at', { ascending: false }),
+    supabase.from('ml_models').select('*').order('display_order', { ascending: true }),
+    supabase.from('llm_projects').select('*').order('display_order', { ascending: true }),
   ]);
 
   return {
@@ -72,6 +74,8 @@ async function fetchPortfolioData() {
     projects: projectsRes.data || [],
     certifications: certsRes.data || [],
     documentation: docsRes.data || [],
+    mlModels: mlModelsRes.data || [],
+    llmProjects: llmProjectsRes.data || [],
   };
 }
 
@@ -115,6 +119,16 @@ function generateSystemPrompt(data: any): string {
   const docsList = data.documentation.map((doc: any) =>
     `- ${doc.title} (${doc.category}): ${doc.description}`
   ).join('\n');
+
+  // Format ML Models
+  const mlModelsList = data.mlModels.map((model: any) =>
+    `- ${model.title} (${model.model_type || 'ML Model'}): ${model.description}${model.framework ? `\n  Framework: ${model.framework}` : ''}${model.technologies?.length ? `\n  Technologies: ${model.technologies.join(', ')}` : ''}${model.dataset ? `\n  Dataset: ${model.dataset}` : ''}${model.github_url ? `\n  GitHub: ${model.github_url}` : ''}`
+  ).join('\n\n');
+
+  // Format LLM/AI Engineering Projects
+  const llmProjectsList = data.llmProjects.map((proj: any) =>
+    `- ${proj.title} (${proj.project_type || 'LLM Project'}): ${proj.description}${proj.llm_provider ? `\n  LLM Provider: ${proj.llm_provider}` : ''}${proj.use_case ? `\n  Use Case: ${proj.use_case}` : ''}${proj.technologies?.length ? `\n  Technologies: ${proj.technologies.join(', ')}` : ''}${proj.github_url ? `\n  GitHub: ${proj.github_url}` : ''}`
+  ).join('\n\n');
 
   return `You are a professional portfolio assistant for ${profile.full_name || 'Ritvik Indupuri'}, designed to help hiring managers, recruiters, and potential collaborators thoroughly assess qualifications and capabilities.
 
@@ -207,6 +221,12 @@ ${certsList || 'No certifications listed yet'}
 
 **TECHNICAL DOCUMENTATION**
 ${docsList || 'No documentation listed yet'}
+
+**MACHINE LEARNING MODELS**
+${mlModelsList || 'No ML models listed yet'}
+
+**AI ENGINEERING / LLM PROJECTS**
+${llmProjectsList || 'No LLM projects listed yet'}
 
 RESPONSE STRATEGY:
 1. Search ALL sections thoroughly before answering any question
