@@ -139,9 +139,14 @@ const Index = () => {
             <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
             
             <div className="container mx-auto max-w-7xl relative z-10">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* ML Model Showcase */}
                 <MLShowcase isOwner={isOwner} />
+                
+                {/* Vertical Divider */}
+                <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 -translate-x-1/2">
+                  <div className="w-px h-full bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
+                </div>
                 
                 {/* LLM/AI Engineering Showcase */}
                 <LLMShowcase isOwner={isOwner} />
