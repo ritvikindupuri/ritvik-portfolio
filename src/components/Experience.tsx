@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { differenceInMonths, parseISO, format } from "date-fns";
 import { motion } from "framer-motion";
 import { Briefcase, MapPin, Plus, X, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -178,8 +179,18 @@ const Experience = ({ isOwner }: ExperienceProps) => {
     })
   );
 
+  // Force re-render every minute to update "Present" durations in realtime
+  const [, setTick] = useState(0);
+  
   useEffect(() => {
     fetchExperiences();
+    
+    // Update every minute for realtime duration updates
+    const interval = setInterval(() => {
+      setTick(t => t + 1);
+    }, 60000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchExperiences = async () => {
@@ -349,38 +360,44 @@ const Experience = ({ isOwner }: ExperienceProps) => {
     });
   };
 
-  const formatDateRange = (startDate: string, endDate: string | null, isCurrent: boolean) => {
-    const start = new Date(startDate);
-    const startStr = start.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const formatDateRange = useCallback((startDate: string, endDate: string | null, isCurrent: boolean) => {
+    // Parse the date string properly - add day if not present for proper parsing
+    const parseDate = (dateStr: string) => {
+      // Handle YYYY-MM-DD format from database
+      return parseISO(dateStr);
+    };
     
-    if (isCurrent) {
-      const months = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
-      const years = Math.floor(months / 12);
-      const remainingMonths = months % 12;
+    const start = parseDate(startDate);
+    const startStr = format(start, "MMM yyyy");
+    
+    const calculateDuration = (fromDate: Date, toDate: Date) => {
+      const totalMonths = differenceInMonths(toDate, fromDate);
+      // Add 1 to include the starting month (e.g., Oct 2025 to Dec 2025 = 3 months, not 2)
+      const adjustedMonths = totalMonths + 1;
+      const years = Math.floor(adjustedMonths / 12);
+      const remainingMonths = adjustedMonths % 12;
       
       let duration = "";
       if (years > 0) duration += `${years} yr${years > 1 ? "s" : ""} `;
-      if (remainingMonths > 0) duration += `${remainingMonths} mo${remainingMonths > 1 ? "s" : ""}`;
+      if (remainingMonths > 0 || years === 0) duration += `${remainingMonths} mo${remainingMonths !== 1 ? "s" : ""}`;
       
-      return `${startStr} – Present · ${duration.trim()}`;
+      return duration.trim();
+    };
+    
+    if (isCurrent) {
+      const duration = calculateDuration(start, new Date());
+      return `${startStr} – Present · ${duration}`;
     }
     
     if (endDate) {
-      const end = new Date(endDate);
-      const endStr = end.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-      const months = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
-      const years = Math.floor(months / 12);
-      const remainingMonths = months % 12;
-      
-      let duration = "";
-      if (years > 0) duration += `${years} yr${years > 1 ? "s" : ""} `;
-      if (remainingMonths > 0) duration += `${remainingMonths} mo${remainingMonths > 1 ? "s" : ""}`;
-      
-      return `${startStr} – ${endStr} · ${duration.trim()}`;
+      const end = parseDate(endDate);
+      const endStr = format(end, "MMM yyyy");
+      const duration = calculateDuration(start, end);
+      return `${startStr} – ${endStr} · ${duration}`;
     }
     
     return startStr;
-  };
+  }, []);
 
   return (
     <section id="experience" className="py-32 px-4 relative overflow-hidden bg-card/20">
