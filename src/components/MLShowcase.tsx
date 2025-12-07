@@ -457,33 +457,27 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
   };
 
   return (
-    <section id="ml-showcase" className="py-32 px-4 relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 neural-grid opacity-5" />
-      <div className="absolute top-1/4 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-      
-      <div className="container mx-auto max-w-7xl relative z-10">
-        <div className="text-center space-y-3 mb-16">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-accent/10 mb-4 shadow-purple">
-            <Brain className="w-10 h-10 text-accent" />
-          </div>
-          <h2 className="text-6xl md:text-7xl font-bold font-sans text-gradient-neural">
-            ML Model Showcase
-          </h2>
-          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">
-            End-to-end machine learning solutions from data to deployment
-          </p>
-          <div className="w-32 h-1.5 bg-gradient-to-r from-accent to-neural-pink mx-auto rounded-full" />
+    <div className="space-y-8">
+      <div className="text-center space-y-3">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-3 shadow-cyan">
+          <Brain className="w-8 h-8 text-primary" />
         </div>
+        <h3 className="text-4xl md:text-5xl font-bold font-sans text-gradient-neural">
+          ML Models
+        </h3>
+        <p className="text-sm text-muted-foreground font-medium max-w-md mx-auto">
+          End-to-end machine learning from data to deployment
+        </p>
+        <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full" />
+      </div>
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext items={models.map(m => m.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={models.map(m => m.id)} strategy={rectSortingStrategy}>
+          <div className="space-y-6">
               {models.map((model) => (
                 <SortableModelCard
                   key={model.id}
@@ -685,17 +679,16 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
                   </DialogContent>
                 </Dialog>
               )}
-            </div>
-          </SortableContext>
-        </DndContext>
-
-        {models.length === 0 && !isOwner && (
-          <div className="text-center py-16">
-            <Brain className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground">No ML models to display yet.</p>
           </div>
-        )}
-      </div>
-    </section>
+        </SortableContext>
+      </DndContext>
+
+      {models.length === 0 && !isOwner && (
+        <div className="text-center py-12 text-muted-foreground">
+          <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>ML models coming soon</p>
+        </div>
+      )}
+    </div>
   );
 };
