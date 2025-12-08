@@ -2,3 +2,9 @@ project_id = "nvgfgoykyeouwrksszpb"
 
 [functions.send-contact-email]
 verify_jwt = false
+
+[functions.portfolio-chatbot]
+verify_jwt = false
+
+[functions.generate-embeddings]
+verify_jwt = true

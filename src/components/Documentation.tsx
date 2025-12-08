@@ -36,7 +36,6 @@ interface Document {
   projectName: string;
   description: string;
   fileUrl: string;
-  uploadDate: string;
   tags: string[];
   display_order?: number;
 }
@@ -117,7 +116,7 @@ const SortableDoc = ({ doc, isOwner, onEdit, onRemove, isExpanded, toggleExpande
                 {doc.title}
               </h3>
               <p className="text-sm text-muted-foreground font-medium">
-                {doc.projectName} · {doc.uploadDate}
+                {doc.projectName}
               </p>
             </div>
           </div>
@@ -180,7 +179,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
     projectName: "",
     description: "",
     fileUrl: "",
-    uploadDate: "",
     tags: [] as string[],
   });
   const [tagInput, setTagInput] = useState("");
@@ -216,7 +214,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         projectName: doc.category || "General",
         description: doc.description,
         fileUrl: doc.url,
-        uploadDate: doc.upload_date || (doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ""),
         tags: [],
         display_order: doc.display_order
       }));
@@ -288,8 +285,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
           title: newDoc.title,
           description: newDoc.description,
           url: newDoc.fileUrl,
-          category: newDoc.projectName,
-          upload_date: newDoc.uploadDate || null
+          category: newDoc.projectName
         });
 
       if (error) {
@@ -306,7 +302,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         projectName: "",
         description: "",
         fileUrl: "",
-        uploadDate: "",
         tags: [],
       });
       setTagInput("");
@@ -340,7 +335,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
       projectName: doc.projectName,
       description: doc.description,
       fileUrl: doc.fileUrl,
-      uploadDate: doc.uploadDate,
       tags: doc.tags,
     });
     setIsAddDialogOpen(true);
@@ -358,8 +352,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
           title: newDoc.title,
           description: newDoc.description,
           url: newDoc.fileUrl,
-          category: newDoc.projectName,
-          upload_date: newDoc.uploadDate || null
+          category: newDoc.projectName
         })
         .eq('id', editingDocId);
 
@@ -376,7 +369,6 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
         projectName: "",
         description: "",
         fileUrl: "",
-        uploadDate: "",
         tags: [],
       });
       setTagInput("");
@@ -459,7 +451,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
               <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
                 setIsAddDialogOpen(open);
                 if (!open) {
-                  setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
+                  setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", tags: [] });
                   setTagInput("");
                   setEditingDocId(null);
                 }
@@ -471,7 +463,7 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                     transition={{ delay: documents.length * 0.1, duration: 0.5 }}
                     viewport={{ once: true }}
                     onClick={() => {
-                      setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
+                      setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", tags: [] });
                       setTagInput("");
                       setIsAddDialogOpen(true);
                     }}
@@ -556,22 +548,13 @@ export const Documentation = ({ isOwner }: DocumentationProps) => {
                           </span>
                         ))}
                       </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Upload Date (optional)</label>
-                      <Input
-                        placeholder="e.g., Dec 2024"
-                        value={newDoc.uploadDate}
-                        onChange={(e) => setNewDoc({ ...newDoc, uploadDate: e.target.value })}
-                      />
-                    </div>
+                  </div>
                   </div>
                   
                   <div className="flex justify-end gap-3">
                     <Button variant="outline" onClick={() => {
                       setIsAddDialogOpen(false);
-                      setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", uploadDate: "", tags: [] });
+                      setNewDoc({ title: "", projectName: "", description: "", fileUrl: "", tags: [] });
                       setTagInput("");
                       setEditingDocId(null);
                     }} disabled={isUpdating}>

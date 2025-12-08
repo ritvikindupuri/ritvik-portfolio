@@ -50,12 +50,88 @@ function checkChatRateLimit(key: string): { allowed: boolean; remaining: number 
   return { allowed: true, remaining: MAX_CHAT_REQUESTS_PER_HOUR - entry.count };
 }
 
-// Fetch portfolio data from database
-async function fetchPortfolioData() {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+// Generate query embedding using Lovable AI
+async function generateQueryEmbedding(query: string): Promise<number[] | null> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) {
+    console.error('LOVABLE_API_KEY not configured for embeddings');
+    return null;
+  }
 
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an embedding generator. When given text, analyze it and return a semantic embedding as a JSON array of 768 floating point numbers between -1 and 1. Return ONLY the JSON array.'
+          },
+          {
+            role: 'user',
+            content: `Generate a 768-dimensional semantic embedding for: ${query}`
+          }
+        ],
+        temperature: 0,
+        max_tokens: 10000,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Embedding generation failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    
+    if (!content) return null;
+
+    let cleaned = content.trim();
+    if (cleaned.startsWith('```json')) cleaned = cleaned.slice(7);
+    else if (cleaned.startsWith('```')) cleaned = cleaned.slice(3);
+    if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3);
+    cleaned = cleaned.trim();
+    
+    const embedding = JSON.parse(cleaned);
+    if (Array.isArray(embedding) && embedding.length === 768) {
+      return embedding;
+    }
+    return null;
+  } catch (e) {
+    console.error('Error generating query embedding:', e);
+    return null;
+  }
+}
+
+// Perform semantic search using vector similarity
+async function semanticSearch(supabase: any, queryEmbedding: number[], matchCount: number = 10): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.rpc('match_portfolio_content', {
+      query_embedding: queryEmbedding,
+      match_threshold: 0.3,
+      match_count: matchCount
+    });
+
+    if (error) {
+      console.error('Semantic search error:', error);
+      return [];
+    }
+
+    return (data || []).map((item: any) => `[Relevance: ${(item.similarity * 100).toFixed(1)}%] ${item.content_text}`);
+  } catch (e) {
+    console.error('Error in semantic search:', e);
+    return [];
+  }
+}
+
+// Fetch portfolio data from database
+async function fetchPortfolioData(supabase: any) {
   const [profileRes, skillsRes, experienceRes, projectsRes, certsRes, docsRes, mlModelsRes, llmProjectsRes] = await Promise.all([
     supabase.from('profiles').select('*').single(),
     supabase.from('skills').select('*'),
@@ -325,9 +401,24 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Try RAG-enhanced search first
+    let ragContext = '';
+    const queryEmbedding = await generateQueryEmbedding(message);
+    if (queryEmbedding) {
+      const semanticResults = await semanticSearch(supabase, queryEmbedding, 8);
+      if (semanticResults.length > 0) {
+        ragContext = `\n\n**SEMANTICALLY RELEVANT CONTENT (RAG Results)**\nThe following content was found to be most relevant to the user's query:\n${semanticResults.join('\n')}\n\nUse this relevant content to provide a more focused and accurate response.`;
+        console.log(`RAG found ${semanticResults.length} relevant results`);
+      }
+    }
+
     // Fetch current portfolio data
-    const portfolioData = await fetchPortfolioData();
-    const systemPrompt = generateSystemPrompt(portfolioData);
+    const portfolioData = await fetchPortfolioData(supabase);
+    const systemPrompt = generateSystemPrompt(portfolioData) + ragContext;
 
     // Build messages array with conversation history
     const messages: { role: string; content: string }[] = [
