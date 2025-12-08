@@ -272,8 +272,11 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     title: "",
     description: "",
     project_type: "",
+    project_type_custom: "",
     llm_provider: "",
+    llm_provider_custom: "",
     use_case: "",
+    use_case_custom: "",
     github_url: "",
     demo_url: "",
     documentation_url: "",
@@ -337,6 +340,20 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const handleSubmit = async () => {
     if (!formData.title || !formData.description) return;
 
+    // Validate custom fields when "Other" or "Multiple" is selected
+    if ((formData.project_type === "Other") && !formData.project_type_custom.trim()) {
+      toast.error("Please specify the project type");
+      return;
+    }
+    if ((formData.llm_provider === "Other" || formData.llm_provider === "Multiple") && !formData.llm_provider_custom.trim()) {
+      toast.error("Please specify the LLM provider(s)");
+      return;
+    }
+    if ((formData.use_case === "Other") && !formData.use_case_custom.trim()) {
+      toast.error("Please specify the use case");
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
@@ -346,13 +363,24 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
         return;
       }
 
+      // Use custom values when "Other" or "Multiple" is selected
+      const finalProjectType = formData.project_type === "Other" 
+        ? formData.project_type_custom 
+        : formData.project_type;
+      const finalLLMProvider = (formData.llm_provider === "Other" || formData.llm_provider === "Multiple")
+        ? formData.llm_provider_custom 
+        : formData.llm_provider;
+      const finalUseCase = formData.use_case === "Other" 
+        ? formData.use_case_custom 
+        : formData.use_case;
+
       const projectData = {
         user_id: user.id,
         title: formData.title,
         description: formData.description,
-        project_type: formData.project_type || null,
-        llm_provider: formData.llm_provider || null,
-        use_case: formData.use_case || null,
+        project_type: finalProjectType || null,
+        llm_provider: finalLLMProvider || null,
+        use_case: finalUseCase || null,
         github_url: formData.github_url || null,
         demo_url: formData.demo_url || null,
         documentation_url: formData.documentation_url || null,
@@ -406,8 +434,11 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
       title: "",
       description: "",
       project_type: "",
+      project_type_custom: "",
       llm_provider: "",
+      llm_provider_custom: "",
       use_case: "",
+      use_case_custom: "",
       github_url: "",
       demo_url: "",
       documentation_url: "",
@@ -458,12 +489,20 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                 isOwner={isOwner}
                 onEdit={() => {
                   setEditingProject(project);
+                  // Check if stored values are custom (not in predefined lists)
+                  const isCustomProjectType = project.project_type && !projectTypes.includes(project.project_type);
+                  const isCustomProvider = project.llm_provider && !llmProviders.includes(project.llm_provider);
+                  const isCustomUseCase = project.use_case && !useCases.includes(project.use_case);
+                  
                   setFormData({
                     title: project.title,
                     description: project.description,
-                    project_type: project.project_type || "",
-                    llm_provider: project.llm_provider || "",
-                    use_case: project.use_case || "",
+                    project_type: isCustomProjectType ? "Other" : (project.project_type || ""),
+                    project_type_custom: isCustomProjectType ? project.project_type : "",
+                    llm_provider: isCustomProvider ? "Other" : (project.llm_provider || ""),
+                    llm_provider_custom: isCustomProvider ? project.llm_provider : "",
+                    use_case: isCustomUseCase ? "Other" : (project.use_case || ""),
+                    use_case_custom: isCustomUseCase ? project.use_case : "",
                     github_url: project.github_url || "",
                     demo_url: project.demo_url || "",
                     documentation_url: project.documentation_url || "",
@@ -516,39 +555,67 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                 className="bg-secondary/50 border-border min-h-[100px]"
               />
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Select value={formData.project_type} onValueChange={(value) => setFormData({ ...formData, project_type: value })}>
-                  <SelectTrigger className="bg-secondary/50 border-border">
-                    <SelectValue placeholder="Project Type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border z-50">
-                    {projectTypes.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Select value={formData.project_type} onValueChange={(value) => setFormData({ ...formData, project_type: value, project_type_custom: value === "Other" ? formData.project_type_custom : "" })}>
+                    <SelectTrigger className="bg-secondary/50 border-border">
+                      <SelectValue placeholder="Project Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border-border z-50">
+                      {projectTypes.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                <Select value={formData.llm_provider} onValueChange={(value) => setFormData({ ...formData, llm_provider: value })}>
-                  <SelectTrigger className="bg-secondary/50 border-border">
-                    <SelectValue placeholder="LLM Provider" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border z-50">
-                    {llmProviders.map((provider) => (
-                      <SelectItem key={provider} value={provider}>{provider}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select value={formData.llm_provider} onValueChange={(value) => setFormData({ ...formData, llm_provider: value, llm_provider_custom: (value === "Other" || value === "Multiple") ? formData.llm_provider_custom : "" })}>
+                    <SelectTrigger className="bg-secondary/50 border-border">
+                      <SelectValue placeholder="LLM Provider" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border-border z-50">
+                      {llmProviders.map((provider) => (
+                        <SelectItem key={provider} value={provider}>{provider}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                <Select value={formData.use_case} onValueChange={(value) => setFormData({ ...formData, use_case: value })}>
-                  <SelectTrigger className="bg-secondary/50 border-border">
-                    <SelectValue placeholder="Use Case" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border z-50">
-                    {useCases.map((useCase) => (
-                      <SelectItem key={useCase} value={useCase}>{useCase}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select value={formData.use_case} onValueChange={(value) => setFormData({ ...formData, use_case: value, use_case_custom: value === "Other" ? formData.use_case_custom : "" })}>
+                    <SelectTrigger className="bg-secondary/50 border-border">
+                      <SelectValue placeholder="Use Case" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border-border z-50">
+                      {useCases.map((useCase) => (
+                        <SelectItem key={useCase} value={useCase}>{useCase}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Custom input fields for "Other" or "Multiple" selections */}
+                {formData.project_type === "Other" && (
+                  <Input
+                    placeholder="Specify project type *"
+                    value={formData.project_type_custom}
+                    onChange={(e) => setFormData({ ...formData, project_type_custom: e.target.value })}
+                    className="bg-secondary/50 border-border border-accent/50"
+                  />
+                )}
+                {(formData.llm_provider === "Other" || formData.llm_provider === "Multiple") && (
+                  <Input
+                    placeholder={formData.llm_provider === "Multiple" ? "List the providers (e.g., OpenAI, Anthropic) *" : "Specify LLM provider *"}
+                    value={formData.llm_provider_custom}
+                    onChange={(e) => setFormData({ ...formData, llm_provider_custom: e.target.value })}
+                    className="bg-secondary/50 border-border border-accent/50"
+                  />
+                )}
+                {formData.use_case === "Other" && (
+                  <Input
+                    placeholder="Specify use case *"
+                    value={formData.use_case_custom}
+                    onChange={(e) => setFormData({ ...formData, use_case_custom: e.target.value })}
+                    className="bg-secondary/50 border-border border-accent/50"
+                  />
+                )}
               </div>
 
               <div className="space-y-2">

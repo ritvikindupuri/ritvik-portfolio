@@ -275,7 +275,9 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
     title: "",
     description: "",
     model_type: "",
+    model_type_custom: "",
     framework: "",
+    framework_custom: "",
     dataset: "",
     metrics: {} as Record<string, string>,
     github_url: "",
@@ -344,6 +346,16 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
   const handleSubmit = async () => {
     if (!formData.title || !formData.description) return;
 
+    // Validate custom fields when "Other" is selected
+    if (formData.model_type === "Other" && !formData.model_type_custom.trim()) {
+      toast.error("Please specify the model type");
+      return;
+    }
+    if (formData.framework === "Other" && !formData.framework_custom.trim()) {
+      toast.error("Please specify the framework");
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
@@ -353,12 +365,20 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
         return;
       }
 
+      // Use custom values when "Other" is selected
+      const finalModelType = formData.model_type === "Other" 
+        ? formData.model_type_custom 
+        : formData.model_type;
+      const finalFramework = formData.framework === "Other" 
+        ? formData.framework_custom 
+        : formData.framework;
+
       const modelData = {
         user_id: user.id,
         title: formData.title,
         description: formData.description,
-        model_type: formData.model_type || null,
-        framework: formData.framework || null,
+        model_type: finalModelType || null,
+        framework: finalFramework || null,
         dataset: formData.dataset || null,
         metrics: formData.metrics,
         github_url: formData.github_url || null,
@@ -414,7 +434,9 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
       title: "",
       description: "",
       model_type: "",
+      model_type_custom: "",
       framework: "",
+      framework_custom: "",
       dataset: "",
       metrics: {},
       github_url: "",
@@ -485,11 +507,17 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
                   isOwner={isOwner}
                   onEdit={() => {
                     setEditingModel(model);
+                    // Check if stored values are custom (not in predefined lists)
+                    const isCustomModelType = model.model_type && !modelTypes.includes(model.model_type);
+                    const isCustomFramework = model.framework && !frameworks.includes(model.framework);
+                    
                     setFormData({
                       title: model.title,
                       description: model.description,
-                      model_type: model.model_type || "",
-                      framework: model.framework || "",
+                      model_type: isCustomModelType ? "Other" : (model.model_type || ""),
+                      model_type_custom: isCustomModelType ? model.model_type : "",
+                      framework: isCustomFramework ? "Other" : (model.framework || ""),
+                      framework_custom: isCustomFramework ? model.framework : "",
                       dataset: model.dataset || "",
                       metrics: model.metrics || {},
                       github_url: model.github_url || "",
@@ -537,7 +565,7 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Model Type</label>
-                          <Select value={formData.model_type} onValueChange={(val) => setFormData({ ...formData, model_type: val })}>
+                          <Select value={formData.model_type} onValueChange={(val) => setFormData({ ...formData, model_type: val, model_type_custom: val === "Other" ? formData.model_type_custom : "" })}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
@@ -549,6 +577,16 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
                           </Select>
                         </div>
                       </div>
+
+                      {/* Custom model type input */}
+                      {formData.model_type === "Other" && (
+                        <Input
+                          placeholder="Specify model type *"
+                          value={formData.model_type_custom}
+                          onChange={(e) => setFormData({ ...formData, model_type_custom: e.target.value })}
+                          className="border-primary/50"
+                        />
+                      )}
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Description *</label>
@@ -563,7 +601,7 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Framework</label>
-                          <Select value={formData.framework} onValueChange={(val) => setFormData({ ...formData, framework: val })}>
+                          <Select value={formData.framework} onValueChange={(val) => setFormData({ ...formData, framework: val, framework_custom: val === "Other" ? formData.framework_custom : "" })}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select framework" />
                             </SelectTrigger>
@@ -583,6 +621,16 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
                           />
                         </div>
                       </div>
+
+                      {/* Custom framework input */}
+                      {formData.framework === "Other" && (
+                        <Input
+                          placeholder="Specify framework *"
+                          value={formData.framework_custom}
+                          onChange={(e) => setFormData({ ...formData, framework_custom: e.target.value })}
+                          className="border-primary/50"
+                        />
+                      )}
 
                       {/* Metrics */}
                       <div className="space-y-2">
