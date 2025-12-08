@@ -50,84 +50,113 @@ function checkChatRateLimit(key: string): { allowed: boolean; remaining: number 
   return { allowed: true, remaining: MAX_CHAT_REQUESTS_PER_HOUR - entry.count };
 }
 
-// Generate query embedding using Lovable AI
-async function generateQueryEmbedding(query: string): Promise<number[] | null> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  if (!LOVABLE_API_KEY) {
-    console.error('LOVABLE_API_KEY not configured for embeddings');
-    return null;
-  }
+// Keyword-based relevance search (faster, more reliable than embeddings)
+async function keywordSearch(supabase: any, query: string): Promise<string[]> {
+  const keywords = query.toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2);
+  
+  if (keywords.length === 0) return [];
+
+  const results: { text: string; score: number }[] = [];
 
   try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an embedding generator. When given text, analyze it and return a semantic embedding as a JSON array of 768 floating point numbers between -1 and 1. Return ONLY the JSON array.'
-          },
-          {
-            role: 'user',
-            content: `Generate a 768-dimensional semantic embedding for: ${query}`
-          }
-        ],
-        temperature: 0,
-        max_tokens: 10000,
-      }),
-    });
+    // Search across all tables
+    const [docs, projects, skills, experience, mlModels, llmProjects, certs] = await Promise.all([
+      supabase.from('documentation').select('title, description, category'),
+      supabase.from('projects').select('title, description, technologies, category'),
+      supabase.from('skills').select('name, category, level, description'),
+      supabase.from('experience').select('title, company, description, skills'),
+      supabase.from('ml_models').select('title, description, model_type, framework, technologies'),
+      supabase.from('llm_projects').select('title, description, project_type, llm_provider, use_case, technologies'),
+      supabase.from('certifications').select('name, issuer'),
+    ]);
 
-    if (!response.ok) {
-      console.error('Embedding generation failed:', response.status);
-      return null;
+    // Score documentation
+    for (const doc of docs.data || []) {
+      const text = `Documentation: ${doc.title} (${doc.category}) - ${doc.description}`;
+      const score = scoreRelevance(text, keywords);
+      if (score > 0) results.push({ text, score });
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    
-    if (!content) return null;
-
-    let cleaned = content.trim();
-    if (cleaned.startsWith('```json')) cleaned = cleaned.slice(7);
-    else if (cleaned.startsWith('```')) cleaned = cleaned.slice(3);
-    if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3);
-    cleaned = cleaned.trim();
-    
-    const embedding = JSON.parse(cleaned);
-    if (Array.isArray(embedding) && embedding.length === 768) {
-      return embedding;
+    // Score projects
+    for (const p of projects.data || []) {
+      const text = `Project: ${p.title} - ${p.description}. Technologies: ${p.technologies?.join(', ') || 'N/A'}`;
+      const score = scoreRelevance(text, keywords);
+      if (score > 0) results.push({ text, score });
     }
-    return null;
+
+    // Score skills
+    for (const s of skills.data || []) {
+      const text = `Skill: ${s.name} (${s.level}) in ${s.category}. ${s.description || ''}`;
+      const score = scoreRelevance(text, keywords);
+      if (score > 0) results.push({ text, score });
+    }
+
+    // Score experience
+    for (const e of experience.data || []) {
+      const text = `Experience: ${e.title} at ${e.company}. ${e.description?.join(' ') || ''}. Skills: ${e.skills?.join(', ') || 'N/A'}`;
+      const score = scoreRelevance(text, keywords);
+      if (score > 0) results.push({ text, score });
+    }
+
+    // Score ML models
+    for (const m of mlModels.data || []) {
+      const text = `ML Model: ${m.title} (${m.model_type || 'ML'}). Framework: ${m.framework || 'N/A'}. ${m.description}`;
+      const score = scoreRelevance(text, keywords);
+      if (score > 0) results.push({ text, score });
+    }
+
+    // Score LLM projects
+    for (const l of llmProjects.data || []) {
+      const text = `LLM Project: ${l.title} (${l.project_type || 'LLM'}). Provider: ${l.llm_provider || 'N/A'}. Use Case: ${l.use_case || 'N/A'}. ${l.description}`;
+      const score = scoreRelevance(text, keywords);
+      if (score > 0) results.push({ text, score });
+    }
+
+    // Score certifications
+    for (const c of certs.data || []) {
+      const text = `Certification: ${c.name} by ${c.issuer}`;
+      const score = scoreRelevance(text, keywords);
+      if (score > 0) results.push({ text, score });
+    }
+
+    // Sort by relevance and return top results
+    return results
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map(r => `[Relevance: ${Math.round(r.score * 100)}%] ${r.text}`);
+
   } catch (e) {
-    console.error('Error generating query embedding:', e);
-    return null;
+    console.error('Error in keyword search:', e);
+    return [];
   }
 }
 
-// Perform semantic search using vector similarity
-async function semanticSearch(supabase: any, queryEmbedding: number[], matchCount: number = 10): Promise<string[]> {
-  try {
-    const { data, error } = await supabase.rpc('match_portfolio_content', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.3,
-      match_count: matchCount
-    });
-
-    if (error) {
-      console.error('Semantic search error:', error);
-      return [];
+// Score text relevance based on keyword matches
+function scoreRelevance(text: string, keywords: string[]): number {
+  const lowerText = text.toLowerCase();
+  let matches = 0;
+  let totalWeight = 0;
+  
+  for (const keyword of keywords) {
+    // Exact word match
+    const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+    const exactMatches = (lowerText.match(regex) || []).length;
+    if (exactMatches > 0) {
+      matches += exactMatches * 2;
+      totalWeight += 2;
     }
-
-    return (data || []).map((item: any) => `[Relevance: ${(item.similarity * 100).toFixed(1)}%] ${item.content_text}`);
-  } catch (e) {
-    console.error('Error in semantic search:', e);
-    return [];
+    // Partial match
+    else if (lowerText.includes(keyword)) {
+      matches += 1;
+      totalWeight += 1;
+    }
   }
+  
+  if (totalWeight === 0) return 0;
+  return Math.min(matches / (keywords.length * 2), 1);
 }
 
 // Fetch portfolio data from database
@@ -405,15 +434,12 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Try RAG-enhanced search first
+    // Try keyword-based relevance search
     let ragContext = '';
-    const queryEmbedding = await generateQueryEmbedding(message);
-    if (queryEmbedding) {
-      const semanticResults = await semanticSearch(supabase, queryEmbedding, 8);
-      if (semanticResults.length > 0) {
-        ragContext = `\n\n**SEMANTICALLY RELEVANT CONTENT (RAG Results)**\nThe following content was found to be most relevant to the user's query:\n${semanticResults.join('\n')}\n\nUse this relevant content to provide a more focused and accurate response.`;
-        console.log(`RAG found ${semanticResults.length} relevant results`);
-      }
+    const relevantResults = await keywordSearch(supabase, message);
+    if (relevantResults.length > 0) {
+      ragContext = `\n\n**MOST RELEVANT CONTENT FOR THIS QUERY**\nThe following content was found to be most relevant to the user's question:\n${relevantResults.join('\n')}\n\nPrioritize this relevant content when formulating your response.`;
+      console.log(`RAG found ${relevantResults.length} relevant results`);
     }
 
     // Fetch current portfolio data
