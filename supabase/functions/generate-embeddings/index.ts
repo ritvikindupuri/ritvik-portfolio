@@ -7,73 +7,41 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Generate embeddings using Lovable AI Gateway
+// Generate embeddings using OpenAI's text-embedding-3-small model
 async function generateEmbedding(text: string): Promise<number[]> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  if (!LOVABLE_API_KEY) {
-    throw new Error('LOVABLE_API_KEY is not configured');
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  if (!OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not configured');
   }
 
-  // Use Gemini to generate embeddings via a structured prompt
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const response = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an embedding generator. When given text, you will analyze it and return a semantic embedding as a JSON array of 768 floating point numbers between -1 and 1. The embedding should capture the semantic meaning of the text for similarity search. Return ONLY the JSON array, nothing else.'
-        },
-        {
-          role: 'user',
-          content: `Generate a 768-dimensional semantic embedding for the following text. Return only a valid JSON array of 768 numbers:\n\n${text}`
-        }
-      ],
-      temperature: 0,
-      max_tokens: 10000,
+      model: 'text-embedding-3-small',
+      input: text.slice(0, 8000), // Truncate to avoid token limits
+      dimensions: 768, // Match our vector dimension
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Embedding generation error:', errorText);
-    throw new Error('Failed to generate embedding');
+    console.error('OpenAI embedding error:', response.status, errorText);
+    throw new Error(`Failed to generate embedding: ${response.status}`);
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const embedding = data.data?.[0]?.embedding;
   
-  if (!content) {
-    throw new Error('No embedding content returned');
+  if (!embedding || !Array.isArray(embedding)) {
+    throw new Error('Invalid embedding response from OpenAI');
   }
 
-  // Parse the JSON array from the response
-  try {
-    // Clean up the response - remove markdown code blocks if present
-    let cleaned = content.trim();
-    if (cleaned.startsWith('```json')) {
-      cleaned = cleaned.slice(7);
-    } else if (cleaned.startsWith('```')) {
-      cleaned = cleaned.slice(3);
-    }
-    if (cleaned.endsWith('```')) {
-      cleaned = cleaned.slice(0, -3);
-    }
-    cleaned = cleaned.trim();
-    
-    const embedding = JSON.parse(cleaned);
-    if (!Array.isArray(embedding) || embedding.length !== 768) {
-      throw new Error(`Invalid embedding dimension: ${embedding?.length || 'not an array'}`);
-    }
-    return embedding;
-  } catch (e) {
-    console.error('Failed to parse embedding:', e, content.substring(0, 500));
-    throw new Error('Failed to parse embedding response');
-  }
+  console.log(`Generated embedding with ${embedding.length} dimensions`);
+  return embedding;
 }
 
 // Generate text representation for different content types
@@ -108,50 +76,70 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { action, table, id } = await req.json();
+    const { action, table, id, regenerate } = await req.json();
 
     if (action === 'generate_all') {
       // Generate embeddings for all content
       const tables = ['documentation', 'projects', 'skills', 'experience', 'ml_models', 'llm_projects', 'certifications'];
-      const results: Record<string, number> = {};
+      const results: Record<string, { processed: number; skipped: number; errors: number }> = {};
 
       for (const tableName of tables) {
-        const { data: items, error } = await supabase
-          .from(tableName)
-          .select('*')
-          .is('embedding', null);
+        // If regenerate is true, get all items; otherwise only items without embeddings
+        let query = supabase.from(tableName).select('*');
+        if (!regenerate) {
+          query = query.is('embedding', null);
+        }
+        
+        const { data: items, error } = await query;
 
         if (error) {
           console.error(`Error fetching ${tableName}:`, error);
+          results[tableName] = { processed: 0, skipped: 0, errors: 1 };
           continue;
         }
 
-        let count = 0;
+        let processed = 0;
+        let errors = 0;
+        
         for (const item of items || []) {
           try {
             const text = generateTextForContent(tableName, item);
+            console.log(`Generating embedding for ${tableName}:`, item.id, text.substring(0, 100));
+            
             const embedding = await generateEmbedding(text);
+            
+            // Convert to pgvector format string
+            const embeddingStr = `[${embedding.join(',')}]`;
             
             const { error: updateError } = await supabase
               .from(tableName)
-              .update({ embedding })
+              .update({ embedding: embeddingStr })
               .eq('id', item.id);
 
             if (updateError) {
               console.error(`Error updating ${tableName} embedding:`, updateError);
+              errors++;
             } else {
-              count++;
+              processed++;
+              console.log(`Successfully updated embedding for ${tableName}:`, item.id);
             }
 
             // Small delay to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 200));
           } catch (e) {
             console.error(`Error generating embedding for ${tableName}:`, e);
+            errors++;
           }
         }
-        results[tableName] = count;
+        
+        results[tableName] = { 
+          processed, 
+          skipped: (items?.length || 0) - processed - errors,
+          errors 
+        };
       }
 
+      console.log('Embedding generation complete:', results);
       return new Response(
         JSON.stringify({ success: true, results }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -171,25 +159,44 @@ serve(async (req) => {
       }
 
       const text = generateTextForContent(table, item);
+      console.log(`Generating single embedding for ${table}:`, id, text.substring(0, 100));
+      
       const embedding = await generateEmbedding(text);
+      const embeddingStr = `[${embedding.join(',')}]`;
 
       const { error: updateError } = await supabase
         .from(table)
-        .update({ embedding })
+        .update({ embedding: embeddingStr })
         .eq('id', id);
 
       if (updateError) {
         throw new Error(`Failed to update embedding: ${updateError.message}`);
       }
 
+      console.log(`Successfully generated embedding for ${table}:`, id);
       return new Response(
         JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    if (action === 'generate_query_embedding') {
+      // Generate embedding for a query (used by chatbot)
+      const { query } = await req.json();
+      if (!query) {
+        throw new Error('Query is required');
+      }
+      
+      const embedding = await generateEmbedding(query);
+      
+      return new Response(
+        JSON.stringify({ success: true, embedding }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ error: 'Invalid action' }),
+      JSON.stringify({ error: 'Invalid action. Use: generate_all, generate_single, or generate_query_embedding' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

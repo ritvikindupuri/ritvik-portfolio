@@ -49,8 +49,79 @@ function checkChatRateLimit(key: string): { allowed: boolean; remaining: number 
   entry.count++;
   return { allowed: true, remaining: MAX_CHAT_REQUESTS_PER_HOUR - entry.count };
 }
+// Generate query embedding using OpenAI
+async function generateQueryEmbedding(query: string): Promise<number[] | null> {
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  if (!OPENAI_API_KEY) {
+    console.warn('OPENAI_API_KEY not configured, falling back to keyword search');
+    return null;
+  }
 
-// Keyword-based relevance search (faster, more reliable than embeddings)
+  try {
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-3-small',
+        input: query.slice(0, 8000),
+        dimensions: 768,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('OpenAI embedding error:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.data?.[0]?.embedding || null;
+  } catch (e) {
+    console.error('Failed to generate query embedding:', e);
+    return null;
+  }
+}
+
+// Semantic search using vector similarity
+async function semanticSearch(supabase: any, query: string): Promise<string[]> {
+  try {
+    console.log('Generating query embedding for semantic search...');
+    const queryEmbedding = await generateQueryEmbedding(query);
+    
+    if (!queryEmbedding) {
+      console.log('No embedding generated, falling back to keyword search');
+      return [];
+    }
+
+    // Format embedding for pgvector
+    const embeddingStr = `[${queryEmbedding.join(',')}]`;
+    
+    // Call the match_portfolio_content database function
+    const { data: matches, error } = await supabase.rpc('match_portfolio_content', {
+      query_embedding: embeddingStr,
+      match_threshold: 0.25,
+      match_count: 10
+    });
+
+    if (error) {
+      console.error('Semantic search RPC error:', error);
+      return [];
+    }
+
+    console.log(`Semantic search found ${matches?.length || 0} matches`);
+    
+    return (matches || []).map((match: any) => 
+      `[${match.content_type.toUpperCase()}] (${(match.similarity * 100).toFixed(0)}% match): ${match.content_text}`
+    );
+  } catch (e) {
+    console.error('Semantic search failed:', e);
+    return [];
+  }
+}
+
+// Fallback keyword-based relevance search
 async function keywordSearch(supabase: any, query: string): Promise<string[]> {
   const keywords = query.toLowerCase()
     .replace(/[^\w\s]/g, '')
@@ -62,7 +133,6 @@ async function keywordSearch(supabase: any, query: string): Promise<string[]> {
   const results: { text: string; score: number }[] = [];
 
   try {
-    // Search across all tables
     const [docs, projects, skills, experience, mlModels, llmProjects, certs] = await Promise.all([
       supabase.from('documentation').select('title, description, category'),
       supabase.from('projects').select('title, description, technologies, category'),
@@ -73,60 +143,52 @@ async function keywordSearch(supabase: any, query: string): Promise<string[]> {
       supabase.from('certifications').select('name, issuer'),
     ]);
 
-    // Score documentation
     for (const doc of docs.data || []) {
       const text = `Documentation: ${doc.title} (${doc.category}) - ${doc.description}`;
       const score = scoreRelevance(text, keywords);
       if (score > 0) results.push({ text, score });
     }
 
-    // Score projects
     for (const p of projects.data || []) {
       const text = `Project: ${p.title} - ${p.description}. Technologies: ${p.technologies?.join(', ') || 'N/A'}`;
       const score = scoreRelevance(text, keywords);
       if (score > 0) results.push({ text, score });
     }
 
-    // Score skills
     for (const s of skills.data || []) {
       const text = `Skill: ${s.name} (${s.level}) in ${s.category}. ${s.description || ''}`;
       const score = scoreRelevance(text, keywords);
       if (score > 0) results.push({ text, score });
     }
 
-    // Score experience
     for (const e of experience.data || []) {
       const text = `Experience: ${e.title} at ${e.company}. ${e.description?.join(' ') || ''}. Skills: ${e.skills?.join(', ') || 'N/A'}`;
       const score = scoreRelevance(text, keywords);
       if (score > 0) results.push({ text, score });
     }
 
-    // Score ML models
     for (const m of mlModels.data || []) {
       const text = `ML Model: ${m.title} (${m.model_type || 'ML'}). Framework: ${m.framework || 'N/A'}. ${m.description}`;
       const score = scoreRelevance(text, keywords);
       if (score > 0) results.push({ text, score });
     }
 
-    // Score LLM projects
     for (const l of llmProjects.data || []) {
-      const text = `LLM Project: ${l.title} (${l.project_type || 'LLM'}). Provider: ${l.llm_provider || 'N/A'}. Use Case: ${l.use_case || 'N/A'}. ${l.description}`;
+      const text = `LLM Project: ${l.title} (${l.project_type || 'LLM'}). Provider: ${l.llm_provider || 'N/A'}. ${l.description}`;
       const score = scoreRelevance(text, keywords);
       if (score > 0) results.push({ text, score });
     }
 
-    // Score certifications
     for (const c of certs.data || []) {
       const text = `Certification: ${c.name} by ${c.issuer}`;
       const score = scoreRelevance(text, keywords);
       if (score > 0) results.push({ text, score });
     }
 
-    // Sort by relevance and return top results
     return results
       .sort((a, b) => b.score - a.score)
       .slice(0, 8)
-      .map(r => `[Relevance: ${Math.round(r.score * 100)}%] ${r.text}`);
+      .map(r => `[KEYWORD] (${Math.round(r.score * 100)}% match): ${r.text}`);
 
   } catch (e) {
     console.error('Error in keyword search:', e);
@@ -134,28 +196,20 @@ async function keywordSearch(supabase: any, query: string): Promise<string[]> {
   }
 }
 
-// Score text relevance based on keyword matches
 function scoreRelevance(text: string, keywords: string[]): number {
   const lowerText = text.toLowerCase();
   let matches = 0;
-  let totalWeight = 0;
   
   for (const keyword of keywords) {
-    // Exact word match
     const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
     const exactMatches = (lowerText.match(regex) || []).length;
     if (exactMatches > 0) {
       matches += exactMatches * 2;
-      totalWeight += 2;
-    }
-    // Partial match
-    else if (lowerText.includes(keyword)) {
+    } else if (lowerText.includes(keyword)) {
       matches += 1;
-      totalWeight += 1;
     }
   }
   
-  if (totalWeight === 0) return 0;
   return Math.min(matches / (keywords.length * 2), 1);
 }
 
@@ -434,12 +488,27 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Try keyword-based relevance search
+    // Try semantic search first, fall back to keyword search
     let ragContext = '';
-    const relevantResults = await keywordSearch(supabase, message);
+    let searchMethod = 'none';
+    
+    // Attempt semantic (vector) search first
+    let relevantResults = await semanticSearch(supabase, message);
+    
     if (relevantResults.length > 0) {
-      ragContext = `\n\n**MOST RELEVANT CONTENT FOR THIS QUERY**\nThe following content was found to be most relevant to the user's question:\n${relevantResults.join('\n')}\n\nPrioritize this relevant content when formulating your response.`;
-      console.log(`RAG found ${relevantResults.length} relevant results`);
+      searchMethod = 'semantic';
+      console.log(`Semantic RAG found ${relevantResults.length} results`);
+    } else {
+      // Fall back to keyword search
+      relevantResults = await keywordSearch(supabase, message);
+      if (relevantResults.length > 0) {
+        searchMethod = 'keyword';
+        console.log(`Keyword RAG found ${relevantResults.length} results`);
+      }
+    }
+    
+    if (relevantResults.length > 0) {
+      ragContext = `\n\n**MOST RELEVANT CONTENT FOR THIS QUERY** (via ${searchMethod} search)\nThe following content was found to be semantically most relevant to the user's question:\n${relevantResults.join('\n')}\n\nPrioritize this relevant content when formulating your response.`;
     }
 
     // Fetch current portfolio data
