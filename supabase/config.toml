@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.generate-embeddings]
 verify_jwt = false
+
+[functions.index-github-content]
+verify_jwt = false

@@ -140,6 +140,45 @@ export type Database = {
         }
         Relationships: []
       }
+      github_content: {
+        Row: {
+          content_text: string | null
+          created_at: string | null
+          embedding: string | null
+          github_url: string
+          id: string
+          indexed_at: string | null
+          repo_name: string | null
+          source_id: string
+          source_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content_text?: string | null
+          created_at?: string | null
+          embedding?: string | null
+          github_url: string
+          id?: string
+          indexed_at?: string | null
+          repo_name?: string | null
+          source_id: string
+          source_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content_text?: string | null
+          created_at?: string | null
+          embedding?: string | null
+          github_url?: string
+          id?: string
+          indexed_at?: string | null
+          repo_name?: string | null
+          source_id?: string
+          source_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       llm_projects: {
         Row: {
           created_at: string
