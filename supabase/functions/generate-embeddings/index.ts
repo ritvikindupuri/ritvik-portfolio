@@ -44,6 +44,59 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return embedding;
 }
 
+// Extract GitHub URLs from item based on table type
+function extractGitHubUrls(table: string, item: any): { url: string; sourceType: string }[] {
+  const urls: { url: string; sourceType: string }[] = [];
+  
+  // Skills have project_links array
+  if (table === 'skills' && item.project_links) {
+    const links = Array.isArray(item.project_links) ? item.project_links : [];
+    for (const link of links) {
+      if (link.url && link.url.includes('github.com')) {
+        urls.push({ url: link.url, sourceType: 'skill' });
+      }
+    }
+  }
+  
+  // ML models, LLM projects, and projects have github_url
+  if (item.github_url && item.github_url.includes('github.com')) {
+    const sourceType = table === 'ml_models' ? 'ml_model' : 
+                       table === 'llm_projects' ? 'llm_project' : 'project';
+    urls.push({ url: item.github_url, sourceType });
+  }
+  
+  return urls;
+}
+
+// Trigger GitHub content indexing
+async function triggerGitHubIndexing(supabaseUrl: string, githubUrl: string, sourceType: string, sourceId: string): Promise<void> {
+  try {
+    console.log(`Triggering GitHub indexing for ${githubUrl}`);
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/index-github-content`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        github_url: githubUrl,
+        source_type: sourceType,
+        source_id: sourceId,
+      }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('GitHub indexing error:', error);
+    } else {
+      const result = await response.json();
+      console.log('GitHub indexing result:', result);
+    }
+  } catch (e) {
+    console.error('Failed to trigger GitHub indexing:', e);
+  }
+}
+
 // Generate text representation for different content types
 function generateTextForContent(type: string, item: any): string {
   switch (type) {
@@ -122,6 +175,12 @@ serve(async (req) => {
             } else {
               processed++;
               console.log(`Successfully updated embedding for ${tableName}:`, item.id);
+              
+              // Trigger GitHub indexing for items with GitHub URLs
+              const githubUrls = extractGitHubUrls(tableName, item);
+              for (const { url, sourceType } of githubUrls) {
+                await triggerGitHubIndexing(supabaseUrl, url, sourceType, item.id);
+              }
             }
 
             // Small delay to avoid rate limiting
@@ -174,8 +233,15 @@ serve(async (req) => {
       }
 
       console.log(`Successfully generated embedding for ${table}:`, id);
+      
+      // Trigger GitHub indexing for items with GitHub URLs
+      const githubUrls = extractGitHubUrls(table, item);
+      for (const { url, sourceType } of githubUrls) {
+        await triggerGitHubIndexing(supabaseUrl, url, sourceType, id);
+      }
+      
       return new Response(
-        JSON.stringify({ success: true }),
+        JSON.stringify({ success: true, github_indexed: githubUrls.length }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
