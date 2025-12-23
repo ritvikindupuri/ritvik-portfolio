@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, Eye, Download, MessageCircle, MousePointer, 
-  Globe, Clock, TrendingUp, Activity, FileText, FolderOpen
+  Globe, Clock, TrendingUp, Activity, FileText, FolderOpen,
+  ChevronDown, ChevronUp, ExternalLink
 } from "lucide-react";
 import {
   BarChart,
@@ -65,6 +66,7 @@ export const VisitorDashboard = () => {
   const [activities, setActivities] = useState<VisitorActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d');
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
 
   useEffect(() => {
     fetchActivities();
@@ -528,46 +530,161 @@ export const VisitorDashboard = () => {
                 return (
                   <div 
                     key={session.session_id}
-                    className="p-3 rounded-lg border border-border/50 bg-secondary/10"
+                    className="rounded-lg border border-border/50 bg-secondary/10 overflow-hidden"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium">Visitor #{visitorNumber}</p>
-                          <span className={`text-xs ${visitorType.color}`}>• {visitorType.label}</span>
+                    <button
+                      onClick={() => setExpandedSession(
+                        expandedSession === session.session_id ? null : session.session_id
+                      )}
+                      className="w-full p-3 text-left hover:bg-secondary/20 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">Visitor #{visitorNumber}</p>
+                            <span className={`text-xs ${visitorType.color}`}>• {visitorType.label}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {timeAgo} • {durationText}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {timeAgo} • {durationText}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{session.totalActivities} actions</Badge>
+                          {expandedSession === session.session_id ? (
+                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
                       </div>
-                      <Badge variant="outline">{session.totalActivities} actions</Badge>
-                    </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {session.chatbotQueries > 0 && (
-                      <Badge className="bg-blue-500/20 text-blue-400 text-xs">
-                        <MessageCircle className="w-3 h-3 mr-1" />
-                        {session.chatbotQueries} chats
-                      </Badge>
-                    )}
-                    {session.resumeDownloads > 0 && (
-                      <Badge className="bg-orange-500/20 text-orange-400 text-xs">
-                        <Download className="w-3 h-3 mr-1" />
-                        {session.resumeDownloads} downloads
-                      </Badge>
-                    )}
-                    {session.projectClicks > 0 && (
-                      <Badge className="bg-green-500/20 text-green-400 text-xs">
-                        <MousePointer className="w-3 h-3 mr-1" />
-                        {session.projectClicks} projects
-                      </Badge>
-                    )}
-                    {session.sectionsViewed.length > 0 && (
-                      <Badge className="bg-purple-500/20 text-purple-400 text-xs">
-                        <Eye className="w-3 h-3 mr-1" />
-                        {session.sectionsViewed.length} sections
-                      </Badge>
-                    )}
-                    </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {session.chatbotQueries > 0 && (
+                          <Badge className="bg-blue-500/20 text-blue-400 text-xs">
+                            <MessageCircle className="w-3 h-3 mr-1" />
+                            {session.chatbotQueries} chats
+                          </Badge>
+                        )}
+                        {session.resumeDownloads > 0 && (
+                          <Badge className="bg-orange-500/20 text-orange-400 text-xs">
+                            <Download className="w-3 h-3 mr-1" />
+                            {session.resumeDownloads} downloads
+                          </Badge>
+                        )}
+                        {session.projectClicks > 0 && (
+                          <Badge className="bg-green-500/20 text-green-400 text-xs">
+                            <MousePointer className="w-3 h-3 mr-1" />
+                            {session.projectClicks} projects
+                          </Badge>
+                        )}
+                        {session.sectionsViewed.length > 0 && (
+                          <Badge className="bg-purple-500/20 text-purple-400 text-xs">
+                            <Eye className="w-3 h-3 mr-1" />
+                            {session.sectionsViewed.length} sections
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+                    
+                    <AnimatePresence>
+                      {expandedSession === session.session_id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-3 pb-3 border-t border-border/30">
+                            <p className="text-xs text-muted-foreground font-medium mt-3 mb-2">Activity Timeline</p>
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                              {session.activities
+                                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                                .map((activity, actIndex) => {
+                                  const activityTime = new Date(activity.created_at);
+                                  const timeStr = activityTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                  
+                                  const getActivityDetails = () => {
+                                    switch (activity.activity_type) {
+                                      case 'page_view':
+                                        return {
+                                          icon: <Globe className="w-3 h-3" />,
+                                          label: 'Visited page',
+                                          detail: activity.activity_data?.path || 'Homepage',
+                                          color: 'text-muted-foreground'
+                                        };
+                                      case 'section_view':
+                                        return {
+                                          icon: <Eye className="w-3 h-3" />,
+                                          label: 'Viewed section',
+                                          detail: activity.activity_data?.section || 'Unknown',
+                                          color: 'text-purple-400'
+                                        };
+                                      case 'chatbot_query':
+                                        return {
+                                          icon: <MessageCircle className="w-3 h-3" />,
+                                          label: 'Asked chatbot',
+                                          detail: activity.activity_data?.query ? `"${activity.activity_data.query.slice(0, 80)}${activity.activity_data.query.length > 80 ? '...' : ''}"` : 'Query',
+                                          color: 'text-blue-400'
+                                        };
+                                      case 'resume_view':
+                                        return {
+                                          icon: <FileText className="w-3 h-3" />,
+                                          label: 'Viewed resume',
+                                          detail: activity.activity_data?.resume_name || 'Resume',
+                                          color: 'text-cyan-400'
+                                        };
+                                      case 'resume_download':
+                                        return {
+                                          icon: <Download className="w-3 h-3" />,
+                                          label: 'Downloaded resume',
+                                          detail: activity.activity_data?.resume_name || 'Resume',
+                                          color: 'text-orange-400'
+                                        };
+                                      case 'project_view':
+                                        return {
+                                          icon: <FolderOpen className="w-3 h-3" />,
+                                          label: 'Viewed project',
+                                          detail: activity.activity_data?.project_name || 'Project',
+                                          color: 'text-green-400'
+                                        };
+                                      case 'project_click':
+                                        return {
+                                          icon: <ExternalLink className="w-3 h-3" />,
+                                          label: 'Clicked project link',
+                                          detail: activity.activity_data?.project_name || 'Project',
+                                          color: 'text-green-400'
+                                        };
+                                      default:
+                                        return {
+                                          icon: <Activity className="w-3 h-3" />,
+                                          label: activity.activity_type.replace(/_/g, ' '),
+                                          detail: JSON.stringify(activity.activity_data || {}),
+                                          color: 'text-muted-foreground'
+                                        };
+                                    }
+                                  };
+                                  
+                                  const details = getActivityDetails();
+                                  
+                                  return (
+                                    <div 
+                                      key={activity.id}
+                                      className="flex items-start gap-2 text-xs"
+                                    >
+                                      <span className="text-muted-foreground w-12 shrink-0">{timeStr}</span>
+                                      <span className={details.color}>{details.icon}</span>
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-muted-foreground">{details.label}: </span>
+                                        <span className="text-foreground">{details.detail}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               })}
