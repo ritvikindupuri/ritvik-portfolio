@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X } from "lucide-react";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, FileText, Upload } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
@@ -251,21 +251,89 @@ export const Hero = ({ isOwner }: HeroProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [resumeUrl, setResumeUrl] = useState<string>("");
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
 
   useEffect(() => {
-    fetchProfileImage();
+    fetchProfileData();
   }, []);
 
-  const fetchProfileImage = async () => {
+  const fetchProfileData = async () => {
     // Fetch the first profile (owner's profile) for display
     const { data, error } = await supabase
       .from('profiles')
-      .select('profile_image_url')
+      .select('profile_image_url, resume_url')
       .limit(1)
       .single();
 
     if (data?.profile_image_url) {
       setProfileImage(data.profile_image_url);
+    }
+    if (data?.resume_url) {
+      setResumeUrl(data.resume_url);
+    }
+  };
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error("Please upload a PDF file");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+
+    setIsUploadingResume(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to upload");
+        return;
+      }
+
+      // Upload to storage
+      const fileName = `resume_${Date.now()}.pdf`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('resume')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast.error("Failed to upload resume");
+        return;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('resume')
+        .getPublicUrl(fileName);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ resume_url: urlData.publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        toast.error("Failed to save resume URL");
+        return;
+      }
+
+      setResumeUrl(urlData.publicUrl);
+      toast.success("Resume uploaded successfully");
+    } catch (error) {
+      console.error('Resume upload error:', error);
+      toast.error("Failed to upload resume");
+    } finally {
+      setIsUploadingResume(false);
     }
   };
 
@@ -499,12 +567,12 @@ export const Hero = ({ isOwner }: HeroProps) => {
             </div>
           </motion.div>
 
-          {/* Social Links */}
+          {/* Social Links & Resume */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.8 }}
-            className="flex items-center justify-center gap-6 pt-6"
+            className="flex flex-wrap items-center justify-center gap-4 pt-6"
           >
             <a
               href="https://github.com/ritvikindupuri"
@@ -524,7 +592,81 @@ export const Hero = ({ isOwner }: HeroProps) => {
               <Linkedin className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
               <span className="font-medium text-sm">LinkedIn</span>
             </a>
+            
+            {/* Resume Button */}
+            {resumeUrl ? (
+              <button
+                onClick={() => setShowResumeDialog(true)}
+                className="group flex items-center gap-2 px-6 py-3 bg-primary/20 hover:bg-primary/30 border border-primary/50 hover:border-primary rounded-full transition-all duration-300 hover:shadow-elegant"
+              >
+                <FileText className="w-5 h-5 text-primary" />
+                <span className="font-medium text-sm text-primary">View Resume</span>
+              </button>
+            ) : isOwner ? (
+              <label className="group flex items-center gap-2 px-6 py-3 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300 hover:shadow-elegant cursor-pointer">
+                <Upload className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="font-medium text-sm">{isUploadingResume ? "Uploading..." : "Upload Resume"}</span>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleResumeUpload}
+                  className="hidden"
+                  disabled={isUploadingResume}
+                />
+              </label>
+            ) : null}
+            
+            {/* Owner: Update Resume */}
+            {isOwner && resumeUrl && (
+              <label className="group flex items-center gap-2 px-4 py-2 bg-secondary/50 hover:bg-secondary border border-border hover:border-primary/30 rounded-full transition-all duration-300 cursor-pointer">
+                <Upload className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="font-medium text-xs">{isUploadingResume ? "Uploading..." : "Update"}</span>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleResumeUpload}
+                  className="hidden"
+                  disabled={isUploadingResume}
+                />
+              </label>
+            )}
           </motion.div>
+
+          {/* Resume Viewer Dialog */}
+          <Dialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
+            <DialogContent className="max-w-4xl h-[85vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Resume
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 h-full min-h-0">
+                <iframe
+                  src={resumeUrl}
+                  className="w-full h-[calc(85vh-100px)] rounded-lg border border-border"
+                  title="Resume"
+                />
+                <div className="mt-4 flex justify-end gap-3">
+                  <a
+                    href={resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    Open in New Tab
+                  </a>
+                  <a
+                    href={resumeUrl}
+                    download
+                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors text-sm font-medium"
+                  >
+                    Download
+                  </a>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Scroll Indicator - Clickable */}
           <motion.div
