@@ -337,6 +337,20 @@ export const Hero = ({ isOwner }: HeroProps) => {
     }
   };
 
+  const trackResumeEvent = async (eventType: 'view' | 'download') => {
+    try {
+      await supabase
+        .from('resume_analytics')
+        .insert({
+          event_type: eventType,
+          user_agent: navigator.userAgent,
+          referrer: document.referrer || null,
+        });
+    } catch (error) {
+      console.error('Failed to track resume event:', error);
+    }
+  };
+
   const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
@@ -596,7 +610,10 @@ export const Hero = ({ isOwner }: HeroProps) => {
             {/* Resume Button */}
             {resumeUrl ? (
               <button
-                onClick={() => setShowResumeDialog(true)}
+                onClick={() => {
+                  trackResumeEvent('view');
+                  setShowResumeDialog(true);
+                }}
                 className="group flex items-center gap-2 px-6 py-3 bg-primary/20 hover:bg-primary/30 border border-primary/50 hover:border-primary rounded-full transition-all duration-300 hover:shadow-elegant"
               >
                 <FileText className="w-5 h-5 text-primary" />
@@ -659,6 +676,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
                   <a
                     href={resumeUrl}
                     download
+                    onClick={() => trackResumeEvent('download')}
                     className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors text-sm font-medium"
                   >
                     Download

@@ -395,6 +395,33 @@ export type Database = {
         }
         Relationships: []
       }
+      resume_analytics: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          referrer: string | null
+          user_agent: string | null
+          viewer_ip: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          referrer?: string | null
+          user_agent?: string | null
+          viewer_ip?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          referrer?: string | null
+          user_agent?: string | null
+          viewer_ip?: string | null
+        }
+        Relationships: []
+      }
       skills: {
         Row: {
           category: string
