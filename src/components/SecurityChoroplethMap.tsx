@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Globe, MapPin, AlertTriangle, CheckCircle, Clock, Monitor, User } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LoginAttempt {
   id: string;
@@ -410,24 +411,44 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                             <span className="text-sm font-medium">{attempt.email}</span>
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <button 
-                              className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
-                              onClick={() => {
-                                if (location && map.current) {
-                                  setSelectedLocation(location);
-                                  map.current.flyTo({
-                                    center: [location.lon, location.lat],
-                                    zoom: 4,
-                                    duration: 1500
-                                  });
-                                }
-                              }}
-                              disabled={!location}
-                              title={location ? `Click to view ${location.city} on globe` : 'Location not available'}
-                            >
-                              <MapPin className="w-3 h-3" />
-                              {location ? `${location.city}, ${location.country}` : attempt.ip_address || 'Unknown'}
-                            </button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button 
+                                    className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                                    onClick={() => {
+                                      if (location && map.current) {
+                                        setSelectedLocation(location);
+                                        map.current.flyTo({
+                                          center: [location.lon, location.lat],
+                                          zoom: 4,
+                                          duration: 1500
+                                        });
+                                      }
+                                    }}
+                                    disabled={!location}
+                                  >
+                                    <MapPin className="w-3 h-3" />
+                                    {location ? `${location.city}, ${location.country}` : attempt.ip_address || 'Unknown'}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="max-w-xs">
+                                  {location ? (
+                                    <div className="space-y-1 text-xs">
+                                      <p className="font-semibold">{location.city}, {location.country}</p>
+                                      <p className="font-mono text-muted-foreground">IP: {location.ip}</p>
+                                      <div className="flex gap-3 pt-1">
+                                        <span className="text-green-500">{location.successCount} successful</span>
+                                        <span className="text-red-500">{location.failedCount} failed</span>
+                                      </div>
+                                      <p className="text-muted-foreground italic pt-1">Click to view on globe</p>
+                                    </div>
+                                  ) : (
+                                    <p>Location data unavailable</p>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             <span className="flex items-center gap-1">
                               <Monitor className="w-3 h-3" />
                               {parseBrowser(attempt.user_agent)}
