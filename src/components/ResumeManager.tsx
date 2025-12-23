@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
 
 interface Resume {
   id: string;
@@ -21,6 +22,7 @@ interface ResumeManagerProps {
 }
 
 export const ResumeManager = ({ isOwner }: ResumeManagerProps) => {
+  const { trackResumeView, trackResumeDownload } = useVisitorTracker();
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -186,6 +188,7 @@ export const ResumeManager = ({ isOwner }: ResumeManagerProps) => {
 
   const handleDownload = async (resume: Resume) => {
     trackResumeEvent('download', resume.id);
+    trackResumeDownload(resume.name); // Track for visitor analytics
     try {
       const response = await fetch(resume.file_url);
       const blob = await response.blob();
@@ -206,6 +209,7 @@ export const ResumeManager = ({ isOwner }: ResumeManagerProps) => {
 
   const handleView = (resume: Resume) => {
     trackResumeEvent('view', resume.id);
+    trackResumeView(resume.name); // Track for visitor analytics
     setSelectedResume(resume);
     setShowViewDialog(true);
   };

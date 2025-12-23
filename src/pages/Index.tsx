@@ -17,6 +17,7 @@ import { PortfolioChatbot } from "@/components/PortfolioChatbot";
 import { MLShowcase } from "@/components/MLShowcase";
 import { LLMShowcase } from "@/components/LLMShowcase";
 import { SectionTransition } from "@/components/SectionTransition";
+import { VisitorTrackerProvider } from "@/components/VisitorTrackerProvider";
 
 const Index = () => {
   
@@ -118,13 +119,14 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
-      
-      <div className="relative">
+    <VisitorTrackerProvider isOwner={isOwner}>
+      <div className="min-h-screen bg-background">
+        <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
         
-        <div className="relative bg-background">
-          <Hero isOwner={isOwner} />
+        <div className="relative">
+          
+          <div className="relative bg-background">
+            <Hero isOwner={isOwner} />
           
           <SectionTransition 
             badge="Who I Am" 
@@ -220,9 +222,10 @@ const Index = () => {
               </p>
             </div>
           </footer>
+          </div>
         </div>
       </div>
-    </div>
+    </VisitorTrackerProvider>
   );
 };
 
