@@ -242,6 +242,182 @@ flowchart LR
 
 ---
 
+## 📸 Screenshots & Visual Reference
+
+### Portfolio Landing Page
+
+<p align="center">
+  <img src="docs/screenshots/portfolio-hero.png" alt="Portfolio Hero Section" width="800"/>
+</p>
+
+**Figure 1: Portfolio Hero Section** — The landing page features a professional profile photo, animated name introduction with gradient text, and quick access buttons for GitHub/LinkedIn profiles and resume downloads. The cosmic particle background creates an engaging visual experience.
+
+---
+
+### Access Control Dialog
+
+<p align="center">
+  <img src="docs/screenshots/access-dialog.png" alt="Access Control Dialog" width="600"/>
+</p>
+
+**Figure 2: Access Control Dialog** — Visitors can choose to browse as a guest (view-only) or sign in as the portfolio owner for full edit access. This modal appears on first visit and handles the visitor/owner flow separation.
+
+---
+
+### Owner Dashboard - Visitor Analytics
+
+<p align="center">
+  <img src="docs/screenshots/visitor-dashboard.png" alt="Visitor Analytics Dashboard" width="800"/>
+</p>
+
+**Figure 3: Visitor Analytics Dashboard** — The Owner Dashboard displays real-time visitor statistics including:
+- **Session Cards**: Each visitor session shows a unique ID, classification label (e.g., "Engaged Visitor", "Potential Recruiter"), and key metrics
+- **Activity Metrics**: Chatbot queries, sections viewed, project clicks, and resume downloads
+- **Expandable Timeline**: Click any session to reveal the full chronological activity log with timestamps
+
+---
+
+### Visitor Session Timeline
+
+<p align="center">
+  <img src="docs/screenshots/session-timeline.png" alt="Visitor Session Timeline" width="700"/>
+</p>
+
+**Figure 4: Session Activity Timeline** — Each session can be expanded to show a detailed timeline of visitor actions. The timeline displays:
+- Chronological activity entries with relative timestamps ("5 minutes ago")
+- Activity type icons (chat bubble for queries, eye for views, download for resumes)
+- Captured data such as chatbot questions asked and sections explored
+
+---
+
+### Security Monitoring - Interactive Globe
+
+<p align="center">
+  <img src="docs/screenshots/security-globe.png" alt="Security Globe Visualization" width="800"/>
+</p>
+
+**Figure 5: Interactive Security Globe** — The Security tab features a 3D Mapbox globe that visualizes login attempts geographically:
+- 🟢 **Green markers**: Locations with mostly successful logins
+- 🔴 **Red markers**: Suspicious locations with failed attempts or brute force patterns
+- **Auto-rotation**: Globe slowly rotates to show global coverage
+- **Click interaction**: Clicking a marker reveals detailed login attempt logs for that location
+
+---
+
+### Threat Detection Panel
+
+<p align="center">
+  <img src="docs/screenshots/threat-detector.png" alt="MITRE ATT&CK Threat Detection" width="800"/>
+</p>
+
+**Figure 6: MITRE ATT&CK Threat Detection Panel** — Real-time threat analysis displays:
+- **Detected Techniques**: Cards showing MITRE technique ID, name, and tactic
+- **Confidence Score**: Visual bar indicating detection confidence (0-100%)
+- **Severity Badge**: Color-coded severity levels (Critical, High, Medium, Low)
+- **Evidence**: Specific data points that triggered the detection
+- **Affected IPs**: List of source IP addresses involved in the attack pattern
+
+---
+
+### Login Attempt Monitor
+
+<p align="center">
+  <img src="docs/screenshots/login-monitor.png" alt="Login Attempt Monitor" width="750"/>
+</p>
+
+**Figure 7: Login Attempt Monitor** — A chronological table showing all authentication attempts with:
+- **Email**: The email address used in the attempt
+- **IP Address**: Source IP with geolocation data
+- **Status**: Success ✓ or Failure ✗ indicator
+- **Failure Reason**: Why the login failed (invalid password, unknown user, etc.)
+- **Timestamp**: When the attempt occurred
+- **User Agent**: Browser/client information for forensic analysis
+
+---
+
+### Visitor Alert Email
+
+<p align="center">
+  <img src="docs/screenshots/email-visitor-alert.png" alt="Visitor Alert Email" width="600"/>
+</p>
+
+**Figure 8: Visitor Alert Email** — Automated email sent when a visitor reaches 5+ actions. Contains:
+- Session identification (ID, IP address)
+- Complete activity log with timestamps
+- All chatbot queries the visitor asked
+- Visitor email if provided via contact form
+- Clean HTML formatting with the portfolio branding
+
+---
+
+### Threat Alert Email
+
+<p align="center">
+  <img src="docs/screenshots/email-threat-alert.png" alt="Security Threat Alert Email" width="600"/>
+</p>
+
+**Figure 9: Security Threat Alert Email** — Critical security notification sent when threats are detected:
+- **Attacker Information**: Email and IP address involved
+- **Attack Timeline**: Chronological list of login attempts with outcomes
+- **MITRE ATT&CK Details**: Full technique breakdown including:
+  - Technique ID (e.g., T1110)
+  - Technique Name (e.g., Brute Force)
+  - Tactic Category (e.g., Credential Access)
+  - Severity Level with color coding
+  - Confidence percentage
+  - Supporting evidence
+- **Remediation Steps**: Actionable security recommendations
+
+---
+
+### Weekly Digest Email
+
+<p align="center">
+  <img src="docs/screenshots/email-weekly-digest.png" alt="Weekly Digest Email" width="600"/>
+</p>
+
+**Figure 10: Weekly Digest Email** — Comprehensive weekly summary delivered every Monday at 9:00 AM UTC:
+- **Visitor Statistics**: Total visitors, actions, queries, downloads
+- **Top Chatbot Questions**: Most frequently asked questions with counts
+- **Popular Sections**: Which portfolio sections received the most views
+- **Top Projects**: Most clicked projects with interaction counts
+- **Security Overview**: Login attempt summary, unique IPs, suspicious activity flags
+
+---
+
+### AI Chatbot Interface
+
+<p align="center">
+  <img src="docs/screenshots/chatbot-interface.png" alt="AI Chatbot Interface" width="400"/>
+</p>
+
+**Figure 11: AI Chatbot Interface** — Floating chatbot widget that allows visitors to ask natural language questions:
+- **RAG-Powered Responses**: Uses vector embeddings for semantic search across portfolio content
+- **Conversation History**: Maintains context within the session
+- **Query Tracking**: All questions are logged for analytics
+- **Prompt Injection Detection**: Security layer prevents malicious prompts
+
+---
+
+> **📝 Note for Repository Maintainers**: 
+> 
+> To add your own screenshots, create a `docs/screenshots/` folder and add the following images:
+> - `portfolio-hero.png` — Landing page hero section
+> - `access-dialog.png` — Guest/Owner access modal
+> - `visitor-dashboard.png` — Full visitor analytics view
+> - `session-timeline.png` — Expanded session with activity timeline
+> - `security-globe.png` — 3D Mapbox globe with login markers
+> - `threat-detector.png` — MITRE ATT&CK threat cards
+> - `login-monitor.png` — Login attempts table
+> - `email-visitor-alert.png` — Visitor notification email
+> - `email-threat-alert.png` — Security alert email
+> - `email-weekly-digest.png` — Weekly summary email
+> - `chatbot-interface.png` — AI chatbot widget
+>
+> Recommended screenshot dimensions: 1200px width for full-page shots, 800px for focused components.
+
+---
+
 ## 📊 Portfolio Analytics System
 
 ### Overview
