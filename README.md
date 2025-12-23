@@ -12,6 +12,222 @@ Beyond being a portfolio, this site implements **enterprise-grade security monit
 
 ---
 
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (React + Vite)"]
+        UI[Portfolio UI]
+        VTP[VisitorTrackerProvider]
+        TD[ThreatDetector]
+        VD[VisitorDashboard]
+        SCM[SecurityChoroplethMap]
+        CB[AI Chatbot]
+    end
+
+    subgraph Supabase["Supabase Backend"]
+        subgraph Database["PostgreSQL Database"]
+            VA[(visitor_activity)]
+            LA[(login_attempts)]
+            PR[(projects)]
+            SK[(skills)]
+            EX[(experience)]
+            PF[(profiles)]
+        end
+        
+        subgraph EdgeFunctions["Edge Functions"]
+            SVA[send-visitor-alert]
+            STA[send-threat-alert]
+            WD[weekly-digest]
+            GIP[geolocate-ip]
+            PCB[portfolio-chatbot]
+            GMT[get-mapbox-token]
+        end
+        
+        subgraph Extensions["Extensions"]
+            CRON[pg_cron]
+            NET[pg_net]
+            VEC[pgvector]
+        end
+    end
+
+    subgraph External["External Services"]
+        RS[Resend Email API]
+        MB[Mapbox GL]
+        OAI[OpenAI API]
+    end
+
+    UI --> VTP
+    VTP -->|Track Actions| VA
+    UI -->|Login Attempt| LA
+    
+    TD -->|Analyze| LA
+    TD -->|High Severity| STA
+    
+    VD -->|Query| VA
+    SCM -->|Query| LA
+    SCM -->|Geolocate| GIP
+    
+    CB -->|Query| PCB
+    PCB -->|Embeddings| OAI
+    PCB -->|Semantic Search| VEC
+    
+    VTP -->|5+ Actions| SVA
+    SVA --> RS
+    STA --> RS
+    WD --> RS
+    
+    CRON -->|Weekly| WD
+    GIP -->|Coordinates| MB
+    GMT -->|Token| SCM
+```
+
+---
+
+## 📧 Visitor Action to Email Alert Flow
+
+```mermaid
+sequenceDiagram
+    participant V as Visitor
+    participant UI as Portfolio UI
+    participant VTP as VisitorTrackerProvider
+    participant DB as Supabase DB
+    participant EF as Edge Function
+    participant RS as Resend API
+    participant O as Owner Email
+
+    Note over V,O: Real-Time Visitor Alert Flow
+    
+    V->>UI: Browses portfolio
+    UI->>VTP: trackSectionView("Skills")
+    VTP->>VTP: Check isOwner (false)
+    VTP->>DB: INSERT visitor_activity
+    VTP->>VTP: activityCount++
+    
+    V->>UI: Asks chatbot question
+    UI->>VTP: trackChatbotQuery("What skills?")
+    VTP->>DB: INSERT visitor_activity
+    VTP->>VTP: activityCount++
+    
+    V->>UI: Downloads resume
+    UI->>VTP: trackResumeDownload("Resume")
+    VTP->>DB: INSERT visitor_activity
+    VTP->>VTP: activityCount = 5 ✓
+    
+    Note over VTP: Threshold reached!
+    
+    VTP->>EF: invoke('send-visitor-alert')
+    EF->>EF: Build HTML email
+    EF->>EF: Sanitize all inputs
+    EF->>RS: POST /emails
+    RS->>O: 📧 Visitor Alert Email
+    
+    Note over O: Email contains:<br/>- Session ID<br/>- Activity log<br/>- Chatbot queries<br/>- Timestamps
+```
+
+---
+
+## 🚨 Threat Detection to Alert Flow
+
+```mermaid
+sequenceDiagram
+    participant A as Attacker
+    participant AUTH as Auth System
+    participant DB as login_attempts
+    participant TD as ThreatDetector
+    participant EF as send-threat-alert
+    participant RS as Resend API
+    participant O as Owner Email
+
+    Note over A,O: Security Threat Detection Flow
+    
+    A->>AUTH: Login attempt #1 (fail)
+    AUTH->>DB: INSERT {ip, email, success: false}
+    
+    A->>AUTH: Login attempt #2 (fail)
+    AUTH->>DB: INSERT {ip, email, success: false}
+    
+    A->>AUTH: Login attempt #3 (fail)
+    AUTH->>DB: INSERT {ip, email, success: false}
+    
+    Note over TD: Realtime subscription triggers
+    
+    DB-->>TD: postgres_changes event
+    TD->>TD: Fetch all attempts
+    TD->>TD: Group by IP address
+    
+    TD->>TD: Analyze patterns
+    Note over TD: 3+ failed from same IP<br/>= T1110.001 Password Guessing<br/>Confidence: 60%
+    
+    A->>AUTH: Login attempt #4 (fail)
+    AUTH->>DB: INSERT {ip, email, success: false}
+    
+    A->>AUTH: Login attempt #5 (fail)
+    AUTH->>DB: INSERT {ip, email, success: false}
+    
+    DB-->>TD: postgres_changes event
+    TD->>TD: Re-analyze
+    Note over TD: 5+ failed in 1 hour<br/>= T1110 Brute Force<br/>Confidence: 95% ⚠️
+    
+    TD->>TD: Severity = HIGH ✓
+    TD->>TD: Confidence ≥ 60% ✓
+    
+    TD->>EF: invoke('send-threat-alert')
+    EF->>EF: Map to MITRE ATT&CK
+    EF->>EF: Add remediation steps
+    EF->>RS: POST /emails
+    RS->>O: 🚨 THREAT ALERT Email
+    
+    Note over O: Email contains:<br/>- Attacker IP & email<br/>- Login attempt log<br/>- MITRE technique details<br/>- Remediation steps
+```
+
+---
+
+## 📅 Weekly Digest Flow
+
+```mermaid
+flowchart LR
+    subgraph Scheduler["pg_cron Scheduler"]
+        CRON["⏰ Monday 9AM UTC"]
+    end
+    
+    subgraph EdgeFunction["weekly-digest Function"]
+        FETCH["Fetch 7 days data"]
+        AGG["Aggregate stats"]
+        BUILD["Build HTML email"]
+    end
+    
+    subgraph Data["Data Sources"]
+        VA[(visitor_activity)]
+        LA[(login_attempts)]
+    end
+    
+    subgraph Email["Email Content"]
+        VS["👥 Visitor Stats"]
+        TQ["💬 Top Queries"]
+        TS["📍 Top Sections"]
+        TP["🔗 Top Projects"]
+        SS["🛡️ Security Stats"]
+    end
+    
+    CRON -->|HTTP POST| FETCH
+    FETCH --> VA
+    FETCH --> LA
+    VA --> AGG
+    LA --> AGG
+    AGG --> BUILD
+    BUILD --> VS
+    BUILD --> TQ
+    BUILD --> TS
+    BUILD --> TP
+    BUILD --> SS
+    
+    VS --> RS[Resend API]
+    RS --> OWNER[📧 Owner Inbox]
+```
+
+---
+
 ## Key Features
 
 - **Personal Portfolio Website**: Showcases your projects, experience, education, and skills.
