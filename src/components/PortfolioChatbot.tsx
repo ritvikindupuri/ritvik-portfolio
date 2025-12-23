@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
+import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,6 +20,8 @@ interface PortfolioChatbotProps {
 }
 
 export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
+  const { trackChatbotQuery } = useVisitorTracker();
+  
   // Don't show chatbot to owner - check BEFORE any hooks
   if (isOwner) {
     return null;
@@ -56,6 +59,9 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
       content: input.trim(),
       timestamp: new Date()
     };
+
+    // Track the chatbot query for visitor analytics
+    trackChatbotQuery(input.trim());
 
     setMessages(prev => [...prev, userMessage]);
     setInput("");
