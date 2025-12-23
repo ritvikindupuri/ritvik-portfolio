@@ -551,6 +551,36 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_activity: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string
+          email: string | null
+          id: string
+          ip_address: string | null
+          session_id: string
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          session_id: string
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          session_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

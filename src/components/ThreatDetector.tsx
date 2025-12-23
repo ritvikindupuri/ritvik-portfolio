@@ -1,7 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, ShieldAlert, Target, Info } from "lucide-react";
+import { toast } from "sonner";
 
 // MITRE ATT&CK Technique Mapping for Authentication Attacks
 const MITRE_TECHNIQUES = {
@@ -84,6 +86,8 @@ interface ThreatDetectorProps {
 }
 
 export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
+  const alertSentRef = useRef<Set<string>>(new Set());
+
   const detectedThreats = useMemo(() => {
     const threats: DetectedThreat[] = [];
     const now = new Date();
@@ -177,6 +181,54 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
 
     return threats.sort((a, b) => b.confidence - a.confidence);
   }, [loginAttempts]);
+
+  // Send threat alert email when high-severity threats detected
+  useEffect(() => {
+    const highSeverityThreats = detectedThreats.filter(t => t.technique.severity === 'high' && t.confidence >= 0.6);
+    
+    if (highSeverityThreats.length === 0) return;
+
+    // Create unique key for this threat combination
+    const threatKey = highSeverityThreats.map(t => `${t.technique.id}-${t.affectedIps.join(',')}`).join('|');
+    
+    if (alertSentRef.current.has(threatKey)) return;
+    alertSentRef.current.add(threatKey);
+
+    // Get attacker info from first threat
+    const attackerIp = highSeverityThreats[0]?.affectedIps[0] || 'Unknown';
+    const attackerAttempts = loginAttempts.filter(a => a.ip_address === attackerIp);
+    const attackerEmail = attackerAttempts[0]?.email || 'Unknown';
+
+    // Send threat alert
+    supabase.functions.invoke('send-threat-alert', {
+      body: {
+        attacker_email: attackerEmail,
+        attacker_ip: attackerIp,
+        login_attempts: attackerAttempts.map(a => ({
+          success: a.success,
+          timestamp: a.created_at,
+          failure_reason: a.failure_reason,
+          user_agent: a.user_agent
+        })),
+        threats: highSeverityThreats.map(t => ({
+          technique_id: t.technique.id,
+          technique_name: t.technique.name,
+          tactic: t.technique.tactic,
+          severity: t.technique.severity,
+          confidence: t.confidence,
+          description: t.technique.description,
+          evidence: t.evidence
+        }))
+      }
+    }).then(({ error }) => {
+      if (error) {
+        console.error('Failed to send threat alert:', error);
+        alertSentRef.current.delete(threatKey);
+      } else {
+        toast.error('🚨 Threat Alert Sent', { description: 'Security threat detected and email sent.' });
+      }
+    });
+  }, [detectedThreats, loginAttempts]);
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
