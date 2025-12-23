@@ -13,6 +13,7 @@ interface VisitorTrackerContextType {
   trackResumeView: (resumeName: string) => void;
   trackResumeDownload: (resumeName: string) => void;
   trackProjectView: (projectName: string) => void;
+  trackProjectClick: (projectName: string, projectUrl?: string) => void;
   trackSectionView: (sectionName: string) => void;
 }
 
@@ -92,6 +93,11 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
     trackActivity('project_view', { project_name: projectName });
   }, [trackActivity]);
 
+  // Track project click (when user clicks to view details/github)
+  const trackProjectClick = useCallback((projectName: string, projectUrl?: string) => {
+    trackActivity('project_click', { project_name: projectName, url: projectUrl });
+  }, [trackActivity]);
+
   // Track section view
   const trackSectionView = useCallback((sectionName: string) => {
     trackActivity('section_view', { section: sectionName });
@@ -159,6 +165,7 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
       trackResumeView,
       trackResumeDownload,
       trackProjectView,
+      trackProjectClick,
       trackSectionView
     }}>
       {children}
@@ -176,6 +183,7 @@ export const useVisitorTracker = () => {
       trackResumeView: () => {},
       trackResumeDownload: () => {},
       trackProjectView: () => {},
+      trackProjectClick: () => {},
       trackSectionView: () => {}
     };
   }

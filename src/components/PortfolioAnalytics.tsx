@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Shield, Users } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResumeAnalytics } from "@/components/ResumeAnalytics";
 import { SecurityChoroplethMap } from "@/components/SecurityChoroplethMap";
 import { ThreatDetector } from "@/components/ThreatDetector";
+import { VisitorDashboard } from "@/components/VisitorDashboard";
 
 interface LoginAttempt {
   id: string;
@@ -17,6 +19,7 @@ interface LoginAttempt {
 
 export const PortfolioAnalytics = () => {
   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
+  const [activeTab, setActiveTab] = useState("visitors");
 
   return (
     <motion.section
@@ -28,23 +31,38 @@ export const PortfolioAnalytics = () => {
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold flex items-center justify-center gap-3 mb-2">
           <BarChart3 className="w-6 h-6 text-primary" />
-          Security Analytics & Monitoring
+          Analytics & Security Center
         </h2>
         <p className="text-sm text-muted-foreground">
-          Real-time threat detection, login monitoring, and MITRE ATT&CK mapping
+          Visitor tracking, threat detection, and MITRE ATT&CK mapping
         </p>
       </div>
 
-      <div className="space-y-6">
-        {/* Global Login Map with Details */}
-        <SecurityChoroplethMap onLoginAttemptsLoaded={setLoginAttempts} />
-        
-        {/* Threat Detection & Resume Analytics Grid */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <ThreatDetector loginAttempts={loginAttempts} />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="visitors" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Visitor Analytics
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Security Monitoring
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="visitors" className="space-y-6">
+          <VisitorDashboard />
           <ResumeAnalytics />
-        </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          {/* Global Login Map with Details */}
+          <SecurityChoroplethMap onLoginAttemptsLoaded={setLoginAttempts} />
+          
+          {/* Threat Detection */}
+          <ThreatDetector loginAttempts={loginAttempts} />
+        </TabsContent>
+      </Tabs>
     </motion.section>
   );
 };
