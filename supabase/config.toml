@@ -14,3 +14,18 @@ verify_jwt = false
 
 [functions.log-auth-attempt]
 verify_jwt = false
+
+[functions.geolocate-ip]
+verify_jwt = false
+
+[functions.get-mapbox-token]
+verify_jwt = false
+
+[functions.send-visitor-alert]
+verify_jwt = false
+
+[functions.send-threat-alert]
+verify_jwt = false
+
+[functions.weekly-digest]
+verify_jwt = false

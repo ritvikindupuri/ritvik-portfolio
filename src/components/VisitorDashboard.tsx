@@ -346,8 +346,14 @@ export const VisitorDashboard = () => {
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#666" />
                 <YAxis tick={{ fontSize: 10 }} stroke="#666" />
                 <Tooltip 
-                  contentStyle={{ background: '#1a1a2e', border: '1px solid #333' }}
-                  labelStyle={{ color: '#fff' }}
+                  contentStyle={{ 
+                    background: 'hsl(222, 47%, 11%)', 
+                    border: '1px solid hsl(215, 20%, 30%)',
+                    borderRadius: '8px',
+                    padding: '8px 12px'
+                  }}
+                  labelStyle={{ color: 'hsl(0, 0%, 100%)', fontWeight: 600 }}
+                  itemStyle={{ color: 'hsl(0, 0%, 90%)' }}
                 />
                 <Line type="monotone" dataKey="count" stroke="#00d4ff" strokeWidth={2} dot={{ fill: '#00d4ff' }} />
               </LineChart>
@@ -380,7 +386,14 @@ export const VisitorDashboard = () => {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ background: '#1a1a2e', border: '1px solid #333' }}
+                  contentStyle={{ 
+                    background: 'hsl(222, 47%, 11%)', 
+                    border: '1px solid hsl(215, 20%, 30%)',
+                    borderRadius: '8px',
+                    padding: '8px 12px'
+                  }}
+                  labelStyle={{ color: 'hsl(0, 0%, 100%)', fontWeight: 600 }}
+                  itemStyle={{ color: 'hsl(0, 0%, 90%)' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -416,7 +429,14 @@ export const VisitorDashboard = () => {
                   <XAxis type="number" tick={{ fontSize: 10 }} stroke="#666" />
                   <YAxis type="category" dataKey="section" tick={{ fontSize: 10 }} stroke="#666" width={100} />
                   <Tooltip 
-                    contentStyle={{ background: '#1a1a2e', border: '1px solid #333' }}
+                    contentStyle={{ 
+                      background: 'hsl(222, 47%, 11%)', 
+                      border: '1px solid hsl(215, 20%, 30%)',
+                      borderRadius: '8px',
+                      padding: '8px 12px'
+                    }}
+                    labelStyle={{ color: 'hsl(0, 0%, 100%)', fontWeight: 600 }}
+                    itemStyle={{ color: 'hsl(0, 0%, 90%)' }}
                   />
                   <Bar dataKey="count" fill="#00d4ff" radius={[0, 4, 4, 0]} />
                 </BarChart>
