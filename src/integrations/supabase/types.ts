@@ -298,6 +298,7 @@ export type Database = {
           major: string | null
           minor: string | null
           profile_image_url: string | null
+          resume_url: string | null
           university: string | null
           university_logo_url: string | null
           updated_at: string | null
@@ -313,6 +314,7 @@ export type Database = {
           major?: string | null
           minor?: string | null
           profile_image_url?: string | null
+          resume_url?: string | null
           university?: string | null
           university_logo_url?: string | null
           updated_at?: string | null
@@ -328,6 +330,7 @@ export type Database = {
           major?: string | null
           minor?: string | null
           profile_image_url?: string | null
+          resume_url?: string | null
           university?: string | null
           university_logo_url?: string | null
           updated_at?: string | null
