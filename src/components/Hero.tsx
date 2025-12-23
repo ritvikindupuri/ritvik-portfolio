@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, FileText, Upload } from "lucide-react";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, FileText, Upload, BarChart3 } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ResumeAnalytics } from "@/components/ResumeAnalytics";
 
 const TypewriterText = () => {
   const fullText = "Hi, my name is Ritvik Indupuri";
@@ -260,18 +261,34 @@ export const Hero = ({ isOwner }: HeroProps) => {
   }, []);
 
   const fetchProfileData = async () => {
-    // Fetch the first profile (owner's profile) for display
-    const { data, error } = await supabase
+    // Try to fetch profile with resume first, fallback to any profile
+    const { data: profileWithResume } = await supabase
       .from('profiles')
       .select('profile_image_url, resume_url')
+      .not('resume_url', 'is', null)
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    if (profileWithResume) {
+      if (profileWithResume.profile_image_url) {
+        setProfileImage(profileWithResume.profile_image_url);
+      }
+      if (profileWithResume.resume_url) {
+        setResumeUrl(profileWithResume.resume_url);
+      }
+      return;
+    }
+
+    // Fallback: get any profile for profile image
+    const { data } = await supabase
+      .from('profiles')
+      .select('profile_image_url')
+      .not('profile_image_url', 'is', null)
+      .limit(1)
+      .maybeSingle();
 
     if (data?.profile_image_url) {
       setProfileImage(data.profile_image_url);
-    }
-    if (data?.resume_url) {
-      setResumeUrl(data.resume_url);
     }
   };
 
@@ -685,6 +702,18 @@ export const Hero = ({ isOwner }: HeroProps) => {
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Resume Analytics - Owner Only */}
+          {isOwner && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1, duration: 0.8 }}
+              className="max-w-md mx-auto mt-8"
+            >
+              <ResumeAnalytics />
+            </motion.div>
+          )}
 
           {/* Scroll Indicator - Clickable */}
           <motion.div
