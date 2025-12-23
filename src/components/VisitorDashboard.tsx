@@ -48,6 +48,19 @@ interface SessionSummary {
 
 const COLORS = ['#00d4ff', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 
+// Helper function for human-readable time ago
+const getTimeAgo = (date: Date): string => {
+  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
+};
+
 export const VisitorDashboard = () => {
   const [activities, setActivities] = useState<VisitorActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -495,22 +508,40 @@ export const VisitorDashboard = () => {
             <p className="text-center text-muted-foreground py-4">No visitor sessions yet</p>
           ) : (
             <div className="space-y-3 max-h-80 overflow-y-auto">
-              {sessions.slice(0, 10).map(session => (
-                <div 
-                  key={session.session_id}
-                  className="p-3 rounded-lg border border-border/50 bg-secondary/10"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-xs font-mono text-muted-foreground">
-                        {session.session_id.substring(0, 20)}...
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {session.startTime.toLocaleString()}
-                      </p>
+              {sessions.slice(0, 10).map((session, index) => {
+                // Generate a friendly visitor label
+                const visitorNumber = sessions.length - index;
+                const timeAgo = getTimeAgo(session.endTime);
+                const sessionDuration = Math.round((session.endTime.getTime() - session.startTime.getTime()) / 1000 / 60);
+                const durationText = sessionDuration < 1 ? 'Quick visit' : sessionDuration < 5 ? `${sessionDuration}m session` : `${sessionDuration}m engaged`;
+                
+                // Determine visitor type based on activity
+                const getVisitorType = () => {
+                  if (session.chatbotQueries > 2) return { label: 'Engaged Visitor', color: 'text-green-400' };
+                  if (session.resumeDownloads > 0) return { label: 'Potential Recruiter', color: 'text-orange-400' };
+                  if (session.projectClicks > 2) return { label: 'Project Explorer', color: 'text-blue-400' };
+                  if (session.sectionsViewed.length > 3) return { label: 'Active Browser', color: 'text-purple-400' };
+                  return { label: 'New Visitor', color: 'text-muted-foreground' };
+                };
+                const visitorType = getVisitorType();
+
+                return (
+                  <div 
+                    key={session.session_id}
+                    className="p-3 rounded-lg border border-border/50 bg-secondary/10"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">Visitor #{visitorNumber}</p>
+                          <span className={`text-xs ${visitorType.color}`}>• {visitorType.label}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {timeAgo} • {durationText}
+                        </p>
+                      </div>
+                      <Badge variant="outline">{session.totalActivities} actions</Badge>
                     </div>
-                    <Badge variant="outline">{session.totalActivities} actions</Badge>
-                  </div>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {session.chatbotQueries > 0 && (
                       <Badge className="bg-blue-500/20 text-blue-400 text-xs">
@@ -536,9 +567,10 @@ export const VisitorDashboard = () => {
                         {session.sectionsViewed.length} sections
                       </Badge>
                     )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
