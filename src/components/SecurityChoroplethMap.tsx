@@ -410,10 +410,24 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                             <span className="text-sm font-medium">{attempt.email}</span>
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
+                            <button 
+                              className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                              onClick={() => {
+                                if (location && map.current) {
+                                  setSelectedLocation(location);
+                                  map.current.flyTo({
+                                    center: [location.lon, location.lat],
+                                    zoom: 4,
+                                    duration: 1500
+                                  });
+                                }
+                              }}
+                              disabled={!location}
+                              title={location ? `Click to view ${location.city} on globe` : 'Location not available'}
+                            >
                               <MapPin className="w-3 h-3" />
                               {location ? `${location.city}, ${location.country}` : attempt.ip_address || 'Unknown'}
-                            </span>
+                            </button>
                             <span className="flex items-center gap-1">
                               <Monitor className="w-3 h-3" />
                               {parseBrowser(attempt.user_agent)}
