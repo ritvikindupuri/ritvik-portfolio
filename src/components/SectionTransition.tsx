@@ -1,4 +1,6 @@
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
 
 interface SectionTransitionProps {
   badge: string;
@@ -6,8 +8,34 @@ interface SectionTransitionProps {
 }
 
 export const SectionTransition = ({ badge, subtitle }: SectionTransitionProps) => {
+  const { trackSectionView } = useVisitorTracker();
+  const hasTrackedRef = useRef(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  // Track section view with Intersection Observer
+  useEffect(() => {
+    if (!sectionRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasTrackedRef.current) {
+            hasTrackedRef.current = true;
+            trackSectionView(badge);
+          }
+        });
+      },
+      { threshold: 0.5 } // Trigger when 50% visible
+    );
+
+    observer.observe(sectionRef.current);
+
+    return () => observer.disconnect();
+  }, [badge, trackSectionView]);
+
   return (
     <motion.div 
+      ref={sectionRef}
       className="relative py-20 overflow-hidden"
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}

@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
 
 interface ProjectsProps {
   isOwner: boolean;
@@ -37,9 +38,10 @@ interface SortableProjectProps {
   isOwner: boolean;
   onEdit: () => void;
   onRemove: () => void;
+  onProjectClick: (name: string, url?: string) => void;
 }
 
-const SortableProject = ({ project, category, isOwner, onEdit, onRemove }: SortableProjectProps) => {
+const SortableProject = ({ project, category, isOwner, onEdit, onRemove, onProjectClick }: SortableProjectProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
   const {
@@ -156,6 +158,7 @@ const SortableProject = ({ project, category, isOwner, onEdit, onRemove }: Sorta
               href={project.github}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => onProjectClick(project.title, project.github)}
               className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-medium text-sm mt-auto group/link bg-primary/5 hover:bg-primary/10 px-5 py-3 rounded-xl border border-primary/20 hover:border-primary/40"
             >
               <Github className="w-5 h-5" />
@@ -233,6 +236,7 @@ const initialProjects: Record<string, Project[]> = {
 };
 
 export const Projects = ({ isOwner }: ProjectsProps) => {
+  const { trackProjectClick } = useVisitorTracker();
   const [activeTab, setActiveTab] = useState("security");
   const [projects, setProjects] = useState(initialProjects);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -533,6 +537,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                             setIsAddDialogOpen(true);
                           }}
                           onRemove={() => handleRemoveProject(key, project.title)}
+                          onProjectClick={trackProjectClick}
                         />
                       ))}
 
