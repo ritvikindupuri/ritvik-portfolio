@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.index-github-content]
 verify_jwt = false
+
+[functions.log-auth-attempt]
+verify_jwt = false
