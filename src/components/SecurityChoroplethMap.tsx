@@ -157,9 +157,15 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     }
   };
 
-  // Initialize map when token is available
+  // Initialize map when token is available - ALWAYS show the globe
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || map.current) return;
+    if (!mapContainer.current || !mapboxToken) return;
+    
+    // Remove existing map if present
+    if (map.current) {
+      map.current.remove();
+      map.current = null;
+    }
 
     mapboxgl.accessToken = mapboxToken;
 
@@ -187,7 +193,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       });
     });
 
-    // Slow rotation
+    // Slow rotation - always active
     let userInteracting = false;
     const spinGlobe = () => {
       if (!map.current || userInteracting) return;
@@ -202,7 +208,9 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     map.current.on('mousedown', () => { userInteracting = true; });
     map.current.on('mouseup', () => { userInteracting = false; spinGlobe(); });
     map.current.on('moveend', spinGlobe);
-    spinGlobe();
+    
+    // Start spinning immediately
+    map.current.on('load', spinGlobe);
 
     return () => {
       map.current?.remove();
@@ -272,16 +280,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     return loginAttempts.slice(0, 5);
   }, [loginAttempts]);
 
-  if (loading) {
-    return (
-      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Loading geographic data...
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Always show the map, even while loading
   return (
     <div className="space-y-4">
       <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
