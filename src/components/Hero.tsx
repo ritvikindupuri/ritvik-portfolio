@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, BarChart3 } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { ResumeManager } from "@/components/ResumeManager";
 const TypewriterText = () => {
   const fullText = "Hi, my name is Ritvik Indupuri";
@@ -246,6 +246,7 @@ interface HeroProps {
 }
 
 export const Hero = ({ isOwner }: HeroProps) => {
+  const navigate = useNavigate();
   const [profileImage, setProfileImage] = useState<string>("");
   const [tempImage, setTempImage] = useState<string>("");
   const [showCropDialog, setShowCropDialog] = useState(false);
@@ -538,15 +539,22 @@ export const Hero = ({ isOwner }: HeroProps) => {
             <ResumeManager isOwner={isOwner} />
           </motion.div>
 
-          {/* Portfolio Analytics - Owner Only */}
+          {/* Analytics Dashboard Button - Owner Only */}
           {isOwner && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1, duration: 0.8 }}
-              className="w-full max-w-4xl mx-auto mt-8"
+              className="pt-4"
             >
-              <PortfolioAnalytics />
+              <Button 
+                onClick={() => navigate('/dashboard')}
+                className="gap-2"
+                size="lg"
+              >
+                <BarChart3 className="w-5 h-5" />
+                View Analytics Dashboard
+              </Button>
             </motion.div>
           )}
 

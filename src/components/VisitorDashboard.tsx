@@ -21,6 +21,7 @@ import {
   LineChart,
   Line
 } from "recharts";
+import { ChatbotQueryAnalysis } from "@/components/ChatbotQueryAnalysis";
 
 interface VisitorActivity {
   id: string;
@@ -457,6 +458,9 @@ export const VisitorDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Chatbot Query Analysis */}
+      <ChatbotQueryAnalysis />
 
       {/* Recent Sessions */}
       <Card className="bg-card/50 backdrop-blur-sm border-border/50">
