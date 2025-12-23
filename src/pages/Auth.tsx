@@ -8,6 +8,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, User } from "lucide-react";
 
+// Log auth attempt to edge function
+const logAuthAttempt = async (email: string, success: boolean, failureReason?: string) => {
+  try {
+    await supabase.functions.invoke('log-auth-attempt', {
+      body: {
+        email,
+        success,
+        failureReason,
+        userAgent: navigator.userAgent,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to log auth attempt:', error);
+  }
+};
+
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,7 +74,10 @@ export default function Auth() {
           },
         });
 
-        if (error) throw error;
+        if (error) {
+          await logAuthAttempt(email, false, error.message);
+          throw error;
+        }
 
         // SECURITY: Check if user has owner role (assigned server-side by database trigger)
         if (authData.user) {
@@ -71,6 +90,7 @@ export default function Auth() {
 
           if (roleError) {
             console.error('Role check error:', roleError);
+            await logAuthAttempt(email, false, 'Role check failed');
             await supabase.auth.signOut();
             toast.error("Authentication failed. Please try again.");
             setLoading(false);
@@ -79,6 +99,7 @@ export default function Auth() {
 
           if (!roleData) {
             // User doesn't have owner role - sign them out
+            await logAuthAttempt(email, false, 'Not owner role');
             await supabase.auth.signOut();
             toast.error("Only the portfolio owner can sign up here. Please continue as guest.");
             setLoading(false);
@@ -86,6 +107,7 @@ export default function Auth() {
           }
         }
 
+        await logAuthAttempt(email, true);
         toast.success("Account created! You're now logged in.");
         navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
       } else {
@@ -94,7 +116,10 @@ export default function Auth() {
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          await logAuthAttempt(email, false, error.message);
+          throw error;
+        }
 
         // SECURITY: Verify user has owner role from database
         if (authData.user) {
@@ -107,6 +132,7 @@ export default function Auth() {
 
           if (roleError) {
             console.error('Role check error:', roleError);
+            await logAuthAttempt(email, false, 'Role check failed');
             await supabase.auth.signOut();
             toast.error("Authentication failed. Please try again.");
             setLoading(false);
@@ -115,6 +141,7 @@ export default function Auth() {
 
           if (!roleData) {
             // User doesn't have owner role - sign them out
+            await logAuthAttempt(email, false, 'Not owner role');
             await supabase.auth.signOut();
             toast.error("Only the portfolio owner can sign in here. Please continue as guest.");
             setLoading(false);
@@ -122,6 +149,7 @@ export default function Auth() {
           }
         }
 
+        await logAuthAttempt(email, true);
         toast.success("Welcome back!");
         navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
       }

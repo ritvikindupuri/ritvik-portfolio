@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, FileText, Upload, BarChart3 } from "lucide-react";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, FileText, Upload, Download } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ResumeAnalytics } from "@/components/ResumeAnalytics";
-
+import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 const TypewriterText = () => {
   const fullText = "Hi, my name is Ritvik Indupuri";
   const [displayedText, setDisplayedText] = useState("");
@@ -690,28 +689,45 @@ export const Hero = ({ isOwner }: HeroProps) => {
                   >
                     Open in New Tab
                   </a>
-                  <a
-                    href={resumeUrl}
-                    download
-                    onClick={() => trackResumeEvent('download')}
-                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors text-sm font-medium"
+                  <button
+                    onClick={async () => {
+                      trackResumeEvent('download');
+                      try {
+                        const response = await fetch(resumeUrl);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'Ritvik_Indupuri_Resume.pdf';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        toast.success("Resume downloaded!");
+                      } catch (error) {
+                        console.error('Download error:', error);
+                        toast.error("Failed to download. Try opening in new tab.");
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors text-sm font-medium"
                   >
+                    <Download className="w-4 h-4" />
                     Download
-                  </a>
+                  </button>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
 
-          {/* Resume Analytics - Owner Only */}
+          {/* Portfolio Analytics - Owner Only */}
           {isOwner && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1, duration: 0.8 }}
-              className="max-w-md mx-auto mt-8"
+              className="w-full max-w-4xl mx-auto mt-8"
             >
-              <ResumeAnalytics />
+              <PortfolioAnalytics />
             </motion.div>
           )}
 
