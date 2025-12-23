@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, FileText, Upload, Download } from "lucide-react";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
+import { ResumeManager } from "@/components/ResumeManager";
 const TypewriterText = () => {
   const fullText = "Hi, my name is Ritvik Indupuri";
   const [displayedText, setDisplayedText] = useState("");
@@ -251,34 +252,13 @@ export const Hero = ({ isOwner }: HeroProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [resumeUrl, setResumeUrl] = useState<string>("");
-  const [isUploadingResume, setIsUploadingResume] = useState(false);
-  const [showResumeDialog, setShowResumeDialog] = useState(false);
 
   useEffect(() => {
     fetchProfileData();
   }, []);
 
   const fetchProfileData = async () => {
-    // Try to fetch profile with resume first, fallback to any profile
-    const { data: profileWithResume } = await supabase
-      .from('profiles')
-      .select('profile_image_url, resume_url')
-      .not('resume_url', 'is', null)
-      .limit(1)
-      .maybeSingle();
-
-    if (profileWithResume) {
-      if (profileWithResume.profile_image_url) {
-        setProfileImage(profileWithResume.profile_image_url);
-      }
-      if (profileWithResume.resume_url) {
-        setResumeUrl(profileWithResume.resume_url);
-      }
-      return;
-    }
-
-    // Fallback: get any profile for profile image
+    // Fetch profile for profile image
     const { data } = await supabase
       .from('profiles')
       .select('profile_image_url')
@@ -288,82 +268,6 @@ export const Hero = ({ isOwner }: HeroProps) => {
 
     if (data?.profile_image_url) {
       setProfileImage(data.profile_image_url);
-    }
-  };
-
-  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      toast.error("Please upload a PDF file");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File size must be less than 10MB");
-      return;
-    }
-
-    setIsUploadingResume(true);
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("You must be logged in to upload");
-        return;
-      }
-
-      // Upload to storage
-      const fileName = `resume_${Date.now()}.pdf`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('resume')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        toast.error("Failed to upload resume");
-        return;
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('resume')
-        .getPublicUrl(fileName);
-
-      // Update profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ resume_url: urlData.publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) {
-        console.error('Profile update error:', updateError);
-        toast.error("Failed to save resume URL");
-        return;
-      }
-
-      setResumeUrl(urlData.publicUrl);
-      toast.success("Resume uploaded successfully");
-    } catch (error) {
-      console.error('Resume upload error:', error);
-      toast.error("Failed to upload resume");
-    } finally {
-      setIsUploadingResume(false);
-    }
-  };
-
-  const trackResumeEvent = async (eventType: 'view' | 'download') => {
-    try {
-      await supabase
-        .from('resume_analytics')
-        .insert({
-          event_type: eventType,
-          user_agent: navigator.userAgent,
-          referrer: document.referrer || null,
-        });
-    } catch (error) {
-      console.error('Failed to track resume event:', error);
     }
   };
 
@@ -622,102 +526,17 @@ export const Hero = ({ isOwner }: HeroProps) => {
               <Linkedin className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
               <span className="font-medium text-sm">LinkedIn</span>
             </a>
-            
-            {/* Resume Button */}
-            {resumeUrl ? (
-              <button
-                onClick={() => {
-                  trackResumeEvent('view');
-                  setShowResumeDialog(true);
-                }}
-                className="group flex items-center gap-2 px-6 py-3 bg-primary/20 hover:bg-primary/30 border border-primary/50 hover:border-primary rounded-full transition-all duration-300 hover:shadow-elegant"
-              >
-                <FileText className="w-5 h-5 text-primary" />
-                <span className="font-medium text-sm text-primary">View Resume</span>
-              </button>
-            ) : isOwner ? (
-              <label className="group flex items-center gap-2 px-6 py-3 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300 hover:shadow-elegant cursor-pointer">
-                <Upload className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                <span className="font-medium text-sm">{isUploadingResume ? "Uploading..." : "Upload Resume"}</span>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleResumeUpload}
-                  className="hidden"
-                  disabled={isUploadingResume}
-                />
-              </label>
-            ) : null}
-            
-            {/* Owner: Update Resume */}
-            {isOwner && resumeUrl && (
-              <label className="group flex items-center gap-2 px-4 py-2 bg-secondary/50 hover:bg-secondary border border-border hover:border-primary/30 rounded-full transition-all duration-300 cursor-pointer">
-                <Upload className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                <span className="font-medium text-xs">{isUploadingResume ? "Uploading..." : "Update"}</span>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleResumeUpload}
-                  className="hidden"
-                  disabled={isUploadingResume}
-                />
-              </label>
-            )}
           </motion.div>
 
-          {/* Resume Viewer Dialog */}
-          <Dialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-            <DialogContent className="max-w-4xl h-[85vh]">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  Resume
-                </DialogTitle>
-              </DialogHeader>
-              <div className="flex-1 h-full min-h-0">
-                <iframe
-                  src={resumeUrl}
-                  className="w-full h-[calc(85vh-100px)] rounded-lg border border-border"
-                  title="Resume"
-                />
-                <div className="mt-4 flex justify-end gap-3">
-                  <a
-                    href={resumeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors text-sm font-medium"
-                  >
-                    Open in New Tab
-                  </a>
-                  <button
-                    onClick={async () => {
-                      trackResumeEvent('download');
-                      try {
-                        const response = await fetch(resumeUrl);
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'Ritvik_Indupuri_Resume.pdf';
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        document.body.removeChild(a);
-                        toast.success("Resume downloaded!");
-                      } catch (error) {
-                        console.error('Download error:', error);
-                        toast.error("Failed to download. Try opening in new tab.");
-                      }
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors text-sm font-medium"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          {/* Resume Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.95, duration: 0.8 }}
+            className="pt-4"
+          >
+            <ResumeManager isOwner={isOwner} />
+          </motion.div>
 
           {/* Portfolio Analytics - Owner Only */}
           {isOwner && (

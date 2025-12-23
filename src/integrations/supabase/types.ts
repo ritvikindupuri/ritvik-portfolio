@@ -452,6 +452,39 @@ export type Database = {
         }
         Relationships: []
       }
+      resumes: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          file_url: string
+          id: string
+          is_primary: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          file_url: string
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          file_url?: string
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       skills: {
         Row: {
           category: string
