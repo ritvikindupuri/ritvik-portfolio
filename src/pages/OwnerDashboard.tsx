@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
+import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -11,7 +12,7 @@ const OwnerDashboard = () => {
   const navigate = useNavigate();
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
-  
+  const [lastPasswordChange, setLastPasswordChange] = useState<string | null>(null);
 
   useEffect(() => {
     checkOwnerAccess();
@@ -39,6 +40,8 @@ const OwnerDashboard = () => {
         return;
       }
 
+      // Get last password change from user metadata
+      setLastPasswordChange(user.updated_at || user.created_at);
       setIsOwner(true);
     } catch (error) {
       console.error('Error checking owner access:', error);
@@ -52,7 +55,6 @@ const OwnerDashboard = () => {
     await supabase.auth.signOut();
     navigate('/');
   };
-
 
   if (loading) {
     return (
@@ -87,6 +89,7 @@ const OwnerDashboard = () => {
           </div>
           
           <div className="flex items-center gap-3">
+            <PasswordChangeDialog lastPasswordChange={lastPasswordChange} />
             <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
               <Shield className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-primary">Owner Dashboard</span>
