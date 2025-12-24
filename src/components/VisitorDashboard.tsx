@@ -517,10 +517,46 @@ export const VisitorDashboard = () => {
                 const sessionDuration = Math.round((session.endTime.getTime() - session.startTime.getTime()) / 1000 / 60);
                 const durationText = sessionDuration < 1 ? 'Quick visit' : sessionDuration < 5 ? `${sessionDuration}m session` : `${sessionDuration}m engaged`;
                 
-                // Determine visitor type based on activity
+                // Determine visitor type based on comprehensive activity analysis
                 const getVisitorType = () => {
+                  // Calculate a recruiter likelihood score based on multiple signals
+                  let recruiterScore = 0;
+                  
+                  // Signal 1: Resume interactions (strong signal)
+                  if (session.resumeDownloads > 0) recruiterScore += 30;
+                  if (session.resumeViews > 0) recruiterScore += 15;
+                  
+                  // Signal 2: Relevant chatbot queries (check for hiring/recruiting intent)
+                  const recruiterKeywords = ['experience', 'resume', 'skills', 'work', 'projects', 'contact', 'hire', 'job', 'position', 'role', 'team', 'available', 'salary', 'rate'];
+                  const chatbotActivities = session.activities.filter(a => a.activity_type === 'chatbot_query');
+                  const recruiterQueries = chatbotActivities.filter(a => {
+                    const query = (a.activity_data?.query || '').toLowerCase();
+                    return recruiterKeywords.some(keyword => query.includes(keyword));
+                  });
+                  if (recruiterQueries.length > 0) recruiterScore += Math.min(recruiterQueries.length * 15, 30);
+                  
+                  // Signal 3: Viewed relevant sections (experience, skills, certifications)
+                  const professionalSections = ['experience', 'skills', 'certifications', 'about', 'contact'];
+                  const viewedProfessionalSections = session.sectionsViewed.filter(s => 
+                    professionalSections.some(ps => s.toLowerCase().includes(ps))
+                  );
+                  recruiterScore += Math.min(viewedProfessionalSections.length * 10, 20);
+                  
+                  // Signal 4: Session duration and engagement depth
+                  const sessionDuration = Math.round((session.endTime.getTime() - session.startTime.getTime()) / 1000 / 60);
+                  if (sessionDuration >= 3) recruiterScore += 10;
+                  
+                  // Signal 5: Multiple chatbot interactions (shows interest)
+                  if (session.chatbotQueries >= 3) recruiterScore += 10;
+                  
+                  // Determine visitor type based on score and patterns
+                  if (recruiterScore >= 50) {
+                    return { label: 'Likely Recruiter', color: 'text-orange-400' };
+                  }
+                  if (recruiterScore >= 30) {
+                    return { label: 'Potential Recruiter', color: 'text-amber-400' };
+                  }
                   if (session.chatbotQueries > 2) return { label: 'Engaged Visitor', color: 'text-green-400' };
-                  if (session.resumeDownloads > 0) return { label: 'Potential Recruiter', color: 'text-orange-400' };
                   if (session.projectClicks > 2) return { label: 'Project Explorer', color: 'text-blue-400' };
                   if (session.sectionsViewed.length > 3) return { label: 'Active Browser', color: 'text-purple-400' };
                   return { label: 'New Visitor', color: 'text-muted-foreground' };

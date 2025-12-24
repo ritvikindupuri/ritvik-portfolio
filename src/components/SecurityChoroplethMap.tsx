@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe, MapPin, AlertTriangle, CheckCircle, Clock, Monitor, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Globe, MapPin, AlertTriangle, CheckCircle, Clock, Monitor, User, ChevronDown, ChevronUp } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LoginAttempt {
@@ -45,6 +46,8 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   const [error, setError] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<IPLocation | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const [showAllAttempts, setShowAllAttempts] = useState(false);
+  const [focusedLocationIndex, setFocusedLocationIndex] = useState<number>(-1);
 
   // Fetch Mapbox token from edge function secrets
   useEffect(() => {
@@ -278,8 +281,48 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   };
 
   const recentAttempts = useMemo(() => {
-    return loginAttempts.slice(0, 5);
-  }, [loginAttempts]);
+    return showAllAttempts ? loginAttempts : loginAttempts.slice(0, 5);
+  }, [loginAttempts, showAllAttempts]);
+
+  // Keyboard navigation for cycling through locations
+  const navigateToLocation = useCallback((index: number) => {
+    if (locations.length === 0 || !map.current) return;
+    
+    const normalizedIndex = ((index % locations.length) + locations.length) % locations.length;
+    const location = locations[normalizedIndex];
+    
+    setFocusedLocationIndex(normalizedIndex);
+    setSelectedLocation(location);
+    map.current.flyTo({
+      center: [location.lon, location.lat],
+      zoom: 4,
+      duration: 1500
+    });
+  }, [locations]);
+
+  // Handle keyboard events for globe navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only respond to arrow keys when not typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      
+      if (locations.length === 0) return;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        navigateToLocation(focusedLocationIndex + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        navigateToLocation(focusedLocationIndex - 1);
+      } else if (e.key === 'Escape') {
+        setSelectedLocation(null);
+        setFocusedLocationIndex(-1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [focusedLocationIndex, locations.length, navigateToLocation]);
 
   // Always show the map, even while loading
   return (
@@ -372,13 +415,17 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         </CardContent>
       </Card>
 
-      {/* Recent Login Activity Table */}
       <Card className="bg-card/50 backdrop-blur-sm border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            Recent Login Activity
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              Recent Login Activity
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Use ← → arrow keys to navigate globe locations
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           {recentAttempts.length === 0 ? (
@@ -386,94 +433,116 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
               No login attempts recorded yet.
             </p>
           ) : (
-            <div className="space-y-2">
-              {recentAttempts.map((attempt) => {
-                const location = locations.find(l => l.ip === attempt.ip_address);
-                return (
-                  <div
-                    key={attempt.id}
-                    className={`p-3 rounded-lg border ${
-                      attempt.success 
-                        ? 'bg-green-500/5 border-green-500/20' 
-                        : 'bg-red-500/5 border-red-500/20'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        {attempt.success ? (
-                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        ) : (
-                          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        )}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <User className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-sm font-medium">{attempt.email}</span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button 
-                                    className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
-                                    onClick={() => {
-                                      if (location && map.current) {
-                                        setSelectedLocation(location);
-                                        map.current.flyTo({
-                                          center: [location.lon, location.lat],
-                                          zoom: 4,
-                                          duration: 1500
-                                        });
-                                      }
-                                    }}
-                                    disabled={!location}
-                                  >
-                                    <MapPin className="w-3 h-3" />
-                                    {location ? `${location.city}, ${location.country}` : attempt.ip_address || 'Unknown'}
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom" className="max-w-xs">
-                                  {location ? (
-                                    <div className="space-y-1 text-xs">
-                                      <p className="font-semibold">{location.city}, {location.country}</p>
-                                      <p className="font-mono text-muted-foreground">IP: {location.ip}</p>
-                                      <div className="flex gap-3 pt-1">
-                                        <span className="text-green-500">{location.successCount} successful</span>
-                                        <span className="text-red-500">{location.failedCount} failed</span>
+            <>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {recentAttempts.map((attempt) => {
+                  const location = locations.find(l => l.ip === attempt.ip_address);
+                  return (
+                    <div
+                      key={attempt.id}
+                      className={`p-3 rounded-lg border ${
+                        attempt.success 
+                          ? 'bg-green-500/5 border-green-500/20' 
+                          : 'bg-red-500/5 border-red-500/20'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {attempt.success ? (
+                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          ) : (
+                            <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <User className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-sm font-medium">{attempt.email}</span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button 
+                                      className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                                      onClick={() => {
+                                        if (location && map.current) {
+                                          setSelectedLocation(location);
+                                          map.current.flyTo({
+                                            center: [location.lon, location.lat],
+                                            zoom: 4,
+                                            duration: 1500
+                                          });
+                                        }
+                                      }}
+                                      disabled={!location}
+                                    >
+                                      <MapPin className="w-3 h-3" />
+                                      {location ? `${location.city}, ${location.country}` : attempt.ip_address || 'Unknown'}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom" className="max-w-xs">
+                                    {location ? (
+                                      <div className="space-y-1 text-xs">
+                                        <p className="font-semibold">{location.city}, {location.country}</p>
+                                        <p className="font-mono text-muted-foreground">IP: {location.ip}</p>
+                                        <div className="flex gap-3 pt-1">
+                                          <span className="text-green-500">{location.successCount} successful</span>
+                                          <span className="text-red-500">{location.failedCount} failed</span>
+                                        </div>
+                                        <p className="text-muted-foreground italic pt-1">Click to view on globe</p>
                                       </div>
-                                      <p className="text-muted-foreground italic pt-1">Click to view on globe</p>
-                                    </div>
-                                  ) : (
-                                    <p>Location data unavailable</p>
-                                  )}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <span className="flex items-center gap-1">
-                              <Monitor className="w-3 h-3" />
-                              {parseBrowser(attempt.user_agent)}
-                            </span>
+                                    ) : (
+                                      <p>Location data unavailable</p>
+                                    )}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <span className="flex items-center gap-1">
+                                <Monitor className="w-3 h-3" />
+                                {parseBrowser(attempt.user_agent)}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <Badge variant={attempt.success ? "default" : "destructive"} className="text-xs">
+                            {attempt.success ? 'Success' : 'Failed'}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(attempt.created_at).toLocaleString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <Badge variant={attempt.success ? "default" : "destructive"} className="text-xs">
-                          {attempt.success ? 'Success' : 'Failed'}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(attempt.created_at).toLocaleString()}
+                      {attempt.failure_reason && (
+                        <p className="text-xs text-red-400 mt-2 pl-6">
+                          Reason: {attempt.failure_reason}
                         </p>
-                      </div>
+                      )}
                     </div>
-                    {attempt.failure_reason && (
-                      <p className="text-xs text-red-400 mt-2 pl-6">
-                        Reason: {attempt.failure_reason}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+              {loginAttempts.length > 5 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllAttempts(!showAllAttempts)}
+                  className="w-full mt-3 text-xs"
+                >
+                  {showAllAttempts ? (
+                    <>
+                      <ChevronUp className="w-4 h-4 mr-1" />
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4 mr-1" />
+                      View All ({loginAttempts.length} entries)
+                    </>
+                  )}
+                </Button>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
