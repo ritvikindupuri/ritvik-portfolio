@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, LogOut, Mail, Loader2 } from "lucide-react";
+import { ArrowLeft, Shield, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 const OwnerDashboard = () => {
   const navigate = useNavigate();
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sendingDigest, setSendingDigest] = useState(false);
+  
 
   useEffect(() => {
     checkOwnerAccess();
@@ -53,22 +53,6 @@ const OwnerDashboard = () => {
     navigate('/');
   };
 
-  const handleSendWeeklyDigest = async () => {
-    setSendingDigest(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('weekly-digest');
-      
-      if (error) throw error;
-      
-      toast.success("Weekly digest sent to your email!");
-      console.log("Digest sent:", data);
-    } catch (error: any) {
-      console.error("Error sending digest:", error);
-      toast.error("Failed to send digest: " + error.message);
-    } finally {
-      setSendingDigest(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -103,20 +87,6 @@ const OwnerDashboard = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleSendWeeklyDigest}
-              disabled={sendingDigest}
-              className="gap-2"
-            >
-              {sendingDigest ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Mail className="w-4 h-4" />
-              )}
-              Send Weekly Digest
-            </Button>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
               <Shield className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-primary">Owner Dashboard</span>

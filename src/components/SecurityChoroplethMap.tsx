@@ -329,15 +329,31 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     <div className="space-y-4">
       <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Globe className="w-5 h-5 text-primary" />
-            Owner Authentication Map
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Globe className="w-5 h-5 text-primary" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help border-b border-dashed border-muted-foreground/50">
+                      Owner Authentication Map
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="text-sm">
+                      This map shows locations where <strong>you (the owner)</strong> have logged into the dashboard. 
+                      It does not track general visitor activity.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </CardTitle>
             {locations.length > 0 && (
-              <Badge variant="secondary" className="ml-auto">
+              <Badge variant="secondary">
                 {locations.length} locations
               </Badge>
             )}
-          </CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {/* Map Container */}
@@ -420,7 +436,21 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              Owner Login History
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help border-b border-dashed border-muted-foreground/50">
+                      Owner Login History
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="text-sm">
+                      Records of your authentication attempts showing when and where you logged into the dashboard.
+                      The location reflects where you were when logging in.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </CardTitle>
             <p className="text-xs text-muted-foreground">
               Use ← → arrow keys to navigate globe locations
