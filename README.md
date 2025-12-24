@@ -12,7 +12,7 @@ Beyond being a portfolio, this site implements **enterprise-grade security monit
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TB
@@ -82,9 +82,72 @@ flowchart TB
     GMT -->|Token| SCM
 ```
 
+### System Architecture Diagram Explanation
+
+The System Architecture diagram illustrates the complete technical stack and data flow of the portfolio application, organized into three main layers:
+
+**Frontend Layer (React + Vite)**
+
+The frontend consists of six primary components that handle different aspects of the user experience:
+
+- **Portfolio UI**: The main user interface that renders all portfolio sections including the hero, skills, projects, experience, and contact areas. This is the entry point for all visitor interactions.
+- **VisitorTrackerProvider**: A React Context Provider that wraps the entire application and monitors visitor behavior. It tracks actions such as section views, chatbot queries, resume downloads, and project clicks. When a visitor is not the authenticated owner, all actions are logged to the database.
+- **ThreatDetector**: A security monitoring component that subscribes to real-time database changes for login attempts. It analyzes patterns to detect potential attacks using MITRE ATT&CK framework mappings.
+- **VisitorDashboard**: The analytics interface available to the portfolio owner, displaying visitor sessions, activity timelines, and behavioral classifications.
+- **SecurityChoroplethMap**: An interactive 3D globe visualization using Mapbox GL that displays geographic locations of login attempts with color-coded markers indicating success or failure patterns.
+- **AI Chatbot**: A floating chat widget that allows visitors to ask natural language questions about the portfolio owner's skills, projects, and experience using RAG (Retrieval Augmented Generation).
+
+**Backend Layer (Supabase)**
+
+The backend is powered by Supabase and consists of three subsystems:
+
+- **PostgreSQL Database**: Contains six core tables:
+  - `visitor_activity`: Stores all tracked visitor actions with session IDs, activity types, timestamps, and associated data
+  - `login_attempts`: Records all authentication attempts with IP addresses, user agents, success/failure status, and failure reasons
+  - `projects`: Portfolio project entries with descriptions, technologies, and links
+  - `skills`: Technical skills organized by category with proficiency levels
+  - `experience`: Work experience entries with descriptions and date ranges
+  - `profiles`: User profile information including bio, social links, and resume URLs
+
+- **Edge Functions**: Serverless functions that handle specific backend operations:
+  - `send-visitor-alert`: Compiles visitor activity data and sends notification emails when engagement thresholds are reached
+  - `send-threat-alert`: Formats and sends security alert emails when threats are detected, including MITRE ATT&CK mappings and remediation steps
+  - `weekly-digest`: Aggregates the past seven days of visitor and security data into a comprehensive summary email
+  - `geolocate-ip`: Resolves IP addresses to geographic coordinates using external geolocation services
+  - `portfolio-chatbot`: Processes natural language queries, generates embeddings, performs semantic search, and returns AI-generated responses
+  - `get-mapbox-token`: Securely provides the Mapbox access token to the frontend without exposing it in client-side code
+
+- **Extensions**: PostgreSQL extensions that enable advanced functionality:
+  - `pg_cron`: Schedules automated tasks such as the weekly digest email that runs every Monday at 9:00 AM UTC
+  - `pg_net`: Enables the database to make HTTP requests to edge functions directly from scheduled jobs
+  - `pgvector`: Provides vector similarity search capabilities for the RAG-powered chatbot's semantic search
+
+**External Services Layer**
+
+Three external APIs are integrated into the system:
+
+- **Resend Email API**: Handles all outbound email delivery for visitor alerts, threat notifications, and weekly digests
+- **Mapbox GL**: Provides the 3D globe rendering and geocoding services for the security visualization
+- **OpenAI API**: Generates text embeddings for semantic search and produces natural language responses for the chatbot
+
+**Data Flow Connections**
+
+The arrows in the diagram represent data flow between components:
+
+- The Portfolio UI forwards user interactions to the VisitorTrackerProvider, which logs them to the `visitor_activity` table
+- Login attempts from the authentication system are recorded in the `login_attempts` table
+- The ThreatDetector analyzes login attempts and triggers the `send-threat-alert` function when high-severity threats are detected
+- The VisitorDashboard queries the `visitor_activity` table to display analytics
+- The SecurityChoroplethMap queries login attempts and uses the `geolocate-ip` function to plot locations
+- The AI Chatbot sends queries to the `portfolio-chatbot` edge function, which uses OpenAI for embeddings and pgvector for semantic search
+- When visitors reach five or more actions, the VisitorTrackerProvider invokes the `send-visitor-alert` function
+- All email-sending functions route through the Resend API to deliver notifications
+- The pg_cron scheduler triggers the weekly-digest function via HTTP POST using pg_net
+- The `get-mapbox-token` function provides the access token to the SecurityChoroplethMap component
+
 ---
 
-## 📧 Visitor Action to Email Alert Flow
+## Visitor Action to Email Alert Flow
 
 ```mermaid
 sequenceDiagram
@@ -112,7 +175,7 @@ sequenceDiagram
     V->>UI: Downloads resume
     UI->>VTP: trackResumeDownload("Resume")
     VTP->>DB: INSERT visitor_activity
-    VTP->>VTP: activityCount = 5 ✓
+    VTP->>VTP: activityCount = 5
     
     Note over VTP: Threshold reached!
     
@@ -120,14 +183,52 @@ sequenceDiagram
     EF->>EF: Build HTML email
     EF->>EF: Sanitize all inputs
     EF->>RS: POST /emails
-    RS->>O: 📧 Visitor Alert Email
+    RS->>O: Visitor Alert Email
     
     Note over O: Email contains:<br/>- Session ID<br/>- Activity log<br/>- Chatbot queries<br/>- Timestamps
 ```
 
+### Visitor Action to Email Alert Flow Explanation
+
+This sequence diagram traces the complete lifecycle of a visitor interaction from initial page view to email notification delivery.
+
+**Participants**
+
+- **Visitor (V)**: An anonymous user browsing the portfolio website
+- **Portfolio UI (UI)**: The React frontend that captures user interactions
+- **VisitorTrackerProvider (VTP)**: The React Context that manages activity tracking state
+- **Supabase DB (DB)**: The PostgreSQL database storing visitor activity records
+- **Edge Function (EF)**: The `send-visitor-alert` serverless function
+- **Resend API (RS)**: The email delivery service
+- **Owner Email (O)**: The portfolio owner's inbox receiving notifications
+
+**Sequence of Events**
+
+1. **Initial Browsing**: When a visitor navigates to the portfolio, the UI component detects section views. Each time a section becomes visible in the viewport (such as scrolling to the Skills section), the UI calls the `trackSectionView` method on the VisitorTrackerProvider.
+
+2. **Owner Check**: The VisitorTrackerProvider first checks if the current user is the authenticated owner. If `isOwner` is true, the tracking is skipped entirely to avoid polluting analytics with the owner's own activity. In this flow, the visitor is not the owner, so tracking proceeds.
+
+3. **Database Insertion**: The VisitorTrackerProvider inserts a new record into the `visitor_activity` table with the session ID, activity type ("section_view"), and activity data (the section name). This happens asynchronously to avoid blocking the UI.
+
+4. **Activity Counter**: After each successful insert, the local activity counter is incremented. This counter is used to determine when the engagement threshold has been reached.
+
+5. **Chatbot Interaction**: When the visitor asks the AI chatbot a question, the UI captures this interaction and calls `trackChatbotQuery` with the full query text. This is particularly valuable because chatbot questions often reveal the visitor's intent and interests.
+
+6. **Resume Download**: If the visitor downloads a resume, this high-intent action is tracked via `trackResumeDownload`. This action, combined with previous activity, pushes the counter to the threshold of 5 actions.
+
+7. **Threshold Trigger**: Once the activity count reaches 5, the VisitorTrackerProvider invokes the `send-visitor-alert` edge function. A flag is set to prevent duplicate alerts for the same session.
+
+8. **Email Construction**: The edge function receives the session ID and retrieves all associated activities from the database. It constructs an HTML email template that includes the session identifier, chronological activity log, all chatbot queries, and timestamps for each action.
+
+9. **Input Sanitization**: Before including any user-provided content (especially chatbot queries which could contain malicious scripts), the edge function sanitizes all inputs using DOMPurify to prevent XSS attacks in the email client.
+
+10. **Email Delivery**: The sanitized HTML email is sent via POST request to the Resend API, which handles the actual delivery to the owner's configured email address.
+
+11. **Owner Notification**: The portfolio owner receives the visitor alert email in their inbox, providing real-time insight into who is visiting and what they're interested in.
+
 ---
 
-## 🚨 Threat Detection to Alert Flow
+## Threat Detection to Alert Flow
 
 ```mermaid
 sequenceDiagram
@@ -167,28 +268,72 @@ sequenceDiagram
     
     DB-->>TD: postgres_changes event
     TD->>TD: Re-analyze
-    Note over TD: 5+ failed in 1 hour<br/>= T1110 Brute Force<br/>Confidence: 95% ⚠️
+    Note over TD: 5+ failed in 1 hour<br/>= T1110 Brute Force<br/>Confidence: 95%
     
-    TD->>TD: Severity = HIGH ✓
-    TD->>TD: Confidence ≥ 60% ✓
+    TD->>TD: Severity = HIGH
+    TD->>TD: Confidence >= 60%
     
     TD->>EF: invoke('send-threat-alert')
     EF->>EF: Map to MITRE ATT&CK
     EF->>EF: Add remediation steps
     EF->>RS: POST /emails
-    RS->>O: 🚨 THREAT ALERT Email
+    RS->>O: THREAT ALERT Email
     
     Note over O: Email contains:<br/>- Attacker IP & email<br/>- Login attempt log<br/>- MITRE technique details<br/>- Remediation steps
 ```
 
+### Threat Detection to Alert Flow Explanation
+
+This sequence diagram illustrates how the security monitoring system detects and responds to authentication-based attacks in real-time.
+
+**Participants**
+
+- **Attacker (A)**: A malicious actor attempting to gain unauthorized access
+- **Auth System (AUTH)**: The Supabase authentication service handling login requests
+- **login_attempts (DB)**: The database table storing all authentication attempt records
+- **ThreatDetector (TD)**: The React component that analyzes login patterns for threats
+- **send-threat-alert (EF)**: The edge function that sends security notifications
+- **Resend API (RS)**: The email delivery service
+- **Owner Email (O)**: The portfolio owner receiving security alerts
+
+**Sequence of Events**
+
+1. **Failed Login Attempts**: The attacker begins making login attempts with incorrect credentials. Each attempt is processed by the Supabase authentication system.
+
+2. **Attempt Logging**: Regardless of success or failure, every authentication attempt is recorded in the `login_attempts` table. Each record includes the email address used, source IP address, user agent string, success boolean, failure reason (if applicable), and timestamp.
+
+3. **Realtime Subscription**: The ThreatDetector component maintains a Supabase Realtime subscription to the `login_attempts` table. Whenever a new row is inserted or updated, the component receives a `postgres_changes` event.
+
+4. **Data Fetching**: Upon receiving the realtime event, the ThreatDetector fetches all recent login attempts from the database to get a complete picture of authentication activity.
+
+5. **IP Grouping**: The component groups all login attempts by source IP address. This grouping is essential for detecting patterns that indicate coordinated attacks from a single source.
+
+6. **Pattern Analysis**: The threat analysis engine examines the grouped data for known attack patterns. After three failed attempts from the same IP, the system identifies a potential T1110.001 (Password Guessing) technique with 60% confidence.
+
+7. **Continued Attacks**: As the attacker continues with more failed attempts, each new failure triggers another realtime event and re-analysis.
+
+8. **Escalation**: Once five failed attempts occur within a one-hour window from the same IP, the detection escalates to T1110 (Brute Force) with 95% confidence. The severity is marked as HIGH.
+
+9. **Alert Threshold Check**: The ThreatDetector checks if the threat meets the alerting criteria: HIGH severity AND confidence of 60% or greater. Both conditions are met.
+
+10. **Edge Function Invocation**: The ThreatDetector calls the `send-threat-alert` edge function, passing the attacker's email, IP address, complete login attempt history, and detected threat details.
+
+11. **MITRE ATT&CK Mapping**: The edge function enriches the alert with full MITRE ATT&CK framework information including technique ID, technique name, tactic category, severity level, and description.
+
+12. **Remediation Steps**: Based on the detected technique, the function includes specific remediation recommendations such as implementing account lockouts, enabling multi-factor authentication, or blocking the offending IP address.
+
+13. **Email Delivery**: The complete threat alert email is sent via Resend to the owner's inbox.
+
+14. **Owner Notification**: The portfolio owner receives an actionable security alert with all information needed to assess and respond to the threat.
+
 ---
 
-## 📅 Weekly Digest Flow
+## Weekly Digest Flow
 
 ```mermaid
 flowchart LR
     subgraph Scheduler["pg_cron Scheduler"]
-        CRON["⏰ Monday 9AM UTC"]
+        CRON["Monday 9AM UTC"]
     end
     
     subgraph EdgeFunction["weekly-digest Function"]
@@ -203,11 +348,11 @@ flowchart LR
     end
     
     subgraph Email["Email Content"]
-        VS["👥 Visitor Stats"]
-        TQ["💬 Top Queries"]
-        TS["📍 Top Sections"]
-        TP["🔗 Top Projects"]
-        SS["🛡️ Security Stats"]
+        VS["Visitor Stats"]
+        TQ["Top Queries"]
+        TS["Top Sections"]
+        TP["Top Projects"]
+        SS["Security Stats"]
     end
     
     CRON -->|HTTP POST| FETCH
@@ -223,8 +368,44 @@ flowchart LR
     BUILD --> SS
     
     VS --> RS[Resend API]
-    RS --> OWNER[📧 Owner Inbox]
+    RS --> OWNER[Owner Inbox]
 ```
+
+### Weekly Digest Flow Explanation
+
+This flowchart shows how the automated weekly summary email is generated and delivered without any manual intervention.
+
+**Components**
+
+**pg_cron Scheduler**
+The PostgreSQL pg_cron extension enables scheduling of recurring database tasks. A cron job is configured to execute every Monday at 9:00 AM UTC. The cron expression `0 9 * * 1` specifies: minute 0, hour 9, any day of month, any month, and day 1 (Monday).
+
+**weekly-digest Function**
+This edge function performs three sequential operations:
+- **Fetch 7 days data**: Queries both the `visitor_activity` and `login_attempts` tables for all records from the past seven days using a date filter on the `created_at` timestamp.
+- **Aggregate stats**: Processes the raw data to calculate totals, counts, and groupings. This includes counting unique sessions, summing actions, grouping chatbot queries by frequency, ranking sections by view count, and categorizing login attempts by success/failure.
+- **Build HTML email**: Constructs a formatted HTML email using the aggregated statistics, applying consistent styling and organization for readability.
+
+**Data Sources**
+- **visitor_activity**: Contains all tracked visitor interactions including page views, section views, chatbot queries, resume actions, and project clicks
+- **login_attempts**: Contains all authentication attempts with success/failure status, IP addresses, and timestamps
+
+**Email Content Sections**
+The weekly digest email includes five main sections:
+- **Visitor Stats**: High-level metrics including total unique visitors (by session count), total actions performed, total chatbot queries, and resume downloads
+- **Top Queries**: The most frequently asked chatbot questions, ranked by count, showing what visitors are most interested in
+- **Top Sections**: Portfolio sections ranked by view frequency, indicating which parts of the portfolio attract the most attention
+- **Top Projects**: Projects ranked by click count (GitHub links, demo links), showing which work samples generate the most interest
+- **Security Stats**: Authentication summary including total login attempts, successful vs failed breakdown, unique IP addresses, and flagged suspicious IPs (those with 3+ failed attempts)
+
+**Data Flow**
+1. The pg_cron scheduler triggers at the scheduled time by making an HTTP POST request to the edge function endpoint via the pg_net extension
+2. The edge function queries both data source tables with a seven-day lookback filter
+3. Raw data from both tables is fed into the aggregation logic
+4. Aggregated statistics are formatted into the HTML email template
+5. Each content section is populated with the relevant metrics
+6. The complete email is sent to the Resend API
+7. Resend delivers the digest to the owner's inbox
 
 ---
 
@@ -242,12 +423,12 @@ flowchart LR
 
 ---
 
-## 📸 Screenshots & Visual Reference
+## Screenshots and Visual Reference
 
 ### Portfolio Landing Page
 
 <p align="center">
-  <img src="docs/screenshots/portfolio-hero.png" alt="Portfolio Hero Section" width="800"/>
+  <img src="https://imgur.com/gVaJan3.png" alt="Portfolio Hero Section" width="800"/>
 </p>
 
 **Figure 1: Portfolio Hero Section** — The landing page features a professional profile photo, animated name introduction with gradient text, and quick access buttons for GitHub/LinkedIn profiles and resume downloads. The cosmic particle background creates an engaging visual experience.
@@ -257,7 +438,7 @@ flowchart LR
 ### Access Control Dialog
 
 <p align="center">
-  <img src="docs/screenshots/access-dialog.png" alt="Access Control Dialog" width="600"/>
+  <img src="https://imgur.com/NphTUIM.png" alt="Access Control Dialog" width="600"/>
 </p>
 
 **Figure 2: Access Control Dialog** — Visitors can choose to browse as a guest (view-only) or sign in as the portfolio owner for full edit access. This modal appears on first visit and handles the visitor/owner flow separation.
@@ -267,7 +448,7 @@ flowchart LR
 ### Owner Dashboard - Visitor Analytics
 
 <p align="center">
-  <img src="docs/screenshots/visitor-dashboard.png" alt="Visitor Analytics Dashboard" width="800"/>
+  <img src="https://imgur.com/6P09SHZ.png" alt="Visitor Analytics Dashboard" width="800"/>
 </p>
 
 **Figure 3: Visitor Analytics Dashboard** — The Owner Dashboard displays real-time visitor statistics including:
@@ -280,7 +461,7 @@ flowchart LR
 ### Visitor Session Timeline
 
 <p align="center">
-  <img src="docs/screenshots/session-timeline.png" alt="Visitor Session Timeline" width="700"/>
+  <img src="https://imgur.com/5wMqTHW.png" alt="Visitor Session Timeline" width="700"/>
 </p>
 
 **Figure 4: Session Activity Timeline** — Each session can be expanded to show a detailed timeline of visitor actions. The timeline displays:
@@ -293,12 +474,12 @@ flowchart LR
 ### Security Monitoring - Interactive Globe
 
 <p align="center">
-  <img src="docs/screenshots/security-globe.png" alt="Security Globe Visualization" width="800"/>
+  <img src="https://imgur.com/ZKBet0y.png" alt="Security Globe Visualization" width="800"/>
 </p>
 
 **Figure 5: Interactive Security Globe** — The Security tab features a 3D Mapbox globe that visualizes login attempts geographically:
-- 🟢 **Green markers**: Locations with mostly successful logins
-- 🔴 **Red markers**: Suspicious locations with failed attempts or brute force patterns
+- **Green markers**: Locations with mostly successful logins
+- **Red markers**: Suspicious locations with failed attempts or brute force patterns
 - **Auto-rotation**: Globe slowly rotates to show global coverage
 - **Click interaction**: Clicking a marker reveals detailed login attempt logs for that location
 
@@ -307,7 +488,7 @@ flowchart LR
 ### Threat Detection Panel
 
 <p align="center">
-  <img src="docs/screenshots/threat-detector.png" alt="MITRE ATT&CK Threat Detection" width="800"/>
+  <img src="https://imgur.com/Z8tiQri.png" alt="MITRE ATT&CK Threat Detection" width="800"/>
 </p>
 
 **Figure 6: MITRE ATT&CK Threat Detection Panel** — Real-time threat analysis displays:
@@ -322,13 +503,13 @@ flowchart LR
 ### Login Attempt Monitor
 
 <p align="center">
-  <img src="docs/screenshots/login-monitor.png" alt="Login Attempt Monitor" width="750"/>
+  <img src="https://imgur.com/NWBTB5j.png" alt="Login Attempt Monitor" width="750"/>
 </p>
 
 **Figure 7: Login Attempt Monitor** — A chronological table showing all authentication attempts with:
 - **Email**: The email address used in the attempt
 - **IP Address**: Source IP with geolocation data
-- **Status**: Success ✓ or Failure ✗ indicator
+- **Status**: Success or Failure indicator
 - **Failure Reason**: Why the login failed (invalid password, unknown user, etc.)
 - **Timestamp**: When the attempt occurred
 - **User Agent**: Browser/client information for forensic analysis
@@ -337,58 +518,90 @@ flowchart LR
 
 ### Visitor Alert Email
 
-<p align="center">
-  <img src="docs/screenshots/email-visitor-alert.png" alt="Visitor Alert Email" width="600"/>
-</p>
+**Figure 8: Visitor Alert Email** — This automated email is sent when a visitor reaches 5 or more tracked actions during their session. The email includes:
 
-**Figure 8: Visitor Alert Email** — Automated email sent when a visitor reaches 5+ actions. Contains:
-- Session identification (ID, IP address)
-- Complete activity log with timestamps
-- All chatbot queries the visitor asked
-- Visitor email if provided via contact form
-- Clean HTML formatting with the portfolio branding
+- **Header**: "New Visitor Alert" with the portfolio branding and timestamp
+- **Session Information**: The unique session ID (e.g., "vs_1718234567890_abc123def") and the visitor's IP address if captured
+- **Activity Summary Table**: A structured list showing each action the visitor performed, including:
+  - Activity type (section_view, chatbot_query, resume_download, project_click)
+  - Associated data (section name, query text, project name)
+  - Timestamp for each action
+- **Chatbot Queries Section**: If the visitor asked questions, a dedicated section lists all queries with their exact text, providing insight into what information they were seeking
+- **Visitor Email**: If the visitor submitted the contact form, their email address is included
+- **Footer**: Clean HTML formatting consistent with the portfolio's visual branding
+
+This email enables the portfolio owner to understand visitor intent and engagement patterns in real-time.
 
 ---
 
 ### Threat Alert Email
 
-<p align="center">
-  <img src="docs/screenshots/email-threat-alert.png" alt="Security Threat Alert Email" width="600"/>
-</p>
+**Figure 9: Security Threat Alert Email** — This critical security notification is sent immediately when the threat detector identifies high-severity attacks with sufficient confidence. The email includes:
 
-**Figure 9: Security Threat Alert Email** — Critical security notification sent when threats are detected:
-- **Attacker Information**: Email and IP address involved
-- **Attack Timeline**: Chronological list of login attempts with outcomes
-- **MITRE ATT&CK Details**: Full technique breakdown including:
+- **Header**: "SECURITY THREAT DETECTED" with red alert styling and priority indicators
+- **Attacker Information Section**:
+  - Email address used in the attack attempts
+  - Source IP address
+  - Geographic location (if resolved)
+- **Attack Timeline Table**: Chronological list of all login attempts from the attacker, showing:
+  - Timestamp of each attempt
+  - Email used
+  - Success/Failure status
+  - Failure reason for each attempt
+- **MITRE ATT&CK Analysis Section**:
   - Technique ID (e.g., T1110)
   - Technique Name (e.g., Brute Force)
   - Tactic Category (e.g., Credential Access)
-  - Severity Level with color coding
-  - Confidence percentage
-  - Supporting evidence
-- **Remediation Steps**: Actionable security recommendations
+  - Severity Level with color coding (Critical/High/Medium/Low)
+  - Confidence Score percentage (e.g., 95%)
+  - Evidence list supporting the detection
+- **Remediation Steps Section**: Actionable security recommendations based on the detected technique, such as:
+  - "Implement account lockout after N failed attempts"
+  - "Consider enabling multi-factor authentication"
+  - "Block the source IP address at the firewall level"
+  - "Review all recent successful logins for signs of compromise"
+
+This email provides the portfolio owner with all information needed to assess and respond to security threats immediately.
 
 ---
 
 ### Weekly Digest Email
 
-<p align="center">
-  <img src="docs/screenshots/email-weekly-digest.png" alt="Weekly Digest Email" width="600"/>
-</p>
+**Figure 10: Weekly Digest Email** — This comprehensive summary email is automatically generated and sent every Monday at 9:00 AM UTC. The email includes:
 
-**Figure 10: Weekly Digest Email** — Comprehensive weekly summary delivered every Monday at 9:00 AM UTC:
-- **Visitor Statistics**: Total visitors, actions, queries, downloads
-- **Top Chatbot Questions**: Most frequently asked questions with counts
-- **Popular Sections**: Which portfolio sections received the most views
-- **Top Projects**: Most clicked projects with interaction counts
-- **Security Overview**: Login attempt summary, unique IPs, suspicious activity flags
+- **Header**: "Weekly Portfolio Digest" with the date range covered (e.g., "December 16-22, 2024")
+- **Visitor Overview Section**:
+  - Total unique visitors (by session count)
+  - Total actions performed across all sessions
+  - Total chatbot queries received
+  - Total resume downloads
+- **Top Chatbot Questions Section**: Ranked list of the most frequently asked questions, showing:
+  - The question text
+  - Number of times asked
+  - This helps identify what visitors are most curious about
+- **Top Sections Section**: Portfolio sections ranked by view frequency:
+  - Section name
+  - View count
+  - Identifies which parts of the portfolio attract the most attention
+- **Top Projects Section**: Projects ranked by engagement:
+  - Project name
+  - Click count (GitHub links, demo links)
+  - Shows which work samples generate the most interest
+- **Security Overview Section**:
+  - Total login attempts in the past week
+  - Successful vs failed breakdown
+  - Number of unique IP addresses
+  - List of suspicious IPs (those with 3+ failed attempts)
+- **Footer**: Clean formatting with links to the owner dashboard for deeper analysis
+
+This weekly email provides a high-level overview of portfolio performance and security status without requiring the owner to log in to the dashboard.
 
 ---
 
 ### AI Chatbot Interface
 
 <p align="center">
-  <img src="docs/screenshots/chatbot-interface.png" alt="AI Chatbot Interface" width="400"/>
+  <img src="https://imgur.com/0aXubbK.png" alt="AI Chatbot Interface" width="400"/>
 </p>
 
 **Figure 11: AI Chatbot Interface** — Floating chatbot widget that allows visitors to ask natural language questions:
@@ -399,26 +612,7 @@ flowchart LR
 
 ---
 
-> **📝 Note for Repository Maintainers**: 
-> 
-> To add your own screenshots, create a `docs/screenshots/` folder and add the following images:
-> - `portfolio-hero.png` — Landing page hero section
-> - `access-dialog.png` — Guest/Owner access modal
-> - `visitor-dashboard.png` — Full visitor analytics view
-> - `session-timeline.png` — Expanded session with activity timeline
-> - `security-globe.png` — 3D Mapbox globe with login markers
-> - `threat-detector.png` — MITRE ATT&CK threat cards
-> - `login-monitor.png` — Login attempts table
-> - `email-visitor-alert.png` — Visitor notification email
-> - `email-threat-alert.png` — Security alert email
-> - `email-weekly-digest.png` — Weekly summary email
-> - `chatbot-interface.png` — AI chatbot widget
->
-> Recommended screenshot dimensions: 1200px width for full-page shots, 800px for focused components.
-
----
-
-## 📊 Portfolio Analytics System
+## Portfolio Analytics System
 
 ### Overview
 
@@ -429,7 +623,7 @@ The Owner Dashboard (`/owner-dashboard`) provides a comprehensive analytics suit
 
 ---
 
-## 👥 Visitor Tracking System
+## Visitor Tracking System
 
 ### How Tracking Works
 
@@ -498,7 +692,7 @@ const MyComponent = () => {
 
 ---
 
-## 🏷️ Visitor Classification
+## Visitor Classification
 
 Visitors are automatically categorized based on their behavior patterns. The classification logic (in `VisitorDashboard.tsx`) uses this priority order:
 
@@ -530,7 +724,7 @@ Each session can be expanded to reveal a full **Activity Timeline** showing exac
 
 ---
 
-## 🛡️ Security Monitoring
+## Security Monitoring
 
 ### Login Attempt Tracking
 
@@ -550,8 +744,8 @@ The Security Monitoring tab features an **interactive 3D globe** (`SecurityChoro
 1. **IP Geolocation** — The `geolocate-ip` edge function resolves IP addresses to coordinates
 2. **Mapbox Globe** — Uses `mapbox-gl` with dark theme and fog effects
 3. **Color-Coded Markers**:
-   - 🟢 **Green** — More successful logins than failed
-   - 🔴 **Red** — Suspicious (more failed attempts or 3+ failures)
+   - **Green** — More successful logins than failed
+   - **Red** — Suspicious (more failed attempts or 3+ failures)
 4. **Auto-Rotation** — The globe slowly rotates to show global coverage
 5. **Click to Inspect** — Click any marker to see detailed attempt logs for that location
 
@@ -562,7 +756,7 @@ const isSuspicious = loc.failedCount > loc.successCount || loc.failedCount >= 3;
 
 ---
 
-## 🎯 MITRE ATT&CK Threat Detection
+## MITRE ATT&CK Threat Detection
 
 The `ThreatDetector.tsx` component implements real-time threat detection using the **MITRE ATT&CK framework** — an industry-standard knowledge base of adversary tactics and techniques.
 
@@ -614,11 +808,11 @@ Each threat includes a **confidence score** (0-100%) based on:
 - Time window concentration
 - Pattern consistency
 
-Example: 5 failed attempts = 50% + (5 × 10%) = **100% confidence** (capped at 95%)
+Example: 5 failed attempts = 50% + (5 x 10%) = **100% confidence** (capped at 95%)
 
 ---
 
-## 📧 Automated Email System
+## Automated Email System
 
 Three types of automated emails are sent via **Resend** (edge functions):
 
@@ -651,7 +845,7 @@ window.addEventListener('beforeunload', () => {
 
 ### 2. Threat Alert Email (`send-threat-alert`)
 
-**Trigger**: Automatically sent when the threat detector identifies **high-severity threats** with **≥60% confidence**.
+**Trigger**: Automatically sent when the threat detector identifies **high-severity threats** with **60% or greater confidence**.
 
 **Contains**:
 - Attacker information (email, IP)
@@ -714,7 +908,7 @@ select cron.schedule(
 
 ---
 
-## 🗄️ Database Architecture
+## Database Architecture
 
 ### Tables
 
@@ -739,7 +933,7 @@ select cron.schedule(
 
 ---
 
-## 🔧 Edge Functions
+## Edge Functions
 
 | Function | Purpose |
 |----------|---------|
@@ -756,7 +950,7 @@ select cron.schedule(
 
 ---
 
-## 🔐 Security Controls
+## Security Controls
 
 - **XSS Prevention**: `DOMPurify` sanitizes all user-facing HTML
 - **Input Validation**: Zod schema validation for all forms
