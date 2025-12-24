@@ -4,6 +4,32 @@
 
 ---
 
+## Table of Contents
+
+- [About This Project](#about-this-project)
+- [System Architecture](#system-architecture)
+- [Visitor Action to Email Alert Flow](#visitor-action-to-email-alert-flow)
+- [Threat Detection to Alert Flow](#threat-detection-to-alert-flow)
+- [Weekly Digest Flow](#weekly-digest-flow)
+- [Key Features](#key-features)
+- [Screenshots and Visual Reference](#screenshots-and-visual-reference)
+- [Portfolio Analytics System](#portfolio-analytics-system)
+- [Visitor Tracking System](#visitor-tracking-system)
+- [Visitor Classification](#visitor-classification)
+- [Security Monitoring](#security-monitoring)
+- [MITRE ATT&CK Threat Detection](#mitre-attck-threat-detection)
+- [Automated Email System](#automated-email-system)
+- [Database Architecture](#database-architecture)
+- [Edge Functions](#edge-functions)
+- [Security Controls](#security-controls)
+- [Tech Stack](#tech-stack)
+- [RAG Chatbot Architecture](#rag-chatbot-architecture)
+- [Getting Started](#getting-started)
+- [Deployment](#deployment)
+- [License](#license)
+
+---
+
 ## About This Project
 
 Welcome to my personal project portfolio! This application showcases my skills and the projects I've built. It's designed to be a clean, fast, and responsive platform where you can learn more about my work in Cloud Security, cybersecurity, and Artificial Intelligence (AI).
@@ -965,13 +991,217 @@ select cron.schedule(
 
 ## Tech Stack
 
-* **Frontend**: React, Vite, TypeScript
-* **Styling**: Tailwind CSS, shadcn/ui, Framer Motion
-* **Backend**: Supabase (PostgreSQL, Edge Functions, Auth)
-* **Mapping**: Mapbox GL JS
-* **Email**: Resend API
-* **AI**: OpenAI API with vector embeddings
-* **Scheduling**: pg_cron + pg_net extensions
+### Frontend
+
+| Technology | Purpose |
+|------------|---------|
+| **React 18** | Component-based UI framework with hooks and concurrent features |
+| **Vite** | Next-generation build tool with instant HMR and optimized production builds |
+| **TypeScript** | Static type checking for improved code quality and developer experience |
+| **Tailwind CSS** | Utility-first CSS framework for rapid, consistent styling |
+| **shadcn/ui** | Accessible, customizable component library built on Radix UI primitives |
+| **Framer Motion** | Production-ready animation library for smooth transitions and gestures |
+| **React Router DOM** | Client-side routing with nested routes and navigation guards |
+| **React Query (TanStack)** | Server state management with caching, background updates, and optimistic UI |
+| **React Hook Form** | Performant form handling with validation via Zod schemas |
+| **Recharts** | Composable charting library for analytics visualizations |
+
+### Backend
+
+| Technology | Purpose |
+|------------|---------|
+| **Supabase** | Open-source Firebase alternative providing PostgreSQL, Auth, Storage, and Edge Functions |
+| **PostgreSQL** | Robust relational database with JSONB support for flexible data storage |
+| **Supabase Edge Functions** | Deno-based serverless functions for backend logic |
+| **Supabase Auth** | JWT-based authentication with email/password and OAuth providers |
+| **Supabase Realtime** | WebSocket-based real-time subscriptions for live data updates |
+| **Row-Level Security (RLS)** | Database-level access control policies for secure multi-tenant data |
+
+### AI and RAG Pipeline
+
+| Technology | Purpose |
+|------------|---------|
+| **OpenAI API** | GPT models for natural language generation and conversational responses |
+| **OpenAI Embeddings** | text-embedding-ada-002 model for converting text to 1536-dimensional vectors |
+| **pgvector** | PostgreSQL extension enabling vector similarity search with cosine distance |
+| **Semantic Search** | Finds contextually relevant content using embedding comparisons |
+| **RAG (Retrieval Augmented Generation)** | Combines retrieved context with LLM generation for accurate, grounded responses |
+
+### Mapping and Geolocation
+
+| Technology | Purpose |
+|------------|---------|
+| **Mapbox GL JS** | WebGL-powered interactive 3D globe rendering with custom styling |
+| **IP Geolocation API** | Resolves visitor IP addresses to geographic coordinates |
+| **GeoJSON** | Standard format for encoding geographic data structures |
+
+### Email and Notifications
+
+| Technology | Purpose |
+|------------|---------|
+| **Resend** | Modern email API for transactional and notification emails |
+| **HTML Email Templates** | Custom-designed responsive email layouts |
+| **DOMPurify** | XSS sanitization for user-generated content in emails |
+
+### Scheduling and Automation
+
+| Technology | Purpose |
+|------------|---------|
+| **pg_cron** | PostgreSQL extension for scheduling recurring database tasks |
+| **pg_net** | PostgreSQL extension for making HTTP requests from scheduled jobs |
+
+### Development Tools
+
+| Technology | Purpose |
+|------------|---------|
+| **ESLint** | Static code analysis for identifying problematic patterns |
+| **Prettier** | Opinionated code formatter for consistent style |
+| **Bun** | Fast JavaScript runtime and package manager |
+
+---
+
+## RAG Chatbot Architecture
+
+The AI chatbot uses Retrieval Augmented Generation (RAG) to provide accurate, contextual responses about the portfolio owner's skills, projects, and experience.
+
+### How RAG Works
+
+```mermaid
+flowchart LR
+    subgraph Query["User Query"]
+        Q[Question Text]
+    end
+    
+    subgraph Embedding["Embedding Generation"]
+        EMB[OpenAI Embeddings API]
+    end
+    
+    subgraph Search["Vector Search"]
+        PGV[(pgvector)]
+        MATCH[match_portfolio_content]
+    end
+    
+    subgraph Context["Context Assembly"]
+        CTX[Relevant Chunks]
+    end
+    
+    subgraph Generation["Response Generation"]
+        GPT[OpenAI GPT]
+        RESP[Final Response]
+    end
+    
+    Q --> EMB
+    EMB --> PGV
+    PGV --> MATCH
+    MATCH --> CTX
+    CTX --> GPT
+    Q --> GPT
+    GPT --> RESP
+```
+
+### RAG Pipeline Explanation
+
+The RAG (Retrieval Augmented Generation) pipeline enables the chatbot to answer questions accurately by grounding responses in actual portfolio data rather than relying solely on the LLM's training data.
+
+**Step 1: Query Embedding**
+
+When a visitor asks a question (e.g., "What experience does Ritvik have with cloud security?"), the query text is sent to the OpenAI Embeddings API. The `text-embedding-ada-002` model converts the question into a 1536-dimensional vector that captures its semantic meaning.
+
+**Step 2: Vector Similarity Search**
+
+The query embedding is compared against pre-computed embeddings stored in the PostgreSQL database using the pgvector extension. The `match_portfolio_content` database function performs a cosine similarity search across multiple tables:
+
+- `projects` - Project descriptions and technologies
+- `skills` - Technical skills with descriptions
+- `experience` - Work experience entries with descriptions
+- `certifications` - Professional certifications
+- `llm_projects` - LLM/AI-specific projects
+- `ml_models` - Machine learning model projects
+- `github_content` - Indexed GitHub repository content
+
+The function returns the top N most semantically similar content chunks, ranked by similarity score.
+
+**Step 3: Context Assembly**
+
+The retrieved content chunks are assembled into a context block. Each chunk includes its source type (project, skill, experience, etc.) and the relevant text. This context provides the LLM with factual, up-to-date information specific to the portfolio.
+
+**Step 4: Response Generation**
+
+The original user query and the assembled context are sent to OpenAI's GPT model. The system prompt instructs the model to:
+
+- Answer based only on the provided context
+- Cite specific projects, skills, or experiences when relevant
+- Decline to answer if the context doesn't contain relevant information
+- Maintain a professional, helpful tone
+
+**Step 5: Response Delivery**
+
+The generated response is returned to the frontend and displayed in the chat interface. The conversation history is maintained for multi-turn interactions.
+
+### Embedding Generation Process
+
+Portfolio content is embedded during data entry and updates:
+
+```typescript
+// When a new project is added or updated
+const embedding = await openai.embeddings.create({
+  model: "text-embedding-ada-002",
+  input: `${project.title}: ${project.description}. Technologies: ${project.technologies.join(', ')}`
+});
+
+// Store the embedding vector in the database
+await supabase
+  .from('projects')
+  .update({ embedding: embedding.data[0].embedding })
+  .eq('id', project.id);
+```
+
+### Security Measures
+
+The chatbot includes several security controls:
+
+| Control | Implementation |
+|---------|---------------|
+| **Prompt Injection Detection** | Analyzes queries for manipulation attempts before processing |
+| **Rate Limiting** | Limits queries per session to prevent abuse |
+| **Input Sanitization** | Strips potentially malicious content from queries |
+| **Context Boundaries** | LLM is instructed to only answer from provided context |
+
+### Database Function for Semantic Search
+
+The `match_portfolio_content` function performs the core similarity search:
+
+```sql
+CREATE OR REPLACE FUNCTION match_portfolio_content(
+  query_embedding vector(1536),
+  match_threshold float DEFAULT 0.7,
+  match_count int DEFAULT 5
+)
+RETURNS TABLE (
+  content_id uuid,
+  content_type text,
+  content_text text,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    id as content_id,
+    'project' as content_type,
+    title || ': ' || description as content_text,
+    1 - (embedding <=> query_embedding) as similarity
+  FROM projects
+  WHERE embedding IS NOT NULL
+    AND 1 - (embedding <=> query_embedding) > match_threshold
+  UNION ALL
+  -- Similar queries for skills, experience, etc.
+  ORDER BY similarity DESC
+  LIMIT match_count;
+END;
+$$;
+```
 
 ---
 
