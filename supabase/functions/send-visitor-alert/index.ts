@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,15 +31,56 @@ function sanitizeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
+async function getLocationFromIP(ip: string): Promise<{ city: string; country: string } | null> {
+  try {
+    if (!ip || ip === 'unknown') return null;
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=city,country,status`);
+    const data = await response.json();
+    if (data.status === 'success') {
+      return { city: data.city, country: data.country };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting location from IP:", error);
+    return null;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { session_id, ip_address, email, activities, chatbot_queries }: VisitorAlertRequest = await req.json();
+    const { session_id, email, activities, chatbot_queries }: VisitorAlertRequest = await req.json();
 
-    console.log("Sending visitor alert for session:", session_id);
+    // Get actual IP from request headers
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const realIp = req.headers.get("x-real-ip");
+    const cfConnectingIp = req.headers.get("cf-connecting-ip");
+    const ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || cfConnectingIp || "unknown";
+
+    console.log("Sending visitor alert for session:", session_id, "IP:", ipAddress);
+
+    // Get location from IP
+    const location = await getLocationFromIP(ipAddress);
+    const locationStr = location ? `${location.city}, ${location.country}` : 'Unknown Location';
+
+    // Update visitor_activity records with the IP address
+    if (ipAddress !== 'unknown') {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const { error: updateError } = await supabase
+        .from('visitor_activity')
+        .update({ ip_address: ipAddress })
+        .eq('session_id', session_id)
+        .is('ip_address', null);
+      
+      if (updateError) {
+        console.error("Error updating visitor IP:", updateError);
+      } else {
+        console.log("Updated visitor activity with IP:", ipAddress);
+      }
+    }
 
     if (!RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY is not configured");
@@ -112,7 +156,11 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               <div class="info-row">
                 <span class="label">IP Address</span>
-                <span class="value" style="font-family: monospace;">${sanitizeHtml(ip_address || 'Unknown')}</span>
+                <span class="value" style="font-family: monospace;">${sanitizeHtml(ipAddress)}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Location</span>
+                <span class="value">${sanitizeHtml(locationStr)}</span>
               </div>
               <div class="info-row">
                 <span class="label">Visitor Email</span>
@@ -154,7 +202,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "Portfolio Alert <onboarding@resend.dev>",
         to: ["ritvik.indupuri@gmail.com"],
-        subject: `👋 Portfolio Viewed by Guest${email ? ` (${email})` : ''} - ${ip_address || 'Unknown IP'}`,
+        subject: `Portfolio Viewed by Guest${email ? ` (${email})` : ''} - ${locationStr}`,
         html,
       }),
     });
