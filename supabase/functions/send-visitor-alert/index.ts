@@ -46,6 +46,18 @@ async function getLocationFromIP(ip: string): Promise<{ city: string; country: s
   }
 }
 
+function formatActivityType(type: string): string {
+  const typeMap: Record<string, string> = {
+    'page_view': 'Page View',
+    'resume_view': 'Resume View',
+    'resume_download': 'Resume Download',
+    'project_view': 'Project View',
+    'chatbot_query': 'Chatbot Query',
+    'section_view': 'Section View'
+  };
+  return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -86,107 +98,161 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
-    // Build activity summary
-    const activitySummary = activities.map(a => {
-      const time = new Date(a.timestamp).toLocaleString();
-      const safeData = sanitizeHtml(JSON.stringify(a.data || {}));
+    // Build activity rows for the table
+    const activityRows = activities.map(a => {
+      const time = new Date(a.timestamp).toLocaleString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      const activityType = formatActivityType(a.type);
+      
+      let detail = '';
       switch (a.type) {
         case 'page_view':
-          return `<li>📄 Viewed page: <strong>${sanitizeHtml(a.data?.page || 'Home')}</strong> at ${time}</li>`;
+          detail = sanitizeHtml(a.data?.page || 'Home');
+          break;
         case 'resume_view':
-          return `<li>📋 Viewed resume: <strong>${sanitizeHtml(a.data?.resume_name || 'Primary')}</strong> at ${time}</li>`;
         case 'resume_download':
-          return `<li>⬇️ Downloaded resume: <strong>${sanitizeHtml(a.data?.resume_name || 'Primary')}</strong> at ${time}</li>`;
+          detail = sanitizeHtml(a.data?.resume_name || 'Primary Resume');
+          break;
         case 'project_view':
-          return `<li>🔍 Viewed project: <strong>${sanitizeHtml(a.data?.project_name || 'Unknown')}</strong> at ${time}</li>`;
-        case 'chatbot_query':
-          return `<li>💬 Chatbot query at ${time}</li>`;
+          detail = sanitizeHtml(a.data?.project_name || 'Project');
+          break;
         case 'section_view':
-          return `<li>👁️ Viewed section: <strong>${sanitizeHtml(a.data?.section || 'Unknown')}</strong> at ${time}</li>`;
+          detail = sanitizeHtml(a.data?.section || 'Section');
+          break;
+        case 'chatbot_query':
+          detail = 'Query submitted';
+          break;
         default:
-          return `<li>📌 ${sanitizeHtml(a.type)}: ${safeData} at ${time}</li>`;
+          detail = '-';
       }
+      
+      return `
+        <tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">${time}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500; font-size: 14px;">${activityType}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #374151; font-size: 14px;">${detail}</td>
+        </tr>
+      `;
     }).join('\n');
 
     // Build chatbot queries section
     const chatbotSection = chatbot_queries && chatbot_queries.length > 0 
       ? `
-        <div style="margin-top: 20px; padding: 15px; background: #1a1a2e; border-radius: 8px; border-left: 4px solid #00d4ff;">
-          <h3 style="color: #00d4ff; margin: 0 0 10px 0;">💬 Chatbot Queries (${chatbot_queries.length})</h3>
-          <ul style="color: #e0e0e0; margin: 0; padding-left: 20px;">
-            ${chatbot_queries.map(q => `<li style="margin: 8px 0; padding: 8px; background: #252542; border-radius: 4px;">"${sanitizeHtml(q)}"</li>`).join('\n')}
-          </ul>
+        <div style="margin-top: 32px;">
+          <h3 style="color: #111827; margin: 0 0 16px 0; font-size: 16px; font-weight: 600;">Chatbot Queries (${chatbot_queries.length})</h3>
+          <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+            ${chatbot_queries.map((q, i) => `
+              <div style="padding: 14px 16px; ${i < chatbot_queries.length - 1 ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
+                <p style="margin: 0; color: #374151; font-size: 14px; line-height: 1.5;">"${sanitizeHtml(q)}"</p>
+              </div>
+            `).join('\n')}
+          </div>
         </div>
       `
       : '';
+
+    // Calculate session stats
+    const resumeViews = activities.filter(a => a.type === 'resume_view').length;
+    const resumeDownloads = activities.filter(a => a.type === 'resume_download').length;
+    const projectViews = activities.filter(a => a.type === 'project_view').length;
+    const queryCount = chatbot_queries?.length || 0;
 
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f23; color: #e0e0e0; padding: 20px; }
-            .container { max-width: 600px; margin: 0 auto; background: #16162a; border-radius: 12px; padding: 30px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .header h1 { color: #00d4ff; margin: 0; }
-            .badge { display: inline-block; background: #00d4ff20; color: #00d4ff; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
-            .info-box { background: #1a1a2e; border-radius: 8px; padding: 15px; margin: 15px 0; }
-            .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #252542; }
-            .info-row:last-child { border-bottom: none; }
-            .label { color: #888; }
-            .value { color: #fff; font-weight: 500; }
-            .activities { margin-top: 20px; }
-            .activities h3 { color: #00d4ff; margin-bottom: 10px; }
-            .activities ul { list-style: none; padding: 0; margin: 0; }
-            .activities li { padding: 8px 0; border-bottom: 1px solid #252542; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-          </style>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>👋 Portfolio Visitor Alert</h1>
-              <span class="badge">GUEST ACTIVITY</span>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 32px 16px;">
+          <div style="max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+            
+            <!-- Header -->
+            <div style="background: #1f2937; padding: 32px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 24px; font-weight: 600;">Portfolio Visitor Alert</h1>
+              <p style="color: #9ca3af; margin: 0; font-size: 14px;">New visitor activity detected</p>
             </div>
             
-            <div class="info-box">
-              <div class="info-row">
-                <span class="label">Session ID</span>
-                <span class="value" style="font-family: monospace; font-size: 12px;">${sanitizeHtml(session_id)}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">IP Address</span>
-                <span class="value" style="font-family: monospace;">${sanitizeHtml(ipAddress)}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Location</span>
-                <span class="value">${sanitizeHtml(locationStr)}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Visitor Email</span>
-                <span class="value">${sanitizeHtml(email || 'Not provided')}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Total Activities</span>
-                <span class="value">${activities.length}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Time</span>
-                <span class="value">${new Date().toLocaleString()}</span>
+            <!-- Visitor Info -->
+            <div style="padding: 32px;">
+              <h2 style="color: #111827; margin: 0 0 20px 0; font-size: 18px; font-weight: 600;">Visitor Information</h2>
+              
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; width: 140px;">Location</td>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500; font-size: 14px;">${sanitizeHtml(locationStr)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">IP Address</td>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #111827; font-family: 'SF Mono', Monaco, monospace; font-size: 13px;">${sanitizeHtml(ipAddress)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Email</td>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${sanitizeHtml(email || 'Not provided')}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Session ID</td>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-family: 'SF Mono', Monaco, monospace; font-size: 11px;">${sanitizeHtml(session_id)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 14px;">Timestamp</td>
+                  <td style="padding: 12px 0; color: #111827; font-size: 14px;">${new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' })}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <!-- Session Summary -->
+            <div style="padding: 0 32px 32px;">
+              <h2 style="color: #111827; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Session Summary</h2>
+              <div style="display: flex; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; overflow: hidden;">
+                <div style="flex: 1; padding: 16px; text-align: center; border-right: 1px solid #e5e7eb;">
+                  <div style="color: #111827; font-size: 24px; font-weight: 600;">${activities.length}</div>
+                  <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">Total Activities</div>
+                </div>
+                <div style="flex: 1; padding: 16px; text-align: center; border-right: 1px solid #e5e7eb;">
+                  <div style="color: #111827; font-size: 24px; font-weight: 600;">${resumeViews}</div>
+                  <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">Resume Views</div>
+                </div>
+                <div style="flex: 1; padding: 16px; text-align: center; border-right: 1px solid #e5e7eb;">
+                  <div style="color: #111827; font-size: 24px; font-weight: 600;">${resumeDownloads}</div>
+                  <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">Downloads</div>
+                </div>
+                <div style="flex: 1; padding: 16px; text-align: center;">
+                  <div style="color: #111827; font-size: 24px; font-weight: 600;">${queryCount}</div>
+                  <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">Chatbot Queries</div>
+                </div>
               </div>
             </div>
 
-            <div class="activities">
-              <h3>📊 Activity Log</h3>
-              <ul>
-                ${activitySummary || '<li>No activities recorded</li>'}
-              </ul>
+            <!-- Activity Log -->
+            <div style="padding: 0 32px 32px;">
+              <h2 style="color: #111827; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Activity Log</h2>
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="background: #f9fafb;">
+                      <th style="padding: 12px 16px; text-align: left; color: #6b7280; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Time</th>
+                      <th style="padding: 12px 16px; text-align: left; color: #6b7280; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Activity</th>
+                      <th style="padding: 12px 16px; text-align: left; color: #6b7280; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${activityRows || '<tr><td colspan="3" style="padding: 20px; text-align: center; color: #6b7280;">No activities recorded</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            ${chatbotSection}
+            ${chatbotSection ? `<div style="padding: 0 32px 32px;">${chatbotSection}</div>` : ''}
 
-            <div class="footer">
-              <p>This is an automated notification from your portfolio security system.</p>
+            <!-- Footer -->
+            <div style="background: #f9fafb; padding: 24px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0;">This is an automated notification from your portfolio security system.</p>
             </div>
           </div>
         </body>
@@ -202,7 +268,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "Portfolio Alert <onboarding@resend.dev>",
         to: ["ritvik.indupuri@gmail.com"],
-        subject: `Portfolio Viewed by Guest${email ? ` (${email})` : ''} - ${locationStr}`,
+        subject: `Portfolio Visitor: ${locationStr}${email ? ` - ${email}` : ''}`,
         html,
       }),
     });

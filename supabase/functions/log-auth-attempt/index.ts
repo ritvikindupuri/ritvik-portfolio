@@ -81,70 +81,68 @@ async function sendNewLocationAlert(
       body: JSON.stringify({
         from: "Portfolio Security <onboarding@resend.dev>",
         to: ["ritvik.indupuri@gmail.com"],
-        subject: `New Login Location Detected: ${locationStr}`,
+        subject: `New Login Location: ${locationStr}`,
         html: `
           <!DOCTYPE html>
           <html>
             <head>
-              <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f23; color: #e0e0e0; padding: 20px; }
-                .container { max-width: 600px; margin: 0 auto; background: #16162a; border-radius: 12px; padding: 30px; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .header h1 { color: #ffc107; margin: 0; }
-                .badge { display: inline-block; background: #ffc10720; color: #ffc107; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
-                .info-box { background: #1a1a2e; border-radius: 8px; padding: 15px; margin: 15px 0; border-left: 4px solid #ffc107; }
-                .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #252542; }
-                .info-row:last-child { border-bottom: none; }
-                .label { color: #888; }
-                .value { color: #fff; font-weight: 500; }
-                .warning { background: #ff572220; border: 1px solid #ff5722; border-radius: 8px; padding: 15px; margin-top: 20px; }
-                .warning p { color: #ff8a65; margin: 0; }
-                .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-              </style>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
             </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>New Login Location Detected</h1>
-                  <span class="badge">SECURITY NOTICE</span>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 32px 16px;">
+              <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+                
+                <!-- Header -->
+                <div style="background: #ca8a04; padding: 32px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 22px; font-weight: 600;">New Login Location Detected</h1>
+                  <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">Security Notice</p>
                 </div>
                 
-                <p style="color: #e0e0e0; text-align: center;">A successful login to your portfolio dashboard was detected from a new location.</p>
-                
-                <div class="info-box">
-                  <div class="info-row">
-                    <span class="label">Email</span>
-                    <span class="value">${email}</span>
+                <!-- Content -->
+                <div style="padding: 32px;">
+                  <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0; text-align: center;">
+                    A successful login to your portfolio dashboard was detected from a new location.
+                  </p>
+                  
+                  <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; width: 140px;">Email</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500; font-size: 14px;">${email}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Location</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500; font-size: 14px;">${locationStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">IP Address</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-family: 'SF Mono', Monaco, monospace; font-size: 13px;">${ipAddress}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Browser</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${browser}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Operating System</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${os}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; color: #6b7280; font-size: 14px;">Time</td>
+                        <td style="padding: 14px 16px; color: #111827; font-size: 14px;">${new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' })}</td>
+                      </tr>
+                    </table>
                   </div>
-                  <div class="info-row">
-                    <span class="label">Location</span>
-                    <span class="value">${locationStr}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label">IP Address</span>
-                    <span class="value" style="font-family: monospace;">${ipAddress}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label">Browser</span>
-                    <span class="value">${browser}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label">Operating System</span>
-                    <span class="value">${os}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label">Time</span>
-                    <span class="value">${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET</span>
+
+                  <!-- Warning -->
+                  <div style="margin-top: 24px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px;">
+                    <p style="color: #dc2626; font-weight: 600; margin: 0 0 8px 0; font-size: 14px;">Was this you?</p>
+                    <p style="color: #991b1b; margin: 0; font-size: 14px; line-height: 1.5;">If you don't recognize this login, please change your password immediately. This could indicate unauthorized access to your account.</p>
                   </div>
                 </div>
 
-                <div class="warning">
-                  <p><strong>Was this you?</strong></p>
-                  <p style="margin-top: 10px;">If you don't recognize this login, please change your password immediately. This could indicate unauthorized access to your account.</p>
-                </div>
-
-                <div class="footer">
-                  <p>This is an automated security notification from your portfolio.</p>
+                <!-- Footer -->
+                <div style="background: #f9fafb; padding: 20px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #6b7280; font-size: 12px; margin: 0;">This is an automated security notification from your portfolio.</p>
                 </div>
               </div>
             </body>
@@ -170,6 +168,9 @@ async function sendSuspiciousActivityAlert(email: string, ipAddress: string, use
     return;
   }
 
+  const browser = parseBrowser(userAgent);
+  const os = parseOS(userAgent);
+
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -180,19 +181,74 @@ async function sendSuspiciousActivityAlert(email: string, ipAddress: string, use
       body: JSON.stringify({
         from: "Portfolio Security <onboarding@resend.dev>",
         to: ["ritvik.indupuri@gmail.com"],
-        subject: `Security Alert: Suspicious Login Activity Detected`,
+        subject: `Security Alert: ${failedAttempts} Failed Login Attempts`,
         html: `
-          <h2 style="color: #e53935;">Security Alert: Multiple Failed Login Attempts</h2>
-          <p>We detected suspicious login activity on your portfolio.</p>
-          <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 15px 0;">
-            <p><strong>Email Attempted:</strong> ${email}</p>
-            <p><strong>IP Address:</strong> ${ipAddress || 'Unknown'}</p>
-            <p><strong>Failed Attempts:</strong> ${failedAttempts} in the last 15 minutes</p>
-            <p><strong>User Agent:</strong> ${userAgent || 'Unknown'}</p>
-            <p><strong>Time:</strong> ${new Date().toISOString()}</p>
-          </div>
-          <p style="color: #666;">If this was not you, please ensure your account is secure and consider changing your password.</p>
-          <p><strong>Automated protection is active:</strong> Further login attempts from this IP will be rate-limited.</p>
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 32px 16px;">
+              <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+                
+                <!-- Header -->
+                <div style="background: #dc2626; padding: 32px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 22px; font-weight: 600;">Suspicious Login Activity</h1>
+                  <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">Multiple failed attempts detected</p>
+                </div>
+                
+                <!-- Content -->
+                <div style="padding: 32px;">
+                  <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0; text-align: center;">
+                    We detected ${failedAttempts} failed login attempts on your portfolio dashboard within the last 15 minutes.
+                  </p>
+                  
+                  <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; width: 140px;">Email Attempted</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500; font-size: 14px;">${email}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">IP Address</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-family: 'SF Mono', Monaco, monospace; font-size: 13px;">${ipAddress || 'Unknown'}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Browser</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${browser}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Operating System</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${os}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; color: #6b7280; font-size: 14px;">Time</td>
+                        <td style="padding: 14px 16px; color: #111827; font-size: 14px;">${new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' })}</td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <!-- Protection Status -->
+                  <div style="margin-top: 24px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px;">
+                    <p style="color: #166534; font-weight: 600; margin: 0 0 8px 0; font-size: 14px;">Automated Protection Active</p>
+                    <p style="color: #166534; margin: 0; font-size: 14px; line-height: 1.5;">Further login attempts from this IP address will be rate-limited for 15 minutes.</p>
+                  </div>
+
+                  <!-- Recommendation -->
+                  <div style="margin-top: 16px; background: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 16px;">
+                    <p style="color: #854d0e; font-weight: 600; margin: 0 0 8px 0; font-size: 14px;">Recommended Action</p>
+                    <p style="color: #854d0e; margin: 0; font-size: 14px; line-height: 1.5;">If this was not you, please ensure your account is secure and consider changing your password.</p>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="background: #f9fafb; padding: 20px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #6b7280; font-size: 12px; margin: 0;">This is an automated security alert from your portfolio.</p>
+                </div>
+              </div>
+            </body>
+          </html>
         `,
       }),
     });

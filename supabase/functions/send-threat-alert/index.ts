@@ -85,22 +85,17 @@ function sanitizeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
-const getSeverityColor = (severity: string): string => {
+const getSeverityColor = (severity: string): { bg: string; text: string; border: string } => {
   switch (severity) {
-    case 'high': return '#ef4444';
-    case 'medium': return '#f97316';
-    case 'low': return '#eab308';
-    default: return '#6b7280';
+    case 'high': return { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' };
+    case 'medium': return { bg: '#fff7ed', text: '#ea580c', border: '#fed7aa' };
+    case 'low': return { bg: '#fefce8', text: '#ca8a04', border: '#fef08a' };
+    default: return { bg: '#f9fafb', text: '#6b7280', border: '#e5e7eb' };
   }
 };
 
-const getSeverityEmoji = (severity: string): string => {
-  switch (severity) {
-    case 'high': return '🚨';
-    case 'medium': return '⚠️';
-    case 'low': return '📋';
-    default: return '📌';
-  }
+const getSeverityLabel = (severity: string): string => {
+  return severity.charAt(0).toUpperCase() + severity.slice(1);
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -123,66 +118,80 @@ const handler = async (req: Request): Promise<Response> => {
       return (order[t.severity] || 0) > (order[max] || 0) ? t.severity : max;
     }, 'low');
 
+    const severityColors = getSeverityColor(highestSeverity);
+
     // Build login attempt log
     const loginLog = login_attempts.map(attempt => {
-      const time = new Date(attempt.timestamp).toLocaleString();
-      const status = attempt.success 
-        ? '<span style="color: #22c55e;">✓ SUCCESS</span>' 
-        : '<span style="color: #ef4444;">✗ FAILED</span>';
+      const time = new Date(attempt.timestamp).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      const statusColor = attempt.success ? '#16a34a' : '#dc2626';
+      const statusText = attempt.success ? 'Success' : 'Failed';
       const reason = attempt.failure_reason ? ` - ${sanitizeHtml(attempt.failure_reason)}` : '';
-      const browser = attempt.user_agent ? ` (${sanitizeHtml(attempt.user_agent.substring(0, 50))}...)` : '';
       return `
         <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #252542;">${time}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #252542;">${status}${reason}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #252542; font-size: 11px;">${browser}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">${time}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+            <span style="color: ${statusColor}; font-weight: 500; font-size: 14px;">${statusText}</span>
+            <span style="color: #6b7280; font-size: 13px;">${reason}</span>
+          </td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${attempt.user_agent ? sanitizeHtml(attempt.user_agent.substring(0, 60)) : '-'}</td>
         </tr>
       `;
     }).join('\n');
 
     // Build threat cards
     const threatCards = threats.map(threat => {
+      const colors = getSeverityColor(threat.severity);
       const baseId = threat.technique_id.split('.')[0];
       const remediation = REMEDIATION_STEPS[threat.technique_id] || REMEDIATION_STEPS[baseId] || [];
       return `
-        <div style="background: #1a1a2e; border-radius: 8px; padding: 15px; margin: 15px 0; border-left: 4px solid ${getSeverityColor(threat.severity)};">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style="color: #fff; margin: 0;">${getSeverityEmoji(threat.severity)} ${sanitizeHtml(threat.technique_name)}</h3>
-            <span style="background: ${getSeverityColor(threat.severity)}20; color: ${getSeverityColor(threat.severity)}; padding: 4px 12px; border-radius: 20px; font-size: 12px; text-transform: uppercase;">
-              ${sanitizeHtml(threat.severity)}
+        <div style="background: #ffffff; border: 1px solid ${colors.border}; border-left: 4px solid ${colors.text}; border-radius: 8px; padding: 20px; margin: 16px 0;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h3 style="color: #111827; margin: 0; font-size: 16px; font-weight: 600;">${sanitizeHtml(threat.technique_name)}</h3>
+            <span style="background: ${colors.bg}; color: ${colors.text}; padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 500; text-transform: uppercase;">
+              ${getSeverityLabel(threat.severity)}
             </span>
           </div>
           
-          <div style="margin-bottom: 10px;">
-            <span style="color: #888; font-size: 12px;">MITRE ATT&CK ID:</span>
-            <span style="color: #00d4ff; font-family: monospace;"> ${sanitizeHtml(threat.technique_id)}</span>
-            <span style="color: #888; margin-left: 10px; font-size: 12px;">Tactic:</span>
-            <span style="color: #f97316;"> ${sanitizeHtml(threat.tactic)}</span>
+          <div style="margin-bottom: 12px;">
+            <table style="font-size: 13px;">
+              <tr>
+                <td style="padding: 4px 16px 4px 0; color: #6b7280;">MITRE ATT&CK ID</td>
+                <td style="padding: 4px 0; color: #111827; font-family: 'SF Mono', Monaco, monospace;">${sanitizeHtml(threat.technique_id)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 16px 4px 0; color: #6b7280;">Tactic</td>
+                <td style="padding: 4px 0; color: #111827;">${sanitizeHtml(threat.tactic)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 16px 4px 0; color: #6b7280;">Confidence</td>
+                <td style="padding: 4px 0; color: #111827;">${Math.round(threat.confidence * 100)}%</td>
+              </tr>
+            </table>
           </div>
           
-          <p style="color: #ccc; font-size: 14px; margin: 10px 0;">${sanitizeHtml(threat.description)}</p>
+          <p style="color: #374151; font-size: 14px; margin: 12px 0; line-height: 1.5;">${sanitizeHtml(threat.description)}</p>
           
-          <div style="margin: 10px 0;">
-            <span style="color: #888; font-size: 12px;">Confidence Score:</span>
-            <div style="background: #252542; border-radius: 10px; height: 10px; margin-top: 5px; overflow: hidden;">
-              <div style="background: linear-gradient(90deg, ${getSeverityColor(threat.severity)}, ${getSeverityColor(threat.severity)}80); height: 100%; width: ${threat.confidence * 100}%;"></div>
-            </div>
-            <span style="color: #fff; font-size: 12px;">${Math.round(threat.confidence * 100)}%</span>
-          </div>
-          
-          <div style="margin-top: 15px;">
-            <h4 style="color: #00d4ff; margin: 0 0 8px 0; font-size: 13px;">📋 Evidence</h4>
-            <ul style="color: #ccc; margin: 0; padding-left: 20px; font-size: 13px;">
+          <div style="margin-top: 16px;">
+            <h4 style="color: #6b7280; margin: 0 0 8px 0; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Evidence</h4>
+            <ul style="color: #374151; margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">
               ${threat.evidence.map(e => `<li style="margin: 4px 0;">${sanitizeHtml(e)}</li>`).join('')}
             </ul>
           </div>
           
-          <div style="margin-top: 15px; background: #252542; border-radius: 6px; padding: 12px;">
-            <h4 style="color: #22c55e; margin: 0 0 8px 0; font-size: 13px;">🛡️ Remediation Steps</h4>
-            <ol style="color: #ccc; margin: 0; padding-left: 20px; font-size: 13px;">
+          ${remediation.length > 0 ? `
+          <div style="margin-top: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 16px;">
+            <h4 style="color: #166534; margin: 0 0 8px 0; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Recommended Actions</h4>
+            <ol style="color: #166534; margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">
               ${remediation.map(r => `<li style="margin: 4px 0;">${sanitizeHtml(r)}</li>`).join('')}
             </ol>
           </div>
+          ` : ''}
         </div>
       `;
     }).join('\n');
@@ -191,91 +200,89 @@ const handler = async (req: Request): Promise<Response> => {
       <!DOCTYPE html>
       <html>
         <head>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f23; color: #e0e0e0; padding: 20px; margin: 0; }
-            .container { max-width: 700px; margin: 0 auto; background: #16162a; border-radius: 12px; padding: 30px; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid ${getSeverityColor(highestSeverity)}; padding-bottom: 20px; }
-            .header h1 { color: ${getSeverityColor(highestSeverity)}; margin: 0; }
-            .badge { display: inline-block; background: ${getSeverityColor(highestSeverity)}20; color: ${getSeverityColor(highestSeverity)}; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
-            .attacker-info { background: #1a1a2e; border-radius: 8px; padding: 20px; margin: 20px 0; border: 1px solid ${getSeverityColor(highestSeverity)}40; }
-            .attacker-info h2 { color: #fff; margin: 0 0 15px 0; font-size: 18px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-            .info-item { padding: 10px; background: #252542; border-radius: 6px; }
-            .info-label { color: #888; font-size: 12px; display: block; }
-            .info-value { color: #fff; font-weight: 500; font-family: monospace; }
-            .login-log { margin-top: 20px; }
-            .login-log h3 { color: #00d4ff; margin-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; font-size: 13px; }
-            th { text-align: left; padding: 10px 8px; background: #252542; color: #888; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; padding-top: 20px; border-top: 1px solid #252542; }
-          </style>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🚨 SECURITY THREAT DETECTED</h1>
-              <span class="badge">${sanitizeHtml(highestSeverity)} severity - ${threats.length} threat(s) identified</span>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 32px 16px;">
+          <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+            
+            <!-- Header -->
+            <div style="background: ${severityColors.text}; padding: 32px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 24px; font-weight: 600;">Security Threat Detected</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">${getSeverityLabel(highestSeverity)} severity - ${threats.length} threat(s) identified</p>
             </div>
             
-            <div class="attacker-info">
-              <h2>👤 Attacker Information</h2>
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="info-label">Email / Account</span>
-                  <span class="info-value">${sanitizeHtml(attacker_email)}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">IP Address</span>
-                  <span class="info-value">${sanitizeHtml(attacker_ip)}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Name (if known)</span>
-                  <span class="info-value">${sanitizeHtml(attacker_name || 'Unknown')}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Detection Time</span>
-                  <span class="info-value">${new Date().toLocaleString()}</span>
-                </div>
+            <!-- Attacker Info -->
+            <div style="padding: 32px;">
+              <h2 style="color: #111827; margin: 0 0 20px 0; font-size: 18px; font-weight: 600;">Attacker Information</h2>
+              
+              <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; width: 140px;">Email / Account</td>
+                    <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500; font-size: 14px;">${sanitizeHtml(attacker_email)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">IP Address</td>
+                    <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-family: 'SF Mono', Monaco, monospace; font-size: 13px;">${sanitizeHtml(attacker_ip)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Name</td>
+                    <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${sanitizeHtml(attacker_name || 'Unknown')}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 14px 16px; color: #6b7280; font-size: 14px;">Detection Time</td>
+                    <td style="padding: 14px 16px; color: #111827; font-size: 14px;">${new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' })}</td>
+                  </tr>
+                </table>
               </div>
             </div>
 
-            <div class="login-log">
-              <h3>📜 Login Attempt Log</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Timestamp</th>
-                    <th>Status</th>
-                    <th>User Agent</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${loginLog || '<tr><td colspan="3" style="text-align: center; padding: 20px; color: #888;">No login attempts logged</td></tr>'}
-                </tbody>
-              </table>
+            <!-- Login Attempt Log -->
+            <div style="padding: 0 32px 32px;">
+              <h2 style="color: #111827; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Login Attempt Log</h2>
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="background: #f9fafb;">
+                      <th style="padding: 12px 16px; text-align: left; color: #6b7280; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Timestamp</th>
+                      <th style="padding: 12px 16px; text-align: left; color: #6b7280; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+                      <th style="padding: 12px 16px; text-align: left; color: #6b7280; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">User Agent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${loginLog || '<tr><td colspan="3" style="padding: 20px; text-align: center; color: #6b7280;">No login attempts logged</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div style="margin-top: 30px;">
-              <h2 style="color: #fff; margin-bottom: 15px;">🎯 MITRE ATT&CK Threat Analysis</h2>
+            <!-- Threat Analysis -->
+            <div style="padding: 0 32px 32px;">
+              <h2 style="color: #111827; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">MITRE ATT&CK Threat Analysis</h2>
               ${threatCards}
             </div>
 
-            <div style="margin-top: 30px; background: #1a1a2e; border-radius: 8px; padding: 20px;">
-              <h3 style="color: #fff; margin: 0 0 15px 0;">📚 Reference Links</h3>
-              <ul style="color: #ccc; margin: 0; padding-left: 20px;">
-                ${threats.map(t => `
-                  <li style="margin: 8px 0;">
-                    <a href="https://attack.mitre.org/techniques/${t.technique_id.replace('.', '/')}/" style="color: #00d4ff;" target="_blank">
-                      ${sanitizeHtml(t.technique_id)} - ${sanitizeHtml(t.technique_name)} (MITRE ATT&CK)
-                    </a>
-                  </li>
-                `).join('')}
-              </ul>
+            <!-- Reference Links -->
+            <div style="padding: 0 32px 32px;">
+              <h2 style="color: #111827; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Reference Documentation</h2>
+              <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                <ul style="color: #374151; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8;">
+                  ${threats.map(t => `
+                    <li style="margin: 4px 0;">
+                      <a href="https://attack.mitre.org/techniques/${t.technique_id.replace('.', '/')}/" style="color: #2563eb; text-decoration: none;" target="_blank">
+                        ${sanitizeHtml(t.technique_id)} - ${sanitizeHtml(t.technique_name)}
+                      </a>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
             </div>
 
-            <div class="footer">
-              <p>⚡ This is an automated security alert from your portfolio threat detection system.</p>
-              <p>Take immediate action if this appears to be a genuine attack.</p>
+            <!-- Footer -->
+            <div style="background: ${severityColors.bg}; border-top: 1px solid ${severityColors.border}; padding: 24px 32px; text-align: center;">
+              <p style="color: ${severityColors.text}; font-size: 14px; font-weight: 500; margin: 0 0 8px 0;">Take immediate action if this appears to be a genuine attack.</p>
+              <p style="color: #6b7280; font-size: 12px; margin: 0;">This is an automated security alert from your portfolio threat detection system.</p>
             </div>
           </div>
         </body>
@@ -291,7 +298,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "Security Alert <onboarding@resend.dev>",
         to: ["ritvik.indupuri@gmail.com"],
-        subject: `🚨 THREAT ALERT: ${highestSeverity.toUpperCase()} - ${threats[0]?.technique_name || 'Security Breach'} from ${attacker_ip}`,
+        subject: `Security Alert: ${getSeverityLabel(highestSeverity)} - ${threats[0]?.technique_name || 'Threat Detected'} from ${attacker_ip}`,
         html,
       }),
     });
