@@ -331,7 +331,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <Globe className="w-5 h-5 text-primary" />
-            Global Login Locations
+            Owner Authentication Map
             {locations.length > 0 && (
               <Badge variant="secondary" className="ml-auto">
                 {locations.length} locations
@@ -420,7 +420,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              Recent Login Activity
+              Owner Login History
             </CardTitle>
             <p className="text-xs text-muted-foreground">
               Use ← → arrow keys to navigate globe locations
