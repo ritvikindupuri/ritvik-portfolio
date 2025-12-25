@@ -401,51 +401,81 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     });
   }, [successLocations]);
 
-  // Add markers to Security Map
+  // Add markers to Security Map - separate markers for failed logins and guest visits
   useEffect(() => {
-    if (!securityMap.current || securityLocations.length === 0) return;
+    if (!securityMap.current) return;
 
     securityMarkersRef.current.forEach(marker => marker.remove());
     securityMarkersRef.current = [];
 
+    if (securityLocations.length === 0) return;
+
     securityLocations.forEach(loc => {
-      // Red for failed logins, Blue for guests only
-      let color = '#3b82f6'; // Default blue for guests
-      let glowColor = 'rgba(59, 130, 246, 0.5)';
+      // Create separate markers for failed logins and guest visits at the same location
       
+      // Failed login marker (red)
       if (loc.failedLoginCount > 0) {
-        color = '#ef4444'; // Red for failed logins
-        glowColor = 'rgba(239, 68, 68, 0.5)';
+        const failedSize = Math.min(20 + loc.failedLoginCount * 5, 50);
+        const failedEl = document.createElement('div');
+        failedEl.className = 'cursor-pointer';
+        failedEl.innerHTML = `
+          <div 
+            class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
+            style="
+              width: ${failedSize}px; 
+              height: ${failedSize}px; 
+              background: rgba(239, 68, 68, 0.8);
+              border: 2px solid #ef4444;
+              box-shadow: 0 0 ${failedSize/2}px rgba(239, 68, 68, 0.5);
+            "
+          >
+            <span style="color: white; font-size: ${Math.max(10, failedSize/3)}px; font-weight: bold;">
+              ${loc.failedLoginCount}
+            </span>
+          </div>
+        `;
+
+        failedEl.addEventListener('click', () => {
+          setSelectedSecurityLocation(loc);
+          securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
+        });
+
+        const failedMarker = new mapboxgl.Marker(failedEl).setLngLat([loc.lon, loc.lat]).addTo(securityMap.current!);
+        securityMarkersRef.current.push(failedMarker);
       }
 
-      const size = Math.min(20 + loc.totalCount * 5, 50);
-      
-      const el = document.createElement('div');
-      el.className = 'cursor-pointer';
-      el.innerHTML = `
-        <div 
-          class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
-          style="
-            width: ${size}px; 
-            height: ${size}px; 
-            background: ${color}cc;
-            border: 2px solid ${color};
-            box-shadow: 0 0 ${size/2}px ${glowColor};
-          "
-        >
-          <span style="color: white; font-size: ${Math.max(10, size/3)}px; font-weight: bold;">
-            ${loc.totalCount}
-          </span>
-        </div>
-      `;
+      // Guest visit marker (blue) - offset slightly if both exist at same location
+      if (loc.guestVisitCount > 0) {
+        const guestSize = Math.min(20 + loc.guestVisitCount * 5, 50);
+        const guestEl = document.createElement('div');
+        guestEl.className = 'cursor-pointer';
+        guestEl.innerHTML = `
+          <div 
+            class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
+            style="
+              width: ${guestSize}px; 
+              height: ${guestSize}px; 
+              background: rgba(59, 130, 246, 0.8);
+              border: 2px solid #3b82f6;
+              box-shadow: 0 0 ${guestSize/2}px rgba(59, 130, 246, 0.5);
+            "
+          >
+            <span style="color: white; font-size: ${Math.max(10, guestSize/3)}px; font-weight: bold;">
+              ${loc.guestVisitCount}
+            </span>
+          </div>
+        `;
 
-      el.addEventListener('click', () => {
-        setSelectedSecurityLocation(loc);
-        securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
-      });
+        guestEl.addEventListener('click', () => {
+          setSelectedSecurityLocation(loc);
+          securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
+        });
 
-      const marker = new mapboxgl.Marker(el).setLngLat([loc.lon, loc.lat]).addTo(securityMap.current!);
-      securityMarkersRef.current.push(marker);
+        // Offset guest marker slightly if there's also a failed login marker at same location
+        const offsetLon = loc.failedLoginCount > 0 ? loc.lon + 0.5 : loc.lon;
+        const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, loc.lat]).addTo(securityMap.current!);
+        securityMarkersRef.current.push(guestMarker);
+      }
     });
   }, [securityLocations]);
 

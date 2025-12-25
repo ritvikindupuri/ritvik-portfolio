@@ -346,15 +346,28 @@ const handler = async (req: Request): Promise<Response> => {
       if (knownLocation) {
         // Location is known, update last_seen_at and times_seen
         isTrustedLocation = knownLocation.is_trusted;
+        const newTimesSeen = knownLocation.times_seen + 1;
+        
+        // Auto-trust after 5 successful logins from the same IP
+        const AUTO_TRUST_THRESHOLD = 5;
+        const shouldAutoTrust = !knownLocation.is_trusted && newTimesSeen >= AUTO_TRUST_THRESHOLD;
+        
         await supabase
           .from('known_login_locations')
           .update({ 
             last_seen_at: new Date().toISOString(),
-            times_seen: knownLocation.times_seen + 1
+            times_seen: newTimesSeen,
+            is_trusted: shouldAutoTrust ? true : knownLocation.is_trusted,
+            notes: shouldAutoTrust ? `Auto-trusted after ${AUTO_TRUST_THRESHOLD} successful logins` : knownLocation.notes
           })
           .eq('ip_address', ipAddress);
         
-        console.log(`Known location login from ${ipAddress} (trusted: ${isTrustedLocation})`);
+        if (shouldAutoTrust) {
+          console.log(`Auto-trusted location ${ipAddress} after ${AUTO_TRUST_THRESHOLD} successful logins`);
+          isTrustedLocation = true;
+        }
+        
+        console.log(`Known location login from ${ipAddress} (trusted: ${isTrustedLocation}, times_seen: ${newTimesSeen})`);
       } else {
         // New location - get geolocation and add to table
         isNewLocation = true;
