@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Users, Eye, Download, MessageCircle, MousePointer, 
   Globe, Clock, TrendingUp, Activity, FileText, FolderOpen,
-  ChevronDown, ChevronUp, ExternalLink
+  ChevronDown, ChevronUp, ExternalLink, Timer
 } from "lucide-react";
 import {
   BarChart,
@@ -235,6 +235,31 @@ export const VisitorDashboard = () => {
       .slice(0, 8);
   }, [activities]);
 
+  // Section duration stats - average time spent per section
+  const sectionDurationStats = useMemo(() => {
+    const durations: Record<string, { total: number; count: number }> = {};
+    activities
+      .filter(a => a.activity_type === 'section_duration')
+      .forEach(a => {
+        const section = a.activity_data?.section || 'Unknown';
+        const duration = a.activity_data?.duration_seconds || 0;
+        if (!durations[section]) {
+          durations[section] = { total: 0, count: 0 };
+        }
+        durations[section].total += duration;
+        durations[section].count += 1;
+      });
+    return Object.entries(durations)
+      .map(([section, data]) => ({
+        section,
+        avgDuration: Math.round(data.total / data.count),
+        totalTime: data.total,
+        views: data.count
+      }))
+      .sort((a, b) => b.avgDuration - a.avgDuration)
+      .slice(0, 8);
+  }, [activities]);
+
   // Popular projects
   const projectStats = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -435,7 +460,7 @@ export const VisitorDashboard = () => {
       </div>
 
       {/* Section & Project Stats */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         {/* Popular Sections */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardHeader className="pb-2">
@@ -466,6 +491,50 @@ export const VisitorDashboard = () => {
                   <Bar dataKey="count" fill="#00d4ff" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Section Duration Stats */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Timer className="w-4 h-4 text-primary" />
+              Avg. Time Per Section
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {sectionDurationStats.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-4">No duration data yet</p>
+            ) : (
+              <div className="space-y-3">
+                {sectionDurationStats.map((item, index) => {
+                  const formatDuration = (seconds: number) => {
+                    if (seconds < 60) return `${seconds}s`;
+                    const mins = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+                  };
+                  
+                  return (
+                    <div key={item.section} className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground w-4">{index + 1}</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium truncate">{item.section}</p>
+                        <div className="w-full bg-secondary/30 rounded-full h-1.5 mt-1">
+                          <div 
+                            className="bg-green-500 h-full rounded-full"
+                            style={{ width: `${Math.min((item.avgDuration / sectionDurationStats[0].avgDuration) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {formatDuration(item.avgDuration)}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>
