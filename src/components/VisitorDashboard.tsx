@@ -65,7 +65,7 @@ const getTimeAgo = (date: Date): string => {
 export const VisitorDashboard = () => {
   const [activities, setActivities] = useState<VisitorActivity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d');
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
 
   useEffect(() => {
