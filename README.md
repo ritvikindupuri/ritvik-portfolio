@@ -18,6 +18,51 @@ This portfolio showcases my work in Cloud Security, Cybersecurity, and Artificia
 
 ---
 
+## User Experience
+
+### For Guests (Public Visitors)
+
+All visitors can explore the full portfolio content without authentication:
+
+| Section | Description |
+|---------|-------------|
+| **Hero & About** | Introduction, bio, and education details |
+| **Experience** | Professional work history with descriptions |
+| **Projects** | Featured projects with GitHub links and demos |
+| **Skills** | Technical skills organized by category |
+| **ML/LLM Showcases** | Machine learning and AI project portfolios |
+| **Certifications** | Professional certifications and credentials |
+| **Documentation** | Technical writeups and guides |
+| **AI Chatbot** | RAG-powered assistant to answer questions about my background |
+| **Contact Form** | Send messages directly via email |
+| **Resume Download** | Access to downloadable resume |
+
+### For Owner (Authenticated)
+
+After logging in, the portfolio owner has access to an analytics dashboard with:
+
+| Feature | Description |
+|---------|-------------|
+| **Visitor Analytics** | Real-time tracking of page views, unique visitors, and session duration |
+| **Behavioral Classification** | AI-based visitor intent detection (recruiter, developer, student, etc.) |
+| **Geographic Mapping** | Interactive 3D globe showing visitor and login attempt locations |
+| **Login Attempt Monitor** | Security log of authentication attempts with IP geolocation |
+| **MITRE ATT&CK Threat Detection** | Automated detection of brute force, password spraying, and credential stuffing |
+| **Resume Analytics** | Track resume views and downloads with referrer data |
+| **Chatbot Query Analysis** | Review questions asked to the AI assistant |
+| **Content Management** | Edit portfolio content (projects, skills, experience, etc.) |
+
+### Email Alerts (Owner)
+
+The owner receives automated email notifications for:
+
+- **New Visitor Alerts** - When a new unique visitor lands on the portfolio
+- **Contact Form Submissions** - Immediate notification of messages
+- **Security Threat Alerts** - High-severity login anomalies (brute force, credential attacks)
+- **Weekly Digest** - Summary of visitor activity, popular content, and security events
+
+---
+
 ## System Architecture
 
 The architecture follows a three-tier design with clear separation of concerns:
