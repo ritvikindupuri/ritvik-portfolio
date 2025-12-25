@@ -47,8 +47,8 @@ After logging in, the portfolio owner has access to an analytics dashboard with:
 | **Visitor Analytics** | Real-time tracking of page views, unique visitors, and session duration |
 | **Behavioral Classification** | AI-based visitor intent detection (recruiter, developer, student, etc.) |
 | **Geographic Mapping** | Interactive 3D globe showing visitor and login attempt locations |
-| **AI Risk Scoring** | LLM-powered security assessment using Google Gemini 2.5 Pro |
-| **Risk Score History** | Historical trend tracking with line chart visualization |
+| **AI Risk Scoring** | LLM-powered security assessment using Google Gemini 2.5 Pro with 0-100 risk score |
+| **Risk Score History** | Historical trend tracking with interactive line chart, trend indicators, and week-over-week comparison |
 | **Login Attempt Monitor** | Security log of authentication attempts with IP geolocation |
 | **MITRE ATT&CK Threat Detection** | Automated detection of brute force, password spraying, and credential stuffing |
 | **Resume Analytics** | Track resume views and downloads with referrer data |
@@ -62,7 +62,7 @@ The owner receives automated email notifications for:
 - **New Visitor Alerts** - When a new unique visitor lands on the portfolio
 - **Contact Form Submissions** - Immediate notification of messages
 - **Security Threat Alerts** - High-severity login anomalies (brute force, credential attacks)
-- **Weekly Digest** - Summary of visitor activity, popular content, and security events
+- **Weekly Digest** - Summary of visitor activity, popular content, AI risk score trends, and security events
 
 ---
 
