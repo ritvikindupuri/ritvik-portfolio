@@ -353,47 +353,104 @@ export const VisitorSankeyDiagram = () => {
                   className="space-y-2"
                 >
                   <div className="flex items-center gap-3">
-                    {/* Section Label */}
-                    <div 
-                      className="px-2 py-1 rounded text-xs font-medium text-white min-w-[100px] text-center"
-                      style={{ backgroundColor: getSectionColor(data.section) }}
-                    >
-                      {data.section}
-                    </div>
+                    {/* Section Label with tooltip */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div 
+                            className="px-2 py-1 rounded text-xs font-medium text-white min-w-[100px] text-center cursor-help"
+                            style={{ backgroundColor: getSectionColor(data.section) }}
+                          >
+                            {data.section}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-[200px]">
+                          <p className="font-medium">{data.section}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {data.visitors} unique visitors viewed this section
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
-                    {/* Progress Bar */}
-                    <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden relative">
-                      {/* Continued (green) */}
-                      <div 
-                        className="absolute inset-y-0 left-0 bg-green-500 transition-all duration-500"
-                        style={{ width: `${data.retentionRate}%` }}
-                      />
-                      {/* Dropped (red/orange) */}
-                      <div 
-                        className="absolute inset-y-0 bg-red-500/70 transition-all duration-500"
-                        style={{ 
-                          left: `${data.retentionRate}%`,
-                          width: `${data.dropoffRate}%` 
-                        }}
-                      />
-                      {/* Labels on bar */}
-                      <div className="absolute inset-0 flex items-center justify-between px-2 text-xs font-medium">
-                        <span className="text-white drop-shadow">
-                          {data.continued} continued
-                        </span>
-                        <span className="text-white drop-shadow">
-                          {data.dropped} left
-                        </span>
-                      </div>
-                    </div>
+                    {/* Progress Bar with tooltip */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden relative cursor-help">
+                            {/* Continued (green) */}
+                            <div 
+                              className="absolute inset-y-0 left-0 bg-green-500 transition-all duration-500"
+                              style={{ width: `${data.retentionRate}%` }}
+                            />
+                            {/* Dropped (red/orange) */}
+                            <div 
+                              className="absolute inset-y-0 bg-red-500/70 transition-all duration-500"
+                              style={{ 
+                                left: `${data.retentionRate}%`,
+                                width: `${data.dropoffRate}%` 
+                              }}
+                            />
+                            {/* Labels on bar */}
+                            <div className="absolute inset-0 flex items-center justify-between px-2 text-xs font-medium">
+                              <span className="text-white drop-shadow">
+                                {data.continued} continued
+                              </span>
+                              <span className="text-white drop-shadow">
+                                {data.dropped} left
+                              </span>
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[280px]">
+                          <p className="font-medium mb-1">Retention Breakdown for {data.section}</p>
+                          <div className="text-xs space-y-1">
+                            <p className="flex justify-between gap-4">
+                              <span className="text-green-400">✓ Continued:</span>
+                              <span>{data.continued} visitors ({data.retentionRate}%)</span>
+                            </p>
+                            <p className="flex justify-between gap-4">
+                              <span className="text-red-400">✗ Left:</span>
+                              <span>{data.dropped} visitors ({data.dropoffRate}%)</span>
+                            </p>
+                            <p className="text-muted-foreground mt-2 pt-1 border-t border-border/50">
+                              {data.retentionRate >= 60 
+                                ? "Good retention - visitors are engaged with this content"
+                                : data.retentionRate >= 40
+                                ? "Moderate retention - consider enhancing this section"
+                                : "Low retention - this section may need improvement"}
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
-                    {/* Drop-off Rate */}
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded ${status.bg} min-w-[80px] justify-center`}>
-                      <StatusIcon className={`w-3 h-3 ${status.color}`} />
-                      <span className={`text-xs font-bold ${status.color}`}>
-                        {data.dropoffRate}%
-                      </span>
-                    </div>
+                    {/* Drop-off Rate with tooltip */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className={`flex items-center gap-1 px-2 py-1 rounded ${status.bg} min-w-[80px] justify-center cursor-help`}>
+                            <StatusIcon className={`w-3 h-3 ${status.color}`} />
+                            <span className={`text-xs font-bold ${status.color}`}>
+                              {data.dropoffRate}%
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[250px]">
+                          <p className="font-medium">{data.dropoffRate}% Drop-off Rate</p>
+                          <p className="text-xs text-muted-foreground">
+                            {data.dropped} out of {data.visitors} visitors ended their session after viewing {data.section}
+                          </p>
+                          <p className="text-xs mt-1 pt-1 border-t border-border/50">
+                            {data.dropoffRate >= 70 
+                              ? "⚠️ High drop-off indicates content may need a clearer call-to-action or more engaging elements"
+                              : data.dropoffRate >= 40
+                              ? "📊 Moderate drop-off - consider adding navigation hints or related content links"
+                              : "✅ Healthy retention rate - visitors are successfully continuing their journey"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
 
                   {/* Visitor count */}
