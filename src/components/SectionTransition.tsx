@@ -8,20 +8,42 @@ interface SectionTransitionProps {
 }
 
 export const SectionTransition = ({ badge, subtitle }: SectionTransitionProps) => {
-  const { trackSectionView } = useVisitorTracker();
+  const { trackSectionView, trackActivity } = useVisitorTracker();
   const hasTrackedRef = useRef(false);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const entryTimeRef = useRef<number | null>(null);
 
-  // Track section view with Intersection Observer
+  // Track section view with Intersection Observer - including duration tracking
   useEffect(() => {
     if (!sectionRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasTrackedRef.current) {
-            hasTrackedRef.current = true;
-            trackSectionView(badge);
+          if (entry.isIntersecting) {
+            // Section entered viewport
+            if (!hasTrackedRef.current) {
+              hasTrackedRef.current = true;
+              trackSectionView(badge);
+            }
+            // Start timing
+            entryTimeRef.current = Date.now();
+          } else {
+            // Section left viewport - calculate duration
+            if (entryTimeRef.current !== null) {
+              const durationMs = Date.now() - entryTimeRef.current;
+              const durationSeconds = Math.round(durationMs / 1000);
+              
+              // Only track if viewed for at least 2 seconds (avoid scroll-through)
+              if (durationSeconds >= 2) {
+                trackActivity('section_duration', {
+                  section: badge,
+                  duration_seconds: durationSeconds,
+                  duration_ms: durationMs
+                });
+              }
+              entryTimeRef.current = null;
+            }
           }
         });
       },
@@ -30,8 +52,22 @@ export const SectionTransition = ({ badge, subtitle }: SectionTransitionProps) =
 
     observer.observe(sectionRef.current);
 
-    return () => observer.disconnect();
-  }, [badge, trackSectionView]);
+    // Cleanup: track duration if section was visible when unmounting
+    return () => {
+      if (entryTimeRef.current !== null) {
+        const durationMs = Date.now() - entryTimeRef.current;
+        const durationSeconds = Math.round(durationMs / 1000);
+        if (durationSeconds >= 2) {
+          trackActivity('section_duration', {
+            section: badge,
+            duration_seconds: durationSeconds,
+            duration_ms: durationMs
+          });
+        }
+      }
+      observer.disconnect();
+    };
+  }, [badge, trackSectionView, trackActivity]);
 
   return (
     <motion.div 

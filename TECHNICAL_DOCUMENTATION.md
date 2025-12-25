@@ -791,11 +791,65 @@ Visitor tracking is implemented through a **React Context Provider** (`VisitorTr
 |--------------|-------------|---------------|
 | `page_view` | Initial page load | `{ page: "/path" }` |
 | `section_view` | Scrolled to a section | `{ section: "Skills" }` |
+| `section_duration` | Time spent viewing a section | `{ section: "Skills", duration_seconds: 45, duration_ms: 45230 }` |
 | `chatbot_query` | Asked the AI chatbot | `{ query: "What are your skills?" }` |
 | `resume_view` | Viewed a resume | `{ resume_name: "Primary Resume" }` |
 | `resume_download` | Downloaded a resume | `{ resume_name: "Primary Resume" }` |
 | `project_view` | Expanded project details | `{ project_name: "AI Chatbot" }` |
 | `project_click` | Clicked project link (GitHub/Demo) | `{ project_name: "AI Chatbot", url: "..." }` |
+
+### Section Duration Tracking
+
+The system tracks how long visitors spend viewing each section using the `IntersectionObserver` API. This is implemented in `SectionTransition.tsx`:
+
+```typescript
+// Track section view with Intersection Observer - including duration tracking
+useEffect(() => {
+  if (!sectionRef.current) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          // Section entered viewport
+          if (!hasTrackedRef.current) {
+            hasTrackedRef.current = true;
+            trackSectionView(badge);
+          }
+          // Start timing
+          entryTimeRef.current = Date.now();
+        } else {
+          // Section left viewport - calculate duration
+          if (entryTimeRef.current !== null) {
+            const durationMs = Date.now() - entryTimeRef.current;
+            const durationSeconds = Math.round(durationMs / 1000);
+            
+            // Only track if viewed for at least 2 seconds (avoid scroll-through)
+            if (durationSeconds >= 2) {
+              trackActivity('section_duration', {
+                section: badge,
+                duration_seconds: durationSeconds,
+                duration_ms: durationMs
+              });
+            }
+            entryTimeRef.current = null;
+          }
+        }
+      });
+    },
+    { threshold: 0.5 } // Trigger when 50% visible
+  );
+
+  observer.observe(sectionRef.current);
+  return () => observer.disconnect();
+}, [badge, trackSectionView, trackActivity]);
+```
+
+**How Duration Tracking Works:**
+1. When a section becomes 50% visible (enters viewport), the system records the entry timestamp
+2. When the section leaves the viewport, the system calculates elapsed time
+3. Only durations of 2+ seconds are logged to filter out quick scroll-throughs
+4. Duration data is stored in the `visitor_activity` table with type `section_duration`
 
 ### Tracking Hook Usage
 
@@ -817,28 +871,213 @@ const MyComponent = () => {
 
 ---
 
+## Visitor Analytics Aggregation
+
+The `VisitorDashboard.tsx` component aggregates raw activity data into meaningful statistics. Here are the key calculations:
+
+### Session Aggregation
+
+Sessions are created by grouping activities by their unique `session_id`:
+
+```typescript
+// Aggregate data by session
+const sessions = useMemo(() => {
+  const sessionMap: Record<string, SessionSummary> = {};
+
+  activities.forEach(activity => {
+    if (!sessionMap[activity.session_id]) {
+      sessionMap[activity.session_id] = {
+        session_id: activity.session_id,
+        activities: [],
+        startTime: new Date(activity.created_at),
+        endTime: new Date(activity.created_at),
+        totalActivities: 0,
+        chatbotQueries: 0,
+        resumeViews: 0,
+        resumeDownloads: 0,
+        projectClicks: 0,
+        sectionsViewed: []
+      };
+    }
+
+    const session = sessionMap[activity.session_id];
+    session.activities.push(activity);
+    session.totalActivities++;
+    
+    // Track session duration via first/last activity timestamps
+    const activityTime = new Date(activity.created_at);
+    if (activityTime < session.startTime) session.startTime = activityTime;
+    if (activityTime > session.endTime) session.endTime = activityTime;
+
+    // Categorize by activity type
+    switch (activity.activity_type) {
+      case 'chatbot_query':
+        session.chatbotQueries++;
+        break;
+      case 'resume_download':
+        session.resumeDownloads++;
+        break;
+      case 'project_click':
+        session.projectClicks++;
+        break;
+      case 'section_view':
+        const section = activity.activity_data?.section;
+        if (section && !session.sectionsViewed.includes(section)) {
+          session.sectionsViewed.push(section);
+        }
+        break;
+    }
+  });
+
+  return Object.values(sessionMap).sort((a, b) => 
+    b.endTime.getTime() - a.endTime.getTime()
+  );
+}, [activities]);
+```
+
+### Most Viewed Sections Calculation
+
+The system counts how many times each section was viewed:
+
+```typescript
+// Most viewed sections
+const sectionStats = useMemo(() => {
+  const counts: Record<string, number> = {};
+  activities
+    .filter(a => a.activity_type === 'section_view')
+    .forEach(a => {
+      const section = a.activity_data?.section || 'Unknown';
+      counts[section] = (counts[section] || 0) + 1;
+    });
+  return Object.entries(counts)
+    .map(([section, count]) => ({ section, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+}, [activities]);
+```
+
+### Average Section Duration Calculation
+
+Calculates how long visitors spend on each section on average:
+
+```typescript
+// Section duration stats - average time spent per section
+const sectionDurationStats = useMemo(() => {
+  const durations: Record<string, { total: number; count: number }> = {};
+  activities
+    .filter(a => a.activity_type === 'section_duration')
+    .forEach(a => {
+      const section = a.activity_data?.section || 'Unknown';
+      const duration = a.activity_data?.duration_seconds || 0;
+      if (!durations[section]) {
+        durations[section] = { total: 0, count: 0 };
+      }
+      durations[section].total += duration;
+      durations[section].count += 1;
+    });
+  return Object.entries(durations)
+    .map(([section, data]) => ({
+      section,
+      avgDuration: Math.round(data.total / data.count),
+      totalTime: data.total,
+      views: data.count
+    }))
+    .sort((a, b) => b.avgDuration - a.avgDuration)
+    .slice(0, 8);
+}, [activities]);
+```
+
+### Most Clicked Projects Calculation
+
+Tracks which projects generate the most engagement:
+
+```typescript
+// Popular projects
+const projectStats = useMemo(() => {
+  const counts: Record<string, number> = {};
+  activities
+    .filter(a => a.activity_type === 'project_click')
+    .forEach(a => {
+      const project = a.activity_data?.project_name || 'Unknown';
+      counts[project] = (counts[project] || 0) + 1;
+    });
+  return Object.entries(counts)
+    .map(([project, count]) => ({ project, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+}, [activities]);
+```
+
+### Session Duration Calculation
+
+Session duration is computed as the difference between first and last activity timestamps:
+
+```typescript
+const sessionDuration = Math.round(
+  (session.endTime.getTime() - session.startTime.getTime()) / 1000 / 60
+);
+const durationText = sessionDuration < 1 
+  ? 'Quick visit' 
+  : sessionDuration < 5 
+    ? `${sessionDuration}m session` 
+    : `${sessionDuration}m engaged`;
+```
+
+---
+
 ## Visitor Classification
 
 Visitors are automatically categorized based on their behavior patterns. The classification logic (in `VisitorDashboard.tsx`) uses this priority order:
 
 ```typescript
 const getVisitorType = () => {
-  if (session.chatbotQueries > 2) 
-    return { label: 'Engaged Visitor', color: 'text-green-400' };
-  if (session.resumeDownloads > 0) 
-    return { label: 'Potential Recruiter', color: 'text-orange-400' };
-  if (session.projectClicks > 2) 
-    return { label: 'Project Explorer', color: 'text-blue-400' };
-  if (session.sectionsViewed.length > 3) 
-    return { label: 'Active Browser', color: 'text-purple-400' };
+  // Calculate a recruiter likelihood score based on multiple signals
+  let recruiterScore = 0;
+  
+  // Signal 1: Resume interactions (strong signal)
+  if (session.resumeDownloads > 0) recruiterScore += 30;
+  if (session.resumeViews > 0) recruiterScore += 15;
+  
+  // Signal 2: Relevant chatbot queries (check for hiring/recruiting intent)
+  const recruiterKeywords = ['experience', 'resume', 'skills', 'work', 'projects', 
+    'contact', 'hire', 'job', 'position', 'role', 'team', 'available'];
+  const chatbotActivities = session.activities.filter(a => 
+    a.activity_type === 'chatbot_query'
+  );
+  const recruiterQueries = chatbotActivities.filter(a => {
+    const query = (a.activity_data?.query || '').toLowerCase();
+    return recruiterKeywords.some(keyword => query.includes(keyword));
+  });
+  if (recruiterQueries.length > 0) {
+    recruiterScore += Math.min(recruiterQueries.length * 15, 30);
+  }
+  
+  // Signal 3: Viewed relevant sections
+  const professionalSections = ['experience', 'skills', 'certifications', 'about', 'contact'];
+  const viewedProfessionalSections = session.sectionsViewed.filter(s => 
+    professionalSections.some(ps => s.toLowerCase().includes(ps))
+  );
+  recruiterScore += Math.min(viewedProfessionalSections.length * 10, 20);
+  
+  // Signal 4: Session duration and engagement depth
+  if (sessionDuration >= 3) recruiterScore += 10;
+  if (session.chatbotQueries >= 3) recruiterScore += 10;
+  
+  // Determine visitor type based on score
+  if (recruiterScore >= 50) return { label: 'Likely Recruiter', color: 'text-orange-400' };
+  if (recruiterScore >= 30) return { label: 'Potential Recruiter', color: 'text-amber-400' };
+  if (session.chatbotQueries > 2) return { label: 'Engaged Visitor', color: 'text-green-400' };
+  if (session.projectClicks > 2) return { label: 'Project Explorer', color: 'text-blue-400' };
+  if (session.sectionsViewed.length > 3) return { label: 'Active Browser', color: 'text-purple-400' };
   return { label: 'New Visitor', color: 'text-muted-foreground' };
 };
 ```
 
 | Visitor Type | Trigger Condition |
 |-------------|-------------------|
+| **Likely Recruiter** | Recruiter score ≥ 50 (resume download + relevant queries + professional sections) |
+| **Potential Recruiter** | Recruiter score ≥ 30 |
 | **Engaged Visitor** | 3+ chatbot queries |
-| **Potential Recruiter** | Downloaded resume at least once |
 | **Project Explorer** | Clicked 3+ projects |
 | **Active Browser** | Viewed 4+ different sections |
 | **New Visitor** | Default (none of the above) |

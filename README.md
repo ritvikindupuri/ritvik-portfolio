@@ -45,6 +45,7 @@ After logging in, the portfolio owner has access to an analytics dashboard with:
 | Feature | Description |
 |---------|-------------|
 | **Visitor Analytics** | Real-time tracking of page views, unique visitors, and session duration |
+| **Section Duration Tracking** | Measures how long visitors spend on each portfolio section using IntersectionObserver |
 | **Behavioral Classification** | AI-based visitor intent detection (recruiter, developer, student, etc.) |
 | **Geographic Mapping** | Interactive 3D globe showing visitor and login attempt locations |
 | **AI Risk Scoring** | LLM-powered security assessment using Google Gemini 2.5 Pro with 0-100 risk score |
