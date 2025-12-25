@@ -64,6 +64,8 @@ const projectTypes = [
   "Agentic Workflow",
   "Multi-Agent System",
   "Tool-Use Agent",
+  "Multimodal AI Application",
+  "Knowledge Graph",
   "Other"
 ];
 
