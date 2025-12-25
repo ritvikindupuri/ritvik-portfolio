@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { BarChart3, Shield, Users, MapPin } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +7,7 @@ import { SecurityChoroplethMap } from "@/components/SecurityChoroplethMap";
 import { ThreatDetector } from "@/components/ThreatDetector";
 import { VisitorDashboard } from "@/components/VisitorDashboard";
 import { KnownLocationsManager } from "@/components/KnownLocationsManager";
+import { AIRiskScore } from "@/components/AIRiskScore";
 
 interface LoginAttempt {
   id: string;
@@ -18,9 +19,57 @@ interface LoginAttempt {
   created_at: string;
 }
 
+// MITRE techniques for threat detection (matching ThreatDetector)
+const MITRE_TECHNIQUES = {
+  T1110: { id: "T1110", name: "Brute Force", severity: "high" },
+  T1110_001: { id: "T1110.001", name: "Password Guessing", severity: "high" },
+  T1110_003: { id: "T1110.003", name: "Password Spraying", severity: "medium" },
+  T1078: { id: "T1078", name: "Valid Accounts", severity: "medium" },
+};
+
 export const PortfolioAnalytics = () => {
   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
   const [activeTab, setActiveTab] = useState("visitors");
+
+  // Detect threats for AI analysis (simplified version matching ThreatDetector logic)
+  const detectedThreats = useMemo(() => {
+    const threats: { technique: typeof MITRE_TECHNIQUES[keyof typeof MITRE_TECHNIQUES]; confidence: number }[] = [];
+    const now = new Date();
+
+    // Group attempts by IP
+    const ipAttempts: Record<string, LoginAttempt[]> = {};
+    loginAttempts.forEach(attempt => {
+      if (attempt.ip_address) {
+        if (!ipAttempts[attempt.ip_address]) {
+          ipAttempts[attempt.ip_address] = [];
+        }
+        ipAttempts[attempt.ip_address].push(attempt);
+      }
+    });
+
+    // Detect Brute Force (T1110)
+    Object.entries(ipAttempts).forEach(([ip, attempts]) => {
+      const failedAttempts = attempts.filter(a => !a.success);
+      const recentFailed = failedAttempts.filter(a => {
+        const attemptTime = new Date(a.created_at);
+        return (now.getTime() - attemptTime.getTime()) < 3600000;
+      });
+
+      if (recentFailed.length >= 5) {
+        threats.push({
+          technique: MITRE_TECHNIQUES.T1110,
+          confidence: Math.min(0.95, 0.5 + (recentFailed.length * 0.1)),
+        });
+      } else if (failedAttempts.length >= 3) {
+        threats.push({
+          technique: MITRE_TECHNIQUES.T1110_001,
+          confidence: 0.6,
+        });
+      }
+    });
+
+    return threats;
+  }, [loginAttempts]);
 
   return (
     <motion.section
@@ -61,6 +110,9 @@ export const PortfolioAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6">
+          {/* AI Risk Score */}
+          <AIRiskScore loginAttempts={loginAttempts} detectedThreats={detectedThreats} />
+          
           {/* Global Login Map with Details */}
           <SecurityChoroplethMap onLoginAttemptsLoaded={setLoginAttempts} />
           
