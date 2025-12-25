@@ -30,6 +30,8 @@ This documentation covers the complete system architecture, data flows, implemen
 - [Risk Score History Chart](#risk-score-history-chart)
 - [Portfolio Analytics System](#portfolio-analytics-system)
 - [Visitor Tracking System](#visitor-tracking-system)
+- [Visitor Analytics Aggregation](#visitor-analytics-aggregation)
+- [Visitor Journey Flow Analysis](#visitor-journey-flow-analysis)
 - [Visitor Classification](#visitor-classification)
 - [Security Monitoring](#security-monitoring)
 - [Known Login Locations System](#known-login-locations-system)
@@ -937,7 +939,7 @@ const sessions = useMemo(() => {
 
 ### Most Viewed Sections Calculation
 
-The system counts how many times each section was viewed:
+The system counts how many times each section was viewed across all visitor sessions. This calculation is implemented in `VisitorDashboard.tsx`:
 
 ```typescript
 // Most viewed sections
@@ -956,9 +958,18 @@ const sectionStats = useMemo(() => {
 }, [activities]);
 ```
 
+**Step-by-Step Explanation:**
+
+1. **Initialize Counter Object**: Creates an empty `counts` object where keys are section names and values are view counts
+2. **Filter by Activity Type**: Uses `.filter()` to only process activities with type `section_view`, ignoring chatbot queries, project clicks, etc.
+3. **Count Each Section**: Iterates through filtered activities, extracting the section name from `activity_data.section` and incrementing its count (or initializing to 1 if first occurrence)
+4. **Transform to Array**: Converts the object to an array of `{ section, count }` objects using `Object.entries()`
+5. **Sort Descending**: Sorts by count in descending order so most popular sections appear first
+6. **Limit Results**: Takes only the top 8 sections using `.slice(0, 8)` to keep the UI manageable
+
 ### Average Section Duration Calculation
 
-Calculates how long visitors spend on each section on average:
+Calculates how long visitors spend on each section on average. This uses the `section_duration` activity type that is logged when a visitor scrolls away from a section:
 
 ```typescript
 // Section duration stats - average time spent per section
@@ -987,9 +998,18 @@ const sectionDurationStats = useMemo(() => {
 }, [activities]);
 ```
 
+**Step-by-Step Explanation:**
+
+1. **Initialize Accumulator**: Creates a `durations` object where each key is a section name and the value contains `total` (sum of all durations) and `count` (number of duration records)
+2. **Filter Duration Events**: Only processes `section_duration` activity types (not regular `section_view` events)
+3. **Accumulate Totals**: For each duration event, adds the `duration_seconds` to the section's running total and increments the count
+4. **Calculate Averages**: Transforms to an array where `avgDuration = total / count`, giving the mean time spent per view
+5. **Sort by Engagement**: Sorts descending by average duration so most engaging sections appear first
+6. **Limit to Top 8**: Returns only the top 8 sections
+
 ### Most Clicked Projects Calculation
 
-Tracks which projects generate the most engagement:
+Tracks which projects generate the most engagement through GitHub/demo link clicks:
 
 ```typescript
 // Popular projects
@@ -1008,9 +1028,17 @@ const projectStats = useMemo(() => {
 }, [activities]);
 ```
 
+**Step-by-Step Explanation:**
+
+1. **Initialize Counter**: Empty object to track click counts per project
+2. **Filter Project Clicks**: Only processes `project_click` activity types (when visitors click GitHub/demo links)
+3. **Extract Project Name**: Gets the project name from `activity_data.project_name`
+4. **Increment Count**: Adds 1 to the project's click count (or initializes to 1)
+5. **Sort and Limit**: Returns top 5 projects sorted by click count descending
+
 ### Session Duration Calculation
 
-Session duration is computed as the difference between first and last activity timestamps:
+Session duration is computed as the difference between the first and last activity timestamps within a session:
 
 ```typescript
 const sessionDuration = Math.round(
@@ -1023,18 +1051,209 @@ const durationText = sessionDuration < 1
     : `${sessionDuration}m engaged`;
 ```
 
+**Step-by-Step Explanation:**
+
+1. **Get Timestamps**: `session.endTime` is the timestamp of the last recorded activity, `session.startTime` is the first
+2. **Calculate Milliseconds**: `getTime()` returns Unix timestamp in milliseconds, subtraction gives duration in ms
+3. **Convert to Minutes**: Divide by 1000 (→ seconds) then by 60 (→ minutes), round to nearest integer
+4. **Human-Readable Label**: Categorizes duration into "Quick visit" (<1 min), "Xm session" (1-4 min), or "Xm engaged" (5+ min)
+
+---
+
+## Visitor Journey Flow Analysis
+
+The Visitor Journey Flow component (`VisitorJourneyFlow.tsx`) analyzes how visitors navigate through portfolio sections, revealing common paths and engagement patterns.
+
+### Visitor Journey Flow Visualization
+
+<p align="center">
+  <img src="https://imgur.com/TtoXN9M.png" alt="Visitor Journey Flow - Top Paths and Section Order" width="800"/>
+</p>
+
+**Figure 15: Visitor Journey Flow - Top Paths and Section Order** - The left panel displays the most common section-to-section transitions (e.g., "Who I Am → Technical Arsenal" at 23%), while the right panel shows the typical order visitors view sections with average position numbers. Entry/exit counts indicate where visitors start and end their journeys.
+
+<p align="center">
+  <img src="https://imgur.com/ubp3WlU.png" alt="Visitor Journey Flow - Entry and Exit Points" width="800"/>
+</p>
+
+**Figure 16: Visitor Journey Entry and Exit Points** - Entry Points show where visitors typically begin their journey (ranked with medals), while Exit Points reveal where they leave. This data helps identify which sections are effective landing spots and which may be causing visitors to leave.
+
+### Journey Data Structure
+
+The component tracks transitions between sections and calculates statistics:
+
+```typescript
+interface JourneyStep {
+  from: string;      // Source section name
+  to: string;        // Destination section name
+  count: number;     // Number of times this transition occurred
+  percentage: number; // Percentage of all transitions
+}
+
+interface SectionStats {
+  section: string;    // Section name
+  entryCount: number; // Times this was the first section viewed
+  exitCount: number;  // Times this was the last section viewed
+  avgPosition: number; // Average position in the journey (1 = first)
+}
+```
+
+### Session Grouping Algorithm
+
+Activities are grouped by session ID to reconstruct each visitor's journey:
+
+```typescript
+// Group activities by session
+const sessionActivities: Record<string, VisitorActivity[]> = {};
+activities.forEach(activity => {
+  if (!sessionActivities[activity.session_id]) {
+    sessionActivities[activity.session_id] = [];
+  }
+  sessionActivities[activity.session_id].push(activity);
+});
+```
+
+**Step-by-Step Explanation:**
+
+1. **Initialize Session Map**: Creates an empty object where keys are session IDs and values are arrays of activities
+2. **Iterate All Activities**: Loops through every `section_view` activity from the database
+3. **Group by Session**: For each activity, checks if the session ID already exists; if not, creates an empty array
+4. **Append Activity**: Pushes the activity into the array for that session
+5. **Result**: All activities are organized by session, allowing us to reconstruct each visitor's journey
+
+### Transition Calculation Algorithm
+
+The core logic for calculating section-to-section transitions:
+
+```typescript
+// Calculate transitions between sections
+const transitions: Record<string, number> = {};
+const sectionEntries: Record<string, number> = {};
+const sectionExits: Record<string, number> = {};
+const sectionPositions: Record<string, number[]> = {};
+let totalTransitions = 0;
+
+Object.values(sessionActivities).forEach(sessionActs => {
+  // Sort by timestamp to ensure chronological order
+  const sorted = sessionActs.sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  sorted.forEach((activity, index) => {
+    const section = activity.activity_data?.section || 'Unknown';
+    
+    // Track position in journey (1-indexed)
+    if (!sectionPositions[section]) sectionPositions[section] = [];
+    sectionPositions[section].push(index + 1);
+
+    // First section = entry point
+    if (index === 0) {
+      sectionEntries[section] = (sectionEntries[section] || 0) + 1;
+    }
+
+    // Last section = exit point
+    if (index === sorted.length - 1) {
+      sectionExits[section] = (sectionExits[section] || 0) + 1;
+    }
+
+    // Track transitions (from current to next)
+    if (index < sorted.length - 1) {
+      const nextSection = sorted[index + 1].activity_data?.section || 'Unknown';
+      const transitionKey = `${section}→${nextSection}`;
+      transitions[transitionKey] = (transitions[transitionKey] || 0) + 1;
+      totalTransitions++;
+    }
+  });
+});
+```
+
+**Step-by-Step Explanation:**
+
+1. **Initialize Tracking Objects**:
+   - `transitions`: Counts each unique "SectionA→SectionB" transition
+   - `sectionEntries`: Counts how many times each section was the first viewed
+   - `sectionExits`: Counts how many times each section was the last viewed
+   - `sectionPositions`: Arrays of positions where each section appeared (for average calculation)
+
+2. **Process Each Session**: Iterates through all sessions using `Object.values(sessionActivities)`
+
+3. **Sort Chronologically**: Sorts activities within each session by `created_at` timestamp to ensure correct order
+
+4. **Track Position**: For each activity, records its position (1-indexed) in the `sectionPositions` array for that section
+
+5. **Identify Entry Points**: If `index === 0` (first activity), increments the entry count for that section
+
+6. **Identify Exit Points**: If `index === sorted.length - 1` (last activity), increments the exit count
+
+7. **Record Transitions**: For all non-final activities, creates a transition key like `"Hero→About"` and increments its count
+
+### Average Position Calculation
+
+Calculates the typical order in which sections are viewed:
+
+```typescript
+const sectionStats: SectionStats[] = Object.keys(sectionPositions).map(section => ({
+  section,
+  entryCount: sectionEntries[section] || 0,
+  exitCount: sectionExits[section] || 0,
+  avgPosition: sectionPositions[section].length > 0 
+    ? Math.round(
+        sectionPositions[section].reduce((a, b) => a + b, 0) / 
+        sectionPositions[section].length * 10
+      ) / 10
+    : 0
+})).sort((a, b) => a.avgPosition - b.avgPosition);
+```
+
+**Step-by-Step Explanation:**
+
+1. **Iterate All Sections**: Uses `Object.keys(sectionPositions)` to get all sections that have been viewed
+2. **Calculate Average Position**: 
+   - Sum all positions using `.reduce((a, b) => a + b, 0)`
+   - Divide by the number of occurrences (`.length`)
+   - Multiply by 10, round, then divide by 10 to get one decimal place precision
+3. **Include Entry/Exit Counts**: Pulls the entry and exit counts from the tracking objects
+4. **Sort by Position**: Sorts ascending so sections typically viewed first appear at the top
+
+### Top Paths Formatting
+
+Converts raw transition data into a sorted, percentage-weighted list:
+
+```typescript
+const journeySteps: JourneyStep[] = Object.entries(transitions)
+  .map(([key, count]) => {
+    const [from, to] = key.split('→');
+    return {
+      from,
+      to,
+      count,
+      percentage: Math.round((count / totalTransitions) * 100)
+    };
+  })
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 10);
+```
+
+**Step-by-Step Explanation:**
+
+1. **Convert to Array**: `Object.entries(transitions)` returns `[["Hero→About", 15], ...]`
+2. **Parse Transition Key**: Splits the key on `→` to extract `from` and `to` sections
+3. **Calculate Percentage**: `(count / totalTransitions) * 100` gives the percentage of all transitions this path represents
+4. **Sort by Popularity**: Most common transitions appear first
+5. **Limit to Top 10**: Returns only the 10 most common paths to keep the UI clean
+
 ---
 
 ## Visitor Classification
 
-Visitors are automatically categorized based on their behavior patterns. The classification logic (in `VisitorDashboard.tsx`) uses this priority order:
+Visitors are automatically categorized based on their behavior patterns. The classification logic (in `VisitorDashboard.tsx`) uses a weighted scoring system:
 
 ```typescript
 const getVisitorType = () => {
   // Calculate a recruiter likelihood score based on multiple signals
   let recruiterScore = 0;
   
-  // Signal 1: Resume interactions (strong signal)
+  // Signal 1: Resume interactions (strong signal - 30 points for download)
   if (session.resumeDownloads > 0) recruiterScore += 30;
   if (session.resumeViews > 0) recruiterScore += 15;
   
@@ -1052,7 +1271,7 @@ const getVisitorType = () => {
     recruiterScore += Math.min(recruiterQueries.length * 15, 30);
   }
   
-  // Signal 3: Viewed relevant sections
+  // Signal 3: Viewed relevant sections (10 points each, max 20)
   const professionalSections = ['experience', 'skills', 'certifications', 'about', 'contact'];
   const viewedProfessionalSections = session.sectionsViewed.filter(s => 
     professionalSections.some(ps => s.toLowerCase().includes(ps))
@@ -1073,14 +1292,40 @@ const getVisitorType = () => {
 };
 ```
 
-| Visitor Type | Trigger Condition |
-|-------------|-------------------|
-| **Likely Recruiter** | Recruiter score ≥ 50 (resume download + relevant queries + professional sections) |
-| **Potential Recruiter** | Recruiter score ≥ 30 |
-| **Engaged Visitor** | 3+ chatbot queries |
-| **Project Explorer** | Clicked 3+ projects |
-| **Active Browser** | Viewed 4+ different sections |
-| **New Visitor** | Default (none of the above) |
+**Step-by-Step Explanation:**
+
+1. **Initialize Score**: Starts at 0, will be incremented based on behavioral signals
+
+2. **Signal 1 - Resume Interactions (High Weight)**:
+   - Resume download: +30 points (strongest signal of recruiter intent)
+   - Resume view: +15 points (interest but not commitment)
+
+3. **Signal 2 - Keyword Detection in Chatbot Queries**:
+   - Filters chatbot queries for recruiting-related keywords
+   - Each matching query adds 15 points, capped at 30 total
+   - Keywords include: "hire", "job", "position", "role", "team", "available"
+
+4. **Signal 3 - Professional Section Views**:
+   - Checks if visitor viewed Experience, Skills, Certifications, About, or Contact
+   - Each professional section adds 10 points, capped at 20 total
+
+5. **Signal 4 - Engagement Depth**:
+   - Session duration ≥3 minutes: +10 points
+   - 3+ chatbot queries: +10 points
+
+6. **Classification Thresholds**:
+   - Score ≥50: "Likely Recruiter" (strong multi-signal match)
+   - Score ≥30: "Potential Recruiter" (moderate signals)
+   - Fallback to engagement-based labels (Engaged Visitor, Project Explorer, Active Browser, New Visitor)
+
+| Visitor Type | Trigger Condition | Score Range |
+|-------------|-------------------|-------------|
+| **Likely Recruiter** | Multiple strong signals | ≥50 points |
+| **Potential Recruiter** | Some recruiter signals | 30-49 points |
+| **Engaged Visitor** | 3+ chatbot queries | N/A (fallback) |
+| **Project Explorer** | Clicked 3+ projects | N/A (fallback) |
+| **Active Browser** | Viewed 4+ sections | N/A (fallback) |
+| **New Visitor** | Default | N/A (default) |
 
 ### Session Timeline
 
