@@ -32,6 +32,7 @@ This documentation covers the complete system architecture, data flows, implemen
 - [Visitor Tracking System](#visitor-tracking-system)
 - [Visitor Analytics Aggregation](#visitor-analytics-aggregation)
 - [Visitor Journey Flow Analysis](#visitor-journey-flow-analysis)
+- [Visitor Flow Sankey Diagram & Drop-off Analysis](#visitor-flow-sankey-diagram--drop-off-analysis)
 - [Visitor Classification](#visitor-classification)
 - [Security Monitoring](#security-monitoring)
 - [Known Login Locations System](#known-login-locations-system)
@@ -1241,6 +1242,252 @@ const journeySteps: JourneyStep[] = Object.entries(transitions)
 3. **Calculate Percentage**: `(count / totalTransitions) * 100` gives the percentage of all transitions this path represents
 4. **Sort by Popularity**: Most common transitions appear first
 5. **Limit to Top 10**: Returns only the 10 most common paths to keep the UI clean
+
+## Visitor Flow Sankey Diagram & Drop-off Analysis
+
+The portfolio includes an advanced visual Sankey diagram that shows visitor flow between sections with proportional line widths, plus a drop-off analysis system that identifies content areas needing improvement.
+
+<p align="center">
+  <img src="https://imgur.com/TtoXN9M.png" alt="Visitor Sankey Flow Diagram" width="800"/>
+</p>
+
+**Figure 17: Visitor Flow Sankey Diagram** - Visual representation of how visitors navigate between portfolio sections:
+- **Flow Lines**: Gradient-colored lines connecting sections, with thickness proportional to traffic volume
+- **Section Nodes**: Color-coded badges representing each portfolio section
+- **Traffic Count**: Number displayed on each flow line showing how many visitors took that path
+- **Percentage Labels**: Shows what percentage of all transitions each path represents
+
+<p align="center">
+  <img src="https://imgur.com/ubp3WlU.png" alt="Section Drop-off Analysis" width="800"/>
+</p>
+
+**Figure 18: Section Drop-off Analysis** - Identifies where visitors leave the portfolio to improve content strategy:
+- **Retention Bar**: Green portion shows visitors who continued to another section
+- **Drop-off Bar**: Red portion shows visitors who left the portfolio at this section
+- **Status Indicators**: Color-coded badges (green=good retention, yellow=moderate, red=high drop-off)
+- **Improvement Recommendations**: AI-generated suggestions for sections with high drop-off rates
+
+### Data Structures
+
+The Sankey diagram and drop-off analysis use these TypeScript interfaces:
+
+```typescript
+interface FlowLink {
+  source: string;      // Origin section name
+  target: string;      // Destination section name
+  value: number;       // Number of visitors who took this path
+  percentage: number;  // Percentage of all transitions
+}
+
+interface DropoffData {
+  section: string;        // Section name
+  visitors: number;       // Total visitors who viewed this section
+  continued: number;      // Visitors who continued to another section
+  dropped: number;        // Visitors who left the portfolio here
+  dropoffRate: number;    // Percentage who left (0-100)
+  retentionRate: number;  // Percentage who continued (0-100)
+}
+```
+
+**Field Explanations:**
+
+- `FlowLink.source`/`target`: Represent the section-to-section transition (e.g., "Hero" → "About")
+- `FlowLink.value`: Raw count of visitors who made this specific transition
+- `FlowLink.percentage`: Calculated as `(value / totalFlows) * 100`
+- `DropoffData.dropped`: Calculated as `visitors - continued` (visitors who ended their session here)
+- `DropoffData.dropoffRate`: Calculated as `(dropped / visitors) * 100`
+
+### Session Deduplication Algorithm
+
+To accurately track visitor flow, consecutive duplicate section views are removed:
+
+```typescript
+Object.entries(sessionActivities).forEach(([sessionId, sessionActs]) => {
+  // Sort by timestamp
+  const sorted = sessionActs.sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  // Get unique sections in order (deduplicate consecutive same sections)
+  const uniqueSections: string[] = [];
+  sorted.forEach(activity => {
+    const section = activity.activity_data?.section || 'Unknown';
+    if (uniqueSections[uniqueSections.length - 1] !== section) {
+      uniqueSections.push(section);
+    }
+  });
+  
+  // ... rest of processing uses uniqueSections
+});
+```
+
+**Step-by-Step Explanation:**
+
+1. **Iterate Sessions**: Processes each visitor session individually
+2. **Sort Chronologically**: Ensures activities are in time order before deduplication
+3. **Check Last Section**: For each activity, compares the section name to the last item in `uniqueSections`
+4. **Conditional Push**: Only adds the section if it differs from the previous one
+5. **Result**: `uniqueSections` contains the visitor's path without repeated consecutive sections (e.g., Hero → Hero → About becomes Hero → About)
+
+**Why Deduplicate?**
+
+Visitors may trigger multiple `section_view` events while scrolling within the same section. Without deduplication, the data would show inflated self-transitions (Hero → Hero) that don't represent actual navigation.
+
+### Flow Link Calculation Algorithm
+
+Builds the Sankey flow data from deduplicated sessions:
+
+```typescript
+// Calculate flow transitions for Sankey
+const flowCounts: Record<string, number> = {};
+let totalFlows = 0;
+
+// Calculate section visit counts and continuation
+const sectionVisitors: Record<string, Set<string>> = {};
+const sectionContinued: Record<string, Set<string>> = {};
+
+Object.entries(sessionActivities).forEach(([sessionId, sessionActs]) => {
+  // ... deduplication code (shown above)
+  
+  // Track section visitors
+  uniqueSections.forEach((section, index) => {
+    if (!sectionVisitors[section]) sectionVisitors[section] = new Set();
+    sectionVisitors[section].add(sessionId);
+
+    // If there's a next section, this visitor continued
+    if (index < uniqueSections.length - 1) {
+      if (!sectionContinued[section]) sectionContinued[section] = new Set();
+      sectionContinued[section].add(sessionId);
+    }
+  });
+
+  // Calculate transitions for Sankey
+  for (let i = 0; i < uniqueSections.length - 1; i++) {
+    const source = uniqueSections[i];
+    const target = uniqueSections[i + 1];
+    const key = `${source}|${target}`;
+    flowCounts[key] = (flowCounts[key] || 0) + 1;
+    totalFlows++;
+  }
+});
+```
+
+**Step-by-Step Explanation:**
+
+1. **Initialize Tracking Structures**:
+   - `flowCounts`: Maps transition keys like `"Hero|About"` to their occurrence count
+   - `sectionVisitors`: Uses Sets to track unique session IDs per section (avoids double-counting)
+   - `sectionContinued`: Uses Sets to track sessions that went to another section after viewing
+
+2. **Track Section Visitors**: For each section in the deduplicated path, adds the session ID to that section's visitor Set
+
+3. **Track Continuation**: If the section is not the last one, the visitor "continued" - add session ID to `sectionContinued[section]`
+
+4. **Build Flow Counts**: For each consecutive pair of sections, creates a key and increments its count
+
+5. **Track Total**: `totalFlows` counts all transitions for percentage calculation
+
+### Drop-off Calculation Algorithm
+
+Calculates retention and drop-off rates for each section:
+
+```typescript
+// Calculate drop-off data for each section
+const dropoffData: DropoffData[] = SECTION_ORDER.map(section => {
+  const visitors = sectionVisitors[section]?.size || 0;
+  const continued = sectionContinued[section]?.size || 0;
+  const dropped = visitors - continued;
+  const dropoffRate = visitors > 0 ? Math.round((dropped / visitors) * 100) : 0;
+  const retentionRate = visitors > 0 ? Math.round((continued / visitors) * 100) : 0;
+
+  return {
+    section,
+    visitors,
+    continued,
+    dropped,
+    dropoffRate,
+    retentionRate
+  };
+}).filter(d => d.visitors > 0);
+```
+
+**Step-by-Step Explanation:**
+
+1. **Iterate Section Order**: Uses a predefined `SECTION_ORDER` array to ensure consistent ordering in the UI
+
+2. **Get Visitor Count**: `sectionVisitors[section]?.size` returns the number of unique sessions that viewed this section
+
+3. **Get Continued Count**: `sectionContinued[section]?.size` returns how many of those sessions went on to view another section
+
+4. **Calculate Dropped**: `dropped = visitors - continued` (visitors who ended their session at this section)
+
+5. **Calculate Rates**:
+   - `dropoffRate = (dropped / visitors) * 100` - percentage who left
+   - `retentionRate = (continued / visitors) * 100` - percentage who continued
+
+6. **Filter Empty Sections**: Removes sections with zero visitors from the output
+
+### Line Width Calculation for Sankey Visualization
+
+The visual line thickness is proportional to traffic volume:
+
+```typescript
+// Get maximum flow value for scaling
+const maxFlowValue = Math.max(...flowLinks.map(f => f.value), 1);
+
+// Calculate line width based on flow value (min 2px, max 20px)
+const getLineWidth = (value: number) => {
+  return Math.max(2, Math.min(20, (value / maxFlowValue) * 20));
+};
+```
+
+**Step-by-Step Explanation:**
+
+1. **Find Maximum**: Determines the highest flow value across all links (minimum of 1 to avoid division by zero)
+2. **Scale to Range**: `(value / maxFlowValue) * 20` scales the value to 0-20 range
+3. **Apply Bounds**: `Math.max(2, Math.min(20, ...))` ensures width is between 2px and 20px
+4. **Result**: Highest-traffic paths get 20px lines, lowest get 2px, others scale proportionally
+
+### Drop-off Status Classification
+
+Color-codes sections based on their drop-off severity:
+
+```typescript
+const getDropoffStatus = (rate: number) => {
+  if (rate >= 70) return { 
+    color: 'text-red-500', 
+    bg: 'bg-red-500/10', 
+    icon: AlertTriangle, 
+    label: 'High Drop-off' 
+  };
+  if (rate >= 40) return { 
+    color: 'text-yellow-500', 
+    bg: 'bg-yellow-500/10', 
+    icon: TrendingDown, 
+    label: 'Moderate' 
+  };
+  return { 
+    color: 'text-green-500', 
+    bg: 'bg-green-500/10', 
+    icon: CheckCircle, 
+    label: 'Good Retention' 
+  };
+};
+```
+
+**Classification Thresholds:**
+
+| Drop-off Rate | Status | Visual Indicator |
+|---------------|--------|------------------|
+| ≥70% | High Drop-off | Red badge with warning icon |
+| 40-69% | Moderate | Yellow badge with trending down icon |
+| <40% | Good Retention | Green badge with checkmark icon |
+
+**Interpretation:**
+
+- **High Drop-off (≥70%)**: Urgent attention needed - content may be confusing, boring, or missing a call-to-action
+- **Moderate (40-69%)**: Room for improvement - consider adding engaging elements or clearer navigation
+- **Good Retention (<40%)**: Content is performing well at keeping visitors engaged
 
 ---
 

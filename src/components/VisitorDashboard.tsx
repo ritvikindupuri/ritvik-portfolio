@@ -25,6 +25,7 @@ import {
 import { ChatbotQueryAnalysis } from "@/components/ChatbotQueryAnalysis";
 import { AIVisitorInsights } from "@/components/AIVisitorInsights";
 import { VisitorJourneyFlow } from "@/components/VisitorJourneyFlow";
+import { VisitorSankeyDiagram } from "@/components/VisitorSankeyDiagram";
 
 interface VisitorActivity {
   id: string;
@@ -589,6 +590,9 @@ export const VisitorDashboard = () => {
           <VisitorJourneyFlow />
         </CardContent>
       </Card>
+
+      {/* Sankey Flow & Drop-off Analysis */}
+      <VisitorSankeyDiagram />
 
       {/* Recent Sessions */}
       <Card className="bg-card/50 backdrop-blur-sm border-border/50">
