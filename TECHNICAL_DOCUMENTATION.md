@@ -10,7 +10,8 @@ The portfolio serves as both a professional showcase and a demonstration of adva
 - **MITRE ATT&CK-aligned threat detection** for authentication security
 - **RAG-powered AI chatbot** for natural language portfolio queries
 - **Automated email notification system** for visitor alerts and security incidents
-- **Interactive 3D security visualization** using Mapbox GL
+- **Interactive 3D security & visitor visualization** using Mapbox GL
+- **Known location tracking** with auto-trust for familiar login IPs
 
 This documentation covers the complete system architecture, data flows, implementation details, and operational procedures for all portfolio features.
 
@@ -29,6 +30,8 @@ This documentation covers the complete system architecture, data flows, implemen
 - [Visitor Tracking System](#visitor-tracking-system)
 - [Visitor Classification](#visitor-classification)
 - [Security Monitoring](#security-monitoring)
+- [Known Login Locations System](#known-login-locations-system)
+- [Security & Visitors Map](#security--visitors-map)
 - [MITRE ATT&CK Threat Detection](#mitre-attck-threat-detection)
 - [Automated Email System](#automated-email-system)
 - [Database Architecture](#database-architecture)
@@ -56,6 +59,7 @@ flowchart TB
         subgraph Database["PostgreSQL Database"]
             VA[(visitor_activity)]
             LA[(login_attempts)]
+            KLL[(known_login_locations)]
             PR[(projects)]
             SK[(skills)]
             EX[(experience)]
@@ -128,9 +132,10 @@ The frontend consists of six primary components that handle different aspects of
 
 The backend is powered by Supabase and consists of three subsystems:
 
-- **PostgreSQL Database**: Contains six core tables:
+- **PostgreSQL Database**: Contains seven core tables:
   - `visitor_activity`: Stores all tracked visitor actions with session IDs, activity types, timestamps, and associated data
   - `login_attempts`: Records all authentication attempts with IP addresses, user agents, success/failure status, and failure reasons
+  - `known_login_locations`: Tracks trusted and untrusted login locations with geolocation data, auto-trust counters, and notes
   - `projects`: Portfolio project entries with descriptions, technologies, and links
   - `skills`: Technical skills organized by category with proficiency levels
   - `experience`: Work experience entries with descriptions and date ranges
@@ -646,8 +651,9 @@ This weekly email provides a high-level overview of portfolio performance and se
 
 The Owner Dashboard (`/owner-dashboard`) provides a comprehensive analytics suite with two main tabs:
 
-1. **Visitor Analytics** - Track guest behavior and engagement
-2. **Security Monitoring** - Monitor login attempts and detect threats
+1. **Visitor Analytics** - Track guest behavior and engagement (defaults to 24-hour view)
+2. **Security Monitoring** - Monitor login attempts, guest visits, and detect threats
+3. **Known Locations** - Manage trusted login locations with auto-trust capabilities
 
 ---
 
@@ -765,17 +771,19 @@ All authentication attempts are logged to the `login_attempts` table via an edge
 - **Failure Reason** - Why the login failed (if applicable)
 - **Timestamp** - When the attempt occurred
 
-### Interactive Security Globe (Mapbox)
+### Interactive Security & Visitors Globe (Mapbox)
 
-The Security Monitoring tab features an **interactive 3D globe** (`SecurityChoroplethMap.tsx`) that visualizes login attempts geographically:
+The Security Monitoring tab features an **interactive 3D globe** (`SecurityChoroplethMap.tsx`) that visualizes both security events and visitor activity geographically:
 
 1. **IP Geolocation** - The `geolocate-ip` edge function resolves IP addresses to coordinates
 2. **Mapbox Globe** - Uses `mapbox-gl` with dark theme and fog effects
-3. **Color-Coded Markers**:
-   - **Green** - More successful logins than failed
-   - **Red** - Suspicious (more failed attempts or 3+ failures)
-4. **Auto-Rotation** - The globe slowly rotates to show global coverage
-5. **Keyboard Navigation** - Use arrow keys to cycle through locations
+3. **Dual Color-Coded Markers**:
+   - **Red Markers** - Failed login attempts (suspicious activity)
+   - **Blue Markers** - Guest visitors (anonymous portfolio viewers)
+4. **Separate Counts** - Each marker type displays its own numerical count
+5. **Auto-Rotation** - The globe slowly rotates to show global coverage
+6. **Keyboard Navigation** - Use arrow keys to cycle through locations
+7. **Location Panel** - Click any marker to see detailed breakdown of failed logins vs guest visits
 
 ---
 
@@ -881,6 +889,7 @@ Three types of automated emails are sent via **Resend** (edge functions):
 |-------|---------|
 | `visitor_activity` | Stores all tracked visitor actions |
 | `login_attempts` | Logs authentication attempts |
+| `known_login_locations` | Trusted/untrusted login locations with geo data |
 | `profiles` | User profile information |
 | `projects` | Portfolio projects |
 | `skills` | Technical skills with categories |
@@ -927,6 +936,121 @@ Three types of automated emails are sent via **Resend** (edge functions):
 - **HTML Sanitization**: All email content is sanitized before sending
 - **Password Strength Validation**: Enforces complex passwords with 90-day rotation reminders
 - **New Location Alerts**: Immediate email notification when login occurs from unfamiliar IP
+- **Known Location Tracking**: Maintains a database of trusted login locations with auto-trust capabilities
+- **Auto-Trust System**: Automatically trusts locations after 5+ successful logins from the same IP
+
+---
+
+## Known Login Locations System
+
+The portfolio includes a sophisticated location tracking system that monitors login geography and automatically manages trusted locations.
+
+### Location Tracking Architecture
+
+When a login attempt occurs, the `log-auth-attempt` edge function:
+
+1. **Checks Known Locations**: Queries `known_login_locations` table for the source IP
+2. **Updates Existing**: If found, increments `times_seen` and updates `last_seen_at`
+3. **Auto-Trust Logic**: If `times_seen >= 5`, automatically sets `is_trusted = true`
+4. **Creates New Entry**: If IP is unknown, geolocates it and creates a new entry marked as `is_trusted = false`
+5. **Sends Alert**: For new/untrusted locations, triggers an email alert to the owner
+
+### Known Locations Manager
+
+The **Locations** tab in the Owner Dashboard (`KnownLocationsManager.tsx`) provides:
+
+- **Location List**: All known login IPs with city, country, and trust status
+- **Trust Toggle**: Mark locations as trusted or untrusted
+- **First/Last Seen**: Track when each location was first and last used
+- **Times Seen Counter**: Shows how many successful logins occurred from each IP
+- **Notes Field**: Add custom notes for each location (e.g., "Home network", "Office VPN")
+- **Delete Option**: Remove locations that are no longer relevant
+
+### Auto-Trust Configuration
+
+```typescript
+// In log-auth-attempt edge function
+const AUTO_TRUST_THRESHOLD = 5;
+
+if (existingLocation.times_seen >= AUTO_TRUST_THRESHOLD && !existingLocation.is_trusted) {
+  await supabase
+    .from('known_login_locations')
+    .update({ is_trusted: true })
+    .eq('id', existingLocation.id);
+}
+```
+
+### Database Schema
+
+```sql
+CREATE TABLE known_login_locations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ip_address TEXT NOT NULL,
+  city TEXT,
+  country TEXT,
+  country_code TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  is_trusted BOOLEAN DEFAULT false,
+  first_seen_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  times_seen INTEGER DEFAULT 1,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+```
+
+---
+
+## Security & Visitors Map
+
+### Dual-Marker Visualization
+
+The Security Map (`SecurityChoroplethMap.tsx`) displays two distinct types of markers on the interactive globe:
+
+<p align="center">
+  <img src="https://imgur.com/cZFeE2W.png" alt="Security & Visitors Map with Dual Markers" width="800"/>
+</p>
+
+**Figure 12: Security & Visitors Map** - The interactive 3D globe visualization displays geographic data for both security events and visitor activity:
+- **Red Markers (Failed Logins)**: Indicate locations with failed authentication attempts, sized by the number of failures
+- **Blue Markers (Guest Visits)**: Show locations of guest visitors who browsed the portfolio without logging in
+- **Summary Badges**: Header displays total counts for "Failed Logins" and "Guest Visits"
+- **Location Legend**: Visual key distinguishes between "Failed logins (suspicious)" and "Guest visitors"
+- **Click Interaction**: Clicking any marker reveals detailed statistics including total attempts, failed count, and guest count for that location
+
+### Security & Visitor Log
+
+<p align="center">
+  <img src="https://imgur.com/79nLhLd.png" alt="Security & Visitor Log Panel" width="800"/>
+</p>
+
+**Figure 13: Security & Visitor Log** - A filterable chronological log displaying all authentication and visitor events:
+- **Filter Tabs**: Toggle between "All", "Failed", and "Guests" to focus on specific event types
+- **Guest Sessions**: Shown with a cyan "Guest Visit" badge, displaying session location and timestamp
+- **Failed Logins**: Highlighted with red "Failed Login" badge, showing email attempted, location, browser, and failure reason
+- **Visual Distinction**: Warning icons (⚠) for failed attempts, eye icons (👁) for guest visits
+- **Location Data**: Each entry shows city, country, and when available, the browser/user agent used
+
+### Marker Generation Logic
+
+```typescript
+// Separate failed logins and guest visits into distinct markers
+const failedLoginsByLocation: Record<string, LocationData> = {};
+const guestVisitsByLocation: Record<string, LocationData> = {};
+
+loginAttempts.forEach(attempt => {
+  if (!attempt.success) {
+    // Red marker for failed logins
+    failedLoginsByLocation[locationKey] = { count: ..., color: 'red' };
+  }
+});
+
+visitorActivity.forEach(visit => {
+  // Blue marker for guest visits
+  guestVisitsByLocation[locationKey] = { count: ..., color: 'cyan' };
+});
+```
 
 ---
 
