@@ -167,6 +167,54 @@ export type Database = {
         }
         Relationships: []
       }
+      known_login_locations: {
+        Row: {
+          city: string | null
+          country: string | null
+          country_code: string | null
+          created_at: string
+          first_seen_at: string
+          id: string
+          ip_address: string
+          is_trusted: boolean
+          last_seen_at: string
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          times_seen: number
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          ip_address: string
+          is_trusted?: boolean
+          last_seen_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          times_seen?: number
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          ip_address?: string
+          is_trusted?: boolean
+          last_seen_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          times_seen?: number
+        }
+        Relationships: []
+      }
       llm_projects: {
         Row: {
           created_at: string

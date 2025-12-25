@@ -330,34 +330,73 @@ const handler = async (req: Request): Promise<Response> => {
     // Create Supabase client with service role for inserting
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Check if this IP has been seen before (for new location detection)
+    // Check if this IP is in known locations table
     let isNewLocation: boolean = false;
-    let location: { city: string; country: string; countryCode: string } | null = null;
+    let isTrustedLocation: boolean = false;
+    let location: { city: string; country: string; countryCode: string; lat?: number; lon?: number } | null = null;
     
     if (success && ipAddress !== 'unknown') {
-      const { data: previousLogins } = await supabase
-        .from('login_attempts')
-        .select('ip_address')
-        .eq('email', email)
-        .eq('success', true)
-        .neq('ip_address', ipAddress)
-        .limit(1);
-      
-      // Check if this specific IP has been used before
-      const { data: sameIPLogins } = await supabase
-        .from('login_attempts')
-        .select('id')
-        .eq('email', email)
+      // Check known_login_locations table first
+      const { data: knownLocation } = await supabase
+        .from('known_login_locations')
+        .select('*')
         .eq('ip_address', ipAddress)
-        .eq('success', true)
-        .limit(1);
+        .maybeSingle();
       
-      // It's a new location if there are previous logins from other IPs but not from this one
-      isNewLocation = !!(previousLogins && previousLogins.length > 0 && (!sameIPLogins || sameIPLogins.length === 0));
-      
-      if (isNewLocation) {
-        location = await getLocationFromIP(ipAddress);
-        console.log(`New login location detected for ${email} from ${ipAddress}:`, location);
+      if (knownLocation) {
+        // Location is known, update last_seen_at and times_seen
+        isTrustedLocation = knownLocation.is_trusted;
+        await supabase
+          .from('known_login_locations')
+          .update({ 
+            last_seen_at: new Date().toISOString(),
+            times_seen: knownLocation.times_seen + 1
+          })
+          .eq('ip_address', ipAddress);
+        
+        console.log(`Known location login from ${ipAddress} (trusted: ${isTrustedLocation})`);
+      } else {
+        // New location - get geolocation and add to table
+        isNewLocation = true;
+        
+        // Get geolocation data
+        try {
+          const geoResponse = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,country,countryCode,lat,lon,status`);
+          const geoData = await geoResponse.json();
+          if (geoData.status === 'success') {
+            location = { 
+              city: geoData.city, 
+              country: geoData.country, 
+              countryCode: geoData.countryCode,
+              lat: geoData.lat,
+              lon: geoData.lon
+            };
+          }
+        } catch (geoError) {
+          console.error("Error getting geolocation:", geoError);
+        }
+        
+        // Insert new location into known_login_locations (not trusted by default)
+        const { error: locationInsertError } = await supabase
+          .from('known_login_locations')
+          .insert({
+            ip_address: ipAddress,
+            city: location?.city || null,
+            country: location?.country || null,
+            country_code: location?.countryCode || null,
+            latitude: location?.lat || null,
+            longitude: location?.lon || null,
+            is_trusted: false,
+            first_seen_at: new Date().toISOString(),
+            last_seen_at: new Date().toISOString(),
+            times_seen: 1
+          });
+        
+        if (locationInsertError) {
+          console.error("Error inserting new location:", locationInsertError);
+        } else {
+          console.log(`New login location added: ${ipAddress} - ${location?.city}, ${location?.country}`);
+        }
       }
     }
 
@@ -393,7 +432,8 @@ const handler = async (req: Request): Promise<Response> => {
         logged: true, 
         blocked: false,
         remainingAttempts: success ? null : MAX_FAILED_ATTEMPTS - rateLimit.count,
-        newLocation: isNewLocation
+        newLocation: isNewLocation,
+        isTrustedLocation: isTrustedLocation
       }),
       {
         status: 200,
