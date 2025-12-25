@@ -1248,10 +1248,19 @@ const journeySteps: JourneyStep[] = Object.entries(transitions)
 The portfolio includes an advanced visual Sankey diagram that shows visitor flow between sections with proportional line widths, plus a drop-off analysis system that identifies content areas needing improvement.
 
 <p align="center">
+  <img src="https://imgur.com/VmJFqhs.png" alt="Visitor Flow Diagram Overview" width="800"/>
+</p>
+
+**Figure 1: Visitor Flow Diagram Overview** - The complete Sankey-style flow visualization showing all tracked visitor navigation paths:
+- **Session Count Badge**: Displays total number of analyzed visitor sessions
+- **Flow Rows**: Each row represents a unique section-to-section transition with source and target nodes
+- **Interactive Tooltips**: Hover over any value or percentage for detailed context
+
+<p align="center">
   <img src="https://imgur.com/TtoXN9M.png" alt="Visitor Sankey Flow Diagram" width="800"/>
 </p>
 
-**Figure 17: Visitor Flow Sankey Diagram** - Visual representation of how visitors navigate between portfolio sections:
+**Figure 2: Visitor Flow Sankey Diagram Detail** - Visual representation of how visitors navigate between portfolio sections:
 - **Flow Lines**: Gradient-colored lines connecting sections, with thickness proportional to traffic volume
 - **Section Nodes**: Color-coded badges representing each portfolio section
 - **Traffic Count**: Number displayed on each flow line showing how many visitors took that path
@@ -1261,11 +1270,12 @@ The portfolio includes an advanced visual Sankey diagram that shows visitor flow
   <img src="https://imgur.com/ubp3WlU.png" alt="Section Drop-off Analysis" width="800"/>
 </p>
 
-**Figure 18: Section Drop-off Analysis** - Identifies where visitors leave the portfolio to improve content strategy:
+**Figure 3: Section Drop-off Analysis** - Identifies where visitors leave the portfolio to improve content strategy:
 - **Retention Bar**: Green portion shows visitors who continued to another section
 - **Drop-off Bar**: Red portion shows visitors who left the portfolio at this section
 - **Status Indicators**: Color-coded badges (green=good retention, yellow=moderate, red=high drop-off)
 - **Improvement Recommendations**: AI-generated suggestions for sections with high drop-off rates
+- **Interactive Tooltips**: Hover over any element for detailed retention metrics and recommendations
 
 ### Data Structures
 
