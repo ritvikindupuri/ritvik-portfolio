@@ -345,10 +345,24 @@ export const VisitorDashboard = () => {
               <div className="p-2 rounded-lg bg-green-500/10">
                 <Activity className="w-5 h-5 text-green-500" />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-2xl font-bold">{stats.totalActivities}</p>
                 <p className="text-xs text-muted-foreground">Total Actions</p>
               </div>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[250px] z-50">
+                    <p className="font-medium">Cumulative Total</p>
+                    <p className="text-xs text-muted-foreground">
+                      Sum of all actions across the selected time range. 
+                      The chart below shows the daily breakdown that adds up to this total.
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
             </div>
           </CardContent>
         </Card>
