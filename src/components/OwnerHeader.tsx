@@ -75,7 +75,7 @@ export const OwnerHeader = ({ isOwner }: OwnerHeaderProps) => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/owner-dashboard')}
+              onClick={() => navigate('/dashboard')}
               className="gap-2 bg-background/80 backdrop-blur-sm border-border/50"
             >
               <BarChart3 className="w-4 h-4" />
