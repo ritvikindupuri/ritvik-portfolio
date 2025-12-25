@@ -270,6 +270,15 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<MLModel | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  // Get unique model types for filter
+  const categories = ["all", ...new Set(models.map(m => m.model_type).filter(Boolean))] as string[];
+  
+  // Filter models by selected category
+  const filteredModels = selectedCategory === "all" 
+    ? models 
+    : models.filter(m => m.model_type === selectedCategory);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -493,14 +502,35 @@ export const MLShowcase = ({ isOwner }: MLShowcaseProps) => {
         <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full" />
       </div>
 
+      {/* Category Filter */}
+      {categories.length > 2 && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {categories.map(category => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-4 py-2 text-sm rounded-full transition-all duration-300 ${
+                selectedCategory === category
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+              }`}
+            >
+              {category === "all" ? "All Models" : category}
+            </button>
+          ))}
+        </div>
+      )}
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={models.map(m => m.id)} strategy={rectSortingStrategy}>
+        <SortableContext items={filteredModels.map(m => m.id)} strategy={rectSortingStrategy}>
           <div className="space-y-6">
-              {models.map((model) => (
+              {filteredModels.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No models in this category</p>
+              ) : filteredModels.map((model) => (
                 <SortableModelCard
                   key={model.id}
                   model={model}
