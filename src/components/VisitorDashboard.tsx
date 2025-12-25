@@ -323,77 +323,152 @@ export const VisitorDashboard = () => {
       {/* AI Visitor Insights */}
       <AIVisitorInsights stats={stats} />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.totalSessions}</p>
-                <p className="text-xs text-muted-foreground">Unique Visitors</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats Grid with Chart Legend */}
+      <div className="space-y-3">
+        {/* Legend explaining relationship */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-secondary/30 rounded-lg border border-border/30">
+          <Info className="w-4 h-4 text-primary shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            <span className="text-foreground font-medium">How to read:</span> Stats cards show totals for your selected time range. 
+            <span className="text-green-500 font-medium"> Total Actions</span> breaks down into the 
+            <span className="text-primary font-medium"> Daily Actions chart</span> and 
+            <span className="text-primary font-medium"> Activity Distribution pie</span> below.
+          </p>
+        </div>
 
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Activity className="w-5 h-5 text-green-500" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Unique Visitors Card */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50 relative">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Users className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-2xl font-bold">{stats.totalSessions}</p>
+                  <p className="text-xs text-muted-foreground">Unique Visitors</p>
+                </div>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[260px] z-50">
+                      <p className="font-medium">Unique Visitors</p>
+                      <p className="text-xs text-muted-foreground">
+                        Count of distinct visitor sessions in the selected time range. 
+                        Each session represents one unique person visiting your portfolio.
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-border/50">
+                        <p className="text-xs text-primary">📊 Related: Session cards below</p>
+                      </div>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
               </div>
-              <div className="flex-1">
-                <p className="text-2xl font-bold">{stats.totalActivities}</p>
-                <p className="text-xs text-muted-foreground">Total Actions</p>
-              </div>
-              <TooltipProvider>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[250px] z-50">
-                    <p className="font-medium">Cumulative Total</p>
-                    <p className="text-xs text-muted-foreground">
-                      Sum of all actions across the selected time range. 
-                      The chart below shows the daily breakdown that adds up to this total.
-                    </p>
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <MessageCircle className="w-5 h-5 text-blue-500" />
+          {/* Total Actions Card */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50 ring-1 ring-green-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <Activity className="w-5 h-5 text-green-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-2xl font-bold">{stats.totalActivities}</p>
+                  <p className="text-xs text-muted-foreground">Total Actions</p>
+                </div>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[280px] z-50">
+                      <p className="font-medium">Total Actions (Cumulative)</p>
+                      <p className="text-xs text-muted-foreground">
+                        Sum of ALL visitor interactions: section views, chatbot queries, 
+                        resume downloads, project clicks, etc.
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+                        <p className="text-xs text-green-500 font-medium">📈 Shown in charts below:</p>
+                        <p className="text-xs text-muted-foreground">• Daily Actions = day-by-day breakdown</p>
+                        <p className="text-xs text-muted-foreground">• Activity Distribution = breakdown by type</p>
+                      </div>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.chatbotQueries}</p>
-                <p className="text-xs text-muted-foreground">Chatbot Queries</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+            {/* Visual connector indicator */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-green-500/50" />
+          </Card>
 
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-orange-500/10">
-                <Download className="w-5 h-5 text-orange-500" />
+          {/* Chatbot Queries Card */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <MessageCircle className="w-5 h-5 text-blue-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-2xl font-bold">{stats.chatbotQueries}</p>
+                  <p className="text-xs text-muted-foreground">Chatbot Queries</p>
+                </div>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[260px] z-50">
+                      <p className="font-medium">Chatbot Queries</p>
+                      <p className="text-xs text-muted-foreground">
+                        Number of questions visitors asked your AI chatbot. 
+                        Higher numbers indicate visitors are actively exploring your skills and projects.
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-border/50">
+                        <p className="text-xs text-blue-500">💡 Included in "Total Actions" & shown in Activity Distribution pie</p>
+                      </div>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.resumeDownloads}</p>
-                <p className="text-xs text-muted-foreground">Resume Downloads</p>
+            </CardContent>
+          </Card>
+
+          {/* Resume Downloads Card */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-orange-500/10">
+                  <Download className="w-5 h-5 text-orange-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-2xl font-bold">{stats.resumeDownloads}</p>
+                  <p className="text-xs text-muted-foreground">Resume Downloads</p>
+                </div>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[260px] z-50">
+                      <p className="font-medium">Resume Downloads</p>
+                      <p className="text-xs text-muted-foreground">
+                        Times visitors downloaded your resume. This is a key engagement signal — 
+                        often indicates potential recruiters or hiring managers.
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-border/50">
+                        <p className="text-xs text-orange-500">🎯 High-value action! Included in "Total Actions"</p>
+                      </div>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Charts Row */}
