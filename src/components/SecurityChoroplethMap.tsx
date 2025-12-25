@@ -678,191 +678,195 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
 
   return (
     <div className="space-y-6">
-      {/* Globe 1: Successful Logins */}
-      <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-help border-b border-dashed border-muted-foreground/50">
-                      Successful Login Map
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs">
-                    <p className="text-sm">
-                      Shows all <strong>successful login attempts</strong> to detect if someone logged in from an unexpected location.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="bg-green-500/20 text-green-400">
-                {stats.successfulLogins} Logins
-              </Badge>
-              {successLocations.length > 0 && (
-                <Badge variant="secondary">{successLocations.length} locations</Badge>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
-              <span>Successful logins</span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="relative w-full h-56 md:h-72">
-            {mapboxToken ? (
-              <div ref={successMapContainer} className="absolute inset-0" />
-            ) : (
-              <div className="absolute inset-0 bg-secondary/20 flex items-center justify-center">
-                <p className="text-muted-foreground text-sm">{error || "Initializing map..."}</p>
+      {/* Side-by-side Maps */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Globe 1: Successful Logins */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-help border-b border-dashed border-muted-foreground/50">
+                        Successful Logins
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="text-sm">
+                        Shows all <strong>successful login attempts</strong> to detect if someone logged in from an unexpected location.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-green-500/20 text-green-400 text-xs">
+                  {stats.successfulLogins} Logins
+                </Badge>
+                {successLocations.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">{successLocations.length} loc</Badge>
+                )}
               </div>
-            )}
-            <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-card/80 to-transparent" />
-          </div>
-
-          {selectedSuccessLocation && renderLocationDetails(selectedSuccessLocation, () => setSelectedSuccessLocation(null), successMap)}
-        </CardContent>
-      </Card>
-
-      {/* Success Login Logs */}
-      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Clock className="w-4 h-4 text-green-500" />
-            Successful Login History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {successActivities.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-4">No successful logins recorded yet.</p>
-          ) : (
-            <>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {successActivities.map(activity => renderActivityLog(activity, successLocations, successMap, setSelectedSuccessLocation))}
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
+                <span>Successful logins</span>
               </div>
-              {allActivities.filter(a => a.type === 'successful_login').length > 5 && (
-                <Button variant="ghost" size="sm" onClick={() => setShowAllSuccessLogs(!showAllSuccessLogs)} className="w-full mt-3 text-xs">
-                  {showAllSuccessLogs ? <><ChevronUp className="w-4 h-4 mr-1" />Show Less</> : <><ChevronDown className="w-4 h-4 mr-1" />View All ({stats.successfulLogins} entries)</>}
-                </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="relative w-full h-48 md:h-64">
+              {mapboxToken ? (
+                <div ref={successMapContainer} className="absolute inset-0" />
+              ) : (
+                <div className="absolute inset-0 bg-secondary/20 flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">{error || "Initializing map..."}</p>
+                </div>
               )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-card/80 to-transparent" />
+            </div>
 
-      {/* Globe 2: Failed Logins + Guests */}
-      <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Shield className="w-5 h-5 text-primary" />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-help border-b border-dashed border-muted-foreground/50">
-                      Security & Visitors Map
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs">
-                    <p className="text-sm">
-                      Shows <strong>failed login attempts</strong> (suspicious activity) and <strong>guest visitors</strong> to your portfolio.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </CardTitle>
-            <div className="flex items-center gap-2">
+            {selectedSuccessLocation && renderLocationDetails(selectedSuccessLocation, () => setSelectedSuccessLocation(null), successMap)}
+          </CardContent>
+        </Card>
+
+        {/* Globe 2: Failed Logins + Guests */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-help border-b border-dashed border-muted-foreground/50">
+                        Security & Visitors
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="text-sm">
+                        Shows <strong>failed login attempts</strong> (suspicious activity) and <strong>guest visitors</strong> to your portfolio.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </CardTitle>
               {securityLocations.length > 0 && (
-                <Badge variant="secondary">{securityLocations.length} locations</Badge>
+                <Badge variant="secondary" className="text-xs">{securityLocations.length} loc</Badge>
               )}
             </div>
-          </div>
-          <div className="flex items-center gap-3 text-xs mt-2">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-500/10">
-              <AlertTriangle className="w-3 h-3 text-red-500" />
-              <span className="text-red-400">{stats.failedLogins} Failed Logins</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/10">
-              <Eye className="w-3 h-3 text-blue-500" />
-              <span className="text-blue-400">{stats.guestVisits} Guest Visits</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
-              <span>Failed logins (suspicious)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]" />
-              <span>Guest visitors</span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="relative w-full h-56 md:h-72">
-            {mapboxToken ? (
-              <div ref={securityMapContainer} className="absolute inset-0" />
-            ) : (
-              <div className="absolute inset-0 bg-secondary/20 flex items-center justify-center">
-                <p className="text-muted-foreground text-sm">{error || "Initializing map..."}</p>
+            <div className="flex items-center gap-3 text-xs mt-2 flex-wrap">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-500/10">
+                <AlertTriangle className="w-3 h-3 text-red-500" />
+                <span className="text-red-400">{stats.failedLogins} Failed</span>
               </div>
-            )}
-            <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-card/80 to-transparent" />
-          </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/10">
+                <Eye className="w-3 h-3 text-blue-500" />
+                <span className="text-blue-400">{stats.guestVisits} Guests</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
+                <span>Failed</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]" />
+                <span>Guests</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="relative w-full h-48 md:h-64">
+              {mapboxToken ? (
+                <div ref={securityMapContainer} className="absolute inset-0" />
+              ) : (
+                <div className="absolute inset-0 bg-secondary/20 flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">{error || "Initializing map..."}</p>
+                </div>
+              )}
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-card/80 to-transparent" />
+            </div>
 
-          {selectedSecurityLocation && renderLocationDetails(selectedSecurityLocation, () => setSelectedSecurityLocation(null), securityMap)}
-        </CardContent>
-      </Card>
+            {selectedSecurityLocation && renderLocationDetails(selectedSecurityLocation, () => setSelectedSecurityLocation(null), securityMap)}
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Security & Visitor Logs */}
-      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+      {/* Side-by-side Logs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Success Login Logs */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              Security & Visitor Log
+              <Clock className="w-4 h-4 text-green-500" />
+              Successful Login History
             </CardTitle>
-            <div className="flex gap-1">
-              {(['all', 'failed_login', 'guest_visit'] as const).map(filter => (
-                <button
-                  key={filter}
-                  onClick={() => setSecurityFilter(filter)}
-                  className={`px-2 py-1 text-xs rounded transition-colors ${
-                    securityFilter === filter 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-secondary/50 hover:bg-secondary'
-                  }`}
-                >
-                  {filter === 'all' ? 'All' : filter === 'failed_login' ? 'Failed' : 'Guests'}
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {securityActivities.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-4">No activity recorded yet.</p>
-          ) : (
-            <>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {securityActivities.map(activity => renderActivityLog(activity, securityLocations, securityMap, setSelectedSecurityLocation))}
+          </CardHeader>
+          <CardContent>
+            {successActivities.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-4">No successful logins recorded yet.</p>
+            ) : (
+              <>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {successActivities.map(activity => renderActivityLog(activity, successLocations, successMap, setSelectedSuccessLocation))}
+                </div>
+                {allActivities.filter(a => a.type === 'successful_login').length > 5 && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowAllSuccessLogs(!showAllSuccessLogs)} className="w-full mt-3 text-xs">
+                    {showAllSuccessLogs ? <><ChevronUp className="w-4 h-4 mr-1" />Show Less</> : <><ChevronDown className="w-4 h-4 mr-1" />View All ({stats.successfulLogins} entries)</>}
+                  </Button>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Security & Visitor Logs */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                Security & Visitor Log
+              </CardTitle>
+              <div className="flex gap-1">
+                {(['all', 'failed_login', 'guest_visit'] as const).map(filter => (
+                  <button
+                    key={filter}
+                    onClick={() => setSecurityFilter(filter)}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      securityFilter === filter 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-secondary/50 hover:bg-secondary'
+                    }`}
+                  >
+                    {filter === 'all' ? 'All' : filter === 'failed_login' ? 'Failed' : 'Guests'}
+                  </button>
+                ))}
               </div>
-              {allActivities.filter(a => a.type !== 'successful_login').length > 10 && (
-                <Button variant="ghost" size="sm" onClick={() => setShowAllSecurityLogs(!showAllSecurityLogs)} className="w-full mt-3 text-xs">
-                  {showAllSecurityLogs ? <><ChevronUp className="w-4 h-4 mr-1" />Show Less</> : <><ChevronDown className="w-4 h-4 mr-1" />View All ({stats.failedLogins + stats.guestVisits} entries)</>}
-                </Button>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {securityActivities.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-4">No activity recorded yet.</p>
+            ) : (
+              <>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {securityActivities.map(activity => renderActivityLog(activity, securityLocations, securityMap, setSelectedSecurityLocation))}
+                </div>
+                {allActivities.filter(a => a.type !== 'successful_login').length > 10 && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowAllSecurityLogs(!showAllSecurityLogs)} className="w-full mt-3 text-xs">
+                    {showAllSecurityLogs ? <><ChevronUp className="w-4 h-4 mr-1" />Show Less</> : <><ChevronDown className="w-4 h-4 mr-1" />View All ({stats.failedLogins + stats.guestVisits} entries)</>}
+                  </Button>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
