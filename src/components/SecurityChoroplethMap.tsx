@@ -354,6 +354,17 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
               </Badge>
             )}
           </div>
+          {/* Map Legend */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
+              <span>Successful logins</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
+              <span>Suspicious (more failures)</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {/* Map Container */}
