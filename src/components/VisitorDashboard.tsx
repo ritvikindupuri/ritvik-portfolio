@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import { ChatbotQueryAnalysis } from "@/components/ChatbotQueryAnalysis";
 import { AIVisitorInsights } from "@/components/AIVisitorInsights";
+import { VisitorJourneyFlow } from "@/components/VisitorJourneyFlow";
 
 interface VisitorActivity {
   id: string;
@@ -575,6 +576,19 @@ export const VisitorDashboard = () => {
 
       {/* Chatbot Query Analysis */}
       <ChatbotQueryAnalysis />
+
+      {/* Visitor Journey Flow */}
+      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            Visitor Journey Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <VisitorJourneyFlow />
+        </CardContent>
+      </Card>
 
       {/* Recent Sessions */}
       <Card className="bg-card/50 backdrop-blur-sm border-border/50">
