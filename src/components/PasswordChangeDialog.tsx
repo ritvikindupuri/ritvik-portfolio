@@ -8,6 +8,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,22 +104,37 @@ export const PasswordChangeDialog = ({ lastPasswordChange }: PasswordChangeDialo
   const strengthLabels = ["Very Weak", "Weak", "Fair", "Good", "Strong", "Very Strong"];
   const strengthColors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-green-500", "bg-emerald-500"];
 
+  const passwordStale = isPasswordStale();
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          variant={isPasswordStale() ? "default" : "outline"} 
-          size="sm" 
-          className={`gap-2 ${isPasswordStale() ? "bg-amber-600 hover:bg-amber-700" : ""}`}
-        >
-          {isPasswordStale() ? (
-            <AlertTriangle className="w-4 h-4" />
-          ) : (
-            <Key className="w-4 h-4" />
-          )}
-          {isPasswordStale() ? "Update Password" : "Change Password"}
-        </Button>
-      </DialogTrigger>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button 
+                variant={passwordStale ? "default" : "outline"} 
+                size="sm" 
+                className={`gap-2 bg-background/80 backdrop-blur-sm border-border/50 ${passwordStale ? "bg-amber-600 hover:bg-amber-700 border-amber-600" : ""}`}
+              >
+                {passwordStale ? (
+                  <AlertTriangle className="w-4 h-4" />
+                ) : (
+                  <Key className="w-4 h-4" />
+                )}
+                {passwordStale ? "Update Password" : "Change Password"}
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            {passwordStale ? (
+              <p>Your password has not been changed in over 90 days. It is recommended to update it for security.</p>
+            ) : (
+              <p>Update your account password</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

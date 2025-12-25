@@ -18,6 +18,7 @@ import { MLShowcase } from "@/components/MLShowcase";
 import { LLMShowcase } from "@/components/LLMShowcase";
 import { SectionTransition } from "@/components/SectionTransition";
 import { VisitorTrackerProvider } from "@/components/VisitorTrackerProvider";
+import { OwnerHeader } from "@/components/OwnerHeader";
 
 const Index = () => {
   
@@ -122,6 +123,9 @@ const Index = () => {
     <VisitorTrackerProvider isOwner={isOwner}>
       <div className="min-h-screen bg-background">
         <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
+        
+        {/* Owner controls - visible immediately after login */}
+        <OwnerHeader isOwner={isOwner} />
         
         <div className="relative">
           
