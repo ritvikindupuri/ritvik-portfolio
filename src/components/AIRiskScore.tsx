@@ -266,7 +266,7 @@ export const AIRiskScore = ({ loginAttempts, detectedThreats }: AIRiskScoreProps
                       <Info className="w-3 h-3 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">Powered by Gemini AI analysis</p>
+                      <p className="text-xs">Powered by Google Gemini 2.5 Pro</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>

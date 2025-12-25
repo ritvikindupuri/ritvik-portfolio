@@ -8,6 +8,7 @@ import { ThreatDetector } from "@/components/ThreatDetector";
 import { VisitorDashboard } from "@/components/VisitorDashboard";
 import { KnownLocationsManager } from "@/components/KnownLocationsManager";
 import { AIRiskScore } from "@/components/AIRiskScore";
+import { RiskScoreHistory } from "@/components/RiskScoreHistory";
 
 interface LoginAttempt {
   id: string;
@@ -112,6 +113,9 @@ export const PortfolioAnalytics = () => {
         <TabsContent value="security" className="space-y-6">
           {/* AI Risk Score */}
           <AIRiskScore loginAttempts={loginAttempts} detectedThreats={detectedThreats} />
+          
+          {/* Risk Score History Chart */}
+          <RiskScoreHistory />
           
           {/* Global Login Map with Details */}
           <SecurityChoroplethMap onLoginAttemptsLoaded={setLoginAttempts} />

@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +12,7 @@ const corsHeaders = {
 
 interface SecurityAnalysisRequest {
   type: "security" | "visitor";
+  saveHistory?: boolean;
   data: {
     loginAttempts?: {
       total: number;
@@ -42,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, data }: SecurityAnalysisRequest = await req.json();
+    const { type, data, saveHistory = true }: SecurityAnalysisRequest = await req.json();
 
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY is not configured");
@@ -101,7 +105,7 @@ Be concise and focus on actionable insights.`;
 Provide your analysis as a JSON object.`;
     }
 
-    console.log(`Analyzing ${type} data...`);
+    console.log(`Analyzing ${type} data with google/gemini-2.5-pro...`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -110,7 +114,7 @@ Provide your analysis as a JSON object.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -174,6 +178,35 @@ Provide your analysis as a JSON object.`;
     }
 
     console.log(`${type} analysis complete:`, analysisResult);
+
+    // Save security risk score to history if enabled and it's a security analysis
+    if (type === "security" && saveHistory && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        
+        const { error: insertError } = await supabase
+          .from("risk_score_history")
+          .insert({
+            risk_score: analysisResult.riskScore,
+            risk_level: analysisResult.riskLevel,
+            summary: analysisResult.summary,
+            factors: analysisResult.factors,
+            recommendation: analysisResult.recommendation,
+            login_attempts_total: data.loginAttempts?.total || 0,
+            login_attempts_failed: data.loginAttempts?.failed || 0,
+            threats_count: data.threats?.count || 0,
+            threats_high_severity: data.threats?.highSeverity || 0,
+          });
+
+        if (insertError) {
+          console.error("Failed to save risk score history:", insertError);
+        } else {
+          console.log("Risk score saved to history");
+        }
+      } catch (historyError) {
+        console.error("Error saving risk score history:", historyError);
+      }
+    }
 
     return new Response(
       JSON.stringify({ success: true, analysis: analysisResult }),
