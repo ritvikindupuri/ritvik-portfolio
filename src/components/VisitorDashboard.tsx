@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Users, Eye, Download, MessageCircle, MousePointer, 
   Globe, Clock, TrendingUp, Activity, FileText, FolderOpen,
-  ChevronDown, ChevronUp, ExternalLink, Timer
+  ChevronDown, ChevronUp, ExternalLink, Timer, Info
 } from "lucide-react";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   BarChart,
   Bar,
@@ -386,10 +387,32 @@ export const VisitorDashboard = () => {
         {/* Activity Over Time */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              Activity Over Time
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                Daily Visitor Actions
+              </CardTitle>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-[280px]">
+                    <p className="font-medium mb-1">What this chart shows:</p>
+                    <p className="text-xs text-muted-foreground">
+                      Total number of visitor actions per day, including section views, 
+                      chatbot queries, resume downloads, and project clicks.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Higher numbers indicate more engagement on that day.
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total tracked actions per day (views, clicks, downloads, queries)
+            </p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -405,11 +428,15 @@ export const VisitorDashboard = () => {
                     padding: '8px 12px'
                   }}
                   labelStyle={{ color: 'hsl(0, 0%, 100%)', fontWeight: 600 }}
-                  itemStyle={{ color: 'hsl(0, 0%, 90%)' }}
+                  formatter={(value: number) => [`${value} actions`, 'Total Actions']}
+                  labelFormatter={(label) => `Date: ${label}`}
                 />
-                <Line type="monotone" dataKey="count" stroke="#00d4ff" strokeWidth={2} dot={{ fill: '#00d4ff' }} />
+                <Line type="monotone" dataKey="count" stroke="#00d4ff" strokeWidth={2} dot={{ fill: '#00d4ff' }} name="Actions" />
               </LineChart>
             </ResponsiveContainer>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              📊 Each point = total visitor interactions on that date
+            </p>
           </CardContent>
         </Card>
 
