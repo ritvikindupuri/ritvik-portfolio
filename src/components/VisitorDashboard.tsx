@@ -353,7 +353,7 @@ export const VisitorDashboard = () => {
                     <TooltipTrigger asChild>
                       <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[260px] z-50">
+                    <TooltipContent side="top" sideOffset={8} className="max-w-[260px] z-[100]">
                       <p className="font-medium">Unique Visitors</p>
                       <p className="text-xs text-muted-foreground">
                         Count of distinct visitor sessions in the selected time range. 
@@ -385,7 +385,7 @@ export const VisitorDashboard = () => {
                     <TooltipTrigger asChild>
                       <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[280px] z-50">
+                    <TooltipContent side="top" sideOffset={8} className="max-w-[280px] z-[100]">
                       <p className="font-medium">Total Actions (Cumulative)</p>
                       <p className="text-xs text-muted-foreground">
                         Sum of ALL visitor interactions: section views, chatbot queries, 
@@ -421,7 +421,7 @@ export const VisitorDashboard = () => {
                     <TooltipTrigger asChild>
                       <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[260px] z-50">
+                    <TooltipContent side="top" sideOffset={8} className="max-w-[260px] z-[100]">
                       <p className="font-medium">Chatbot Queries</p>
                       <p className="text-xs text-muted-foreground">
                         Number of questions visitors asked your AI chatbot. 
@@ -453,7 +453,7 @@ export const VisitorDashboard = () => {
                     <TooltipTrigger asChild>
                       <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[260px] z-50">
+                    <TooltipContent side="top" sideOffset={8} className="max-w-[260px] z-[100]">
                       <p className="font-medium">Resume Downloads</p>
                       <p className="text-xs text-muted-foreground">
                         Times visitors downloaded your resume. This is a key engagement signal — 
