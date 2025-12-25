@@ -267,6 +267,15 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<LLMProject | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  // Get unique project types for filter
+  const categories = ["all", ...new Set(projects.map(p => p.project_type).filter(Boolean))] as string[];
+  
+  // Filter projects by selected category
+  const filteredProjects = selectedCategory === "all" 
+    ? projects 
+    : projects.filter(p => p.project_type === selectedCategory);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -475,14 +484,35 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
         <div className="w-24 h-1 bg-gradient-to-r from-accent to-neural-pink mx-auto rounded-full mt-4" />
       </div>
 
+      {/* Category Filter */}
+      {categories.length > 2 && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {categories.map(category => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-4 py-2 text-sm rounded-full transition-all duration-300 ${
+                selectedCategory === category
+                  ? 'bg-accent text-accent-foreground shadow-lg shadow-accent/25'
+                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+              }`}
+            >
+              {category === "all" ? "All Projects" : category}
+            </button>
+          ))}
+        </div>
+      )}
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={projects.map(p => p.id)} strategy={rectSortingStrategy}>
+        <SortableContext items={filteredProjects.map(p => p.id)} strategy={rectSortingStrategy}>
           <div className="space-y-6">
-            {projects.map((project) => (
+            {filteredProjects.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No projects in this category</p>
+            ) : filteredProjects.map((project) => (
               <SortableLLMCard
                 key={project.id}
                 project={project}
