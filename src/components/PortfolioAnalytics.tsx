@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Shield, Users } from "lucide-react";
+import { BarChart3, Shield, Users, MapPin } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResumeAnalytics } from "@/components/ResumeAnalytics";
 import { SecurityChoroplethMap } from "@/components/SecurityChoroplethMap";
 import { ThreatDetector } from "@/components/ThreatDetector";
 import { VisitorDashboard } from "@/components/VisitorDashboard";
+import { KnownLocationsManager } from "@/components/KnownLocationsManager";
 
 interface LoginAttempt {
   id: string;
@@ -39,14 +40,18 @@ export const PortfolioAnalytics = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="visitors" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Visitor Analytics
+            Visitors
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
-            Security Monitoring
+            Security
+          </TabsTrigger>
+          <TabsTrigger value="locations" className="flex items-center gap-2">
+            <MapPin className="w-4 h-4" />
+            Locations
           </TabsTrigger>
         </TabsList>
 
@@ -61,6 +66,16 @@ export const PortfolioAnalytics = () => {
           
           {/* Threat Detection */}
           <ThreatDetector loginAttempts={loginAttempts} />
+        </TabsContent>
+
+        <TabsContent value="locations" className="space-y-6">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold">Login Location Management</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage trusted vs new login locations. You'll receive email alerts for logins from new locations.
+            </p>
+          </div>
+          <KnownLocationsManager />
         </TabsContent>
       </Tabs>
     </motion.section>
