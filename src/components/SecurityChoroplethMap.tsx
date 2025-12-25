@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Globe, MapPin, AlertTriangle, CheckCircle, Clock, Monitor, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Globe, MapPin, AlertTriangle, CheckCircle, Clock, Monitor, User, ChevronDown, ChevronUp, Eye } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LoginAttempt {
@@ -18,6 +18,28 @@ interface LoginAttempt {
   created_at: string;
 }
 
+interface VisitorActivity {
+  id: string;
+  session_id: string;
+  ip_address: string | null;
+  activity_type: string;
+  activity_data: any;
+  created_at: string;
+}
+
+type ActivityType = 'failed_login' | 'successful_login' | 'guest_visit';
+
+interface UnifiedActivity {
+  id: string;
+  type: ActivityType;
+  ip_address: string | null;
+  user_agent: string | null;
+  email?: string;
+  failure_reason?: string | null;
+  session_id?: string;
+  created_at: string;
+}
+
 interface IPLocation {
   ip: string;
   country: string;
@@ -25,15 +47,19 @@ interface IPLocation {
   city: string;
   lat: number;
   lon: number;
-  attempts: LoginAttempt[];
+  activities: UnifiedActivity[];
   totalCount: number;
-  failedCount: number;
-  successCount: number;
+  failedLoginCount: number;
+  successfulLoginCount: number;
+  guestVisitCount: number;
 }
 
 interface SecurityChoroplethMapProps {
   onLoginAttemptsLoaded?: (attempts: LoginAttempt[]) => void;
 }
+
+// Owner email to filter out successful logins
+const OWNER_EMAIL = "ritvik.indupuri@gmail.com";
 
 export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoroplethMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -41,26 +67,24 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   
   const [locations, setLocations] = useState<IPLocation[]>([]);
-  const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
+  const [unifiedActivities, setUnifiedActivities] = useState<UnifiedActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<IPLocation | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
-  const [showAllAttempts, setShowAllAttempts] = useState(false);
+  const [showAllActivities, setShowAllActivities] = useState(false);
   const [focusedLocationIndex, setFocusedLocationIndex] = useState<number>(-1);
+  const [activeFilter, setActiveFilter] = useState<'all' | ActivityType>('all');
 
   // Fetch Mapbox token from edge function secrets
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        // The token is stored in Supabase secrets, accessible via edge function
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         if (error) throw error;
         setMapboxToken(data.token);
       } catch (err) {
-        // Fallback: try to use the token directly (for development)
         console.log("Using fallback mapbox configuration");
-        // We'll create an edge function to provide the token
         setError("Mapbox token not configured");
       }
     };
@@ -68,45 +92,109 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   }, []);
 
   useEffect(() => {
-    fetchLoginAttempts();
+    fetchAllData();
     
-    // Set up realtime subscription
-    const channel = supabase
+    // Set up realtime subscriptions
+    const loginChannel = supabase
       .channel('login_attempts_changes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'login_attempts' },
-        () => {
-          fetchLoginAttempts();
-        }
+        () => fetchAllData()
+      )
+      .subscribe();
+
+    const visitorChannel = supabase
+      .channel('visitor_activity_security')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'visitor_activity' },
+        () => fetchAllData()
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(loginChannel);
+      supabase.removeChannel(visitorChannel);
     };
   }, []);
 
-  const fetchLoginAttempts = async () => {
+  const fetchAllData = async () => {
     try {
-      const { data, error: dbError } = await supabase
+      // Fetch login attempts
+      const { data: loginData, error: loginError } = await supabase
         .from('login_attempts')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (dbError) throw dbError;
+      if (loginError) throw loginError;
 
-      if (!data || data.length === 0) {
-        setLoading(false);
-        return;
-      }
+      // Fetch visitor activities (get unique sessions with their first activity for geolocation)
+      const { data: visitorData, error: visitorError } = await supabase
+        .from('visitor_activity')
+        .select('*')
+        .not('ip_address', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
 
-      setLoginAttempts(data);
-      onLoginAttemptsLoaded?.(data);
+      if (visitorError) throw visitorError;
 
-      // Get unique IPs
-      const uniqueIps = [...new Set(data.map(a => a.ip_address).filter((ip): ip is string => ip !== null && ip !== 'unknown'))];
+      // Filter login attempts:
+      // - Keep all failed logins
+      // - Exclude owner's successful logins (keep other successful logins if any)
+      const filteredLogins = (loginData || []).filter(attempt => {
+        if (attempt.success && attempt.email.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
+          return false; // Exclude owner's successful logins
+        }
+        return true;
+      });
+
+      onLoginAttemptsLoaded?.(loginData || []);
+
+      // Get unique sessions for guest visits (deduplicate by session_id)
+      const sessionMap: Record<string, VisitorActivity> = {};
+      (visitorData || []).forEach(activity => {
+        if (!sessionMap[activity.session_id] && activity.ip_address) {
+          sessionMap[activity.session_id] = activity;
+        }
+      });
+      const uniqueVisitorSessions = Object.values(sessionMap);
+
+      // Create unified activities list
+      const unified: UnifiedActivity[] = [];
+
+      // Add login attempts
+      filteredLogins.forEach(attempt => {
+        unified.push({
+          id: attempt.id,
+          type: attempt.success ? 'successful_login' : 'failed_login',
+          ip_address: attempt.ip_address,
+          user_agent: attempt.user_agent,
+          email: attempt.email,
+          failure_reason: attempt.failure_reason,
+          created_at: attempt.created_at
+        });
+      });
+
+      // Add guest visits
+      uniqueVisitorSessions.forEach(activity => {
+        unified.push({
+          id: activity.id,
+          type: 'guest_visit',
+          ip_address: activity.ip_address,
+          user_agent: null,
+          session_id: activity.session_id,
+          created_at: activity.created_at
+        });
+      });
+
+      // Sort by created_at
+      unified.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setUnifiedActivities(unified);
+
+      // Get unique IPs for geolocation
+      const uniqueIps = [...new Set(unified.map(a => a.ip_address).filter((ip): ip is string => ip !== null && ip !== 'unknown'))];
 
       if (uniqueIps.length === 0) {
         setLoading(false);
@@ -122,50 +210,57 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
 
       const locationMap: Record<string, IPLocation> = {};
       
-      data.forEach(attempt => {
-        if (attempt.ip_address && geoData.locations[attempt.ip_address]) {
-          const geo = geoData.locations[attempt.ip_address];
-          const key = attempt.ip_address;
+      unified.forEach(activity => {
+        if (activity.ip_address && geoData.locations[activity.ip_address]) {
+          const geo = geoData.locations[activity.ip_address];
+          const key = activity.ip_address;
           
           if (!locationMap[key]) {
             locationMap[key] = {
-              ip: attempt.ip_address,
+              ip: activity.ip_address,
               country: geo.country,
               countryCode: geo.countryCode,
               city: geo.city,
               lat: geo.lat,
               lon: geo.lon,
-              attempts: [],
+              activities: [],
               totalCount: 0,
-              failedCount: 0,
-              successCount: 0
+              failedLoginCount: 0,
+              successfulLoginCount: 0,
+              guestVisitCount: 0
             };
           }
           
-          locationMap[key].attempts.push(attempt);
+          locationMap[key].activities.push(activity);
           locationMap[key].totalCount++;
-          if (attempt.success) {
-            locationMap[key].successCount++;
-          } else {
-            locationMap[key].failedCount++;
+          
+          switch (activity.type) {
+            case 'failed_login':
+              locationMap[key].failedLoginCount++;
+              break;
+            case 'successful_login':
+              locationMap[key].successfulLoginCount++;
+              break;
+            case 'guest_visit':
+              locationMap[key].guestVisitCount++;
+              break;
           }
         }
       });
 
       setLocations(Object.values(locationMap));
     } catch (err) {
-      console.error('Error fetching login attempts:', err);
+      console.error('Error fetching data:', err);
       setError('Failed to load location data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Initialize map when token is available - ALWAYS show the globe
+  // Initialize map when token is available
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
     
-    // Remove existing map if present
     if (map.current) {
       map.current.remove();
       map.current = null;
@@ -197,7 +292,6 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       });
     });
 
-    // Slow rotation - always active
     let userInteracting = false;
     const spinGlobe = () => {
       if (!map.current || userInteracting) return;
@@ -212,8 +306,6 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     map.current.on('mousedown', () => { userInteracting = true; });
     map.current.on('mouseup', () => { userInteracting = false; spinGlobe(); });
     map.current.on('moveend', spinGlobe);
-    
-    // Start spinning immediately
     map.current.on('load', spinGlobe);
 
     return () => {
@@ -231,10 +323,21 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     markersRef.current = [];
 
     locations.forEach(loc => {
-      const isSuspicious = loc.failedCount > loc.successCount || loc.failedCount >= 3;
+      // Determine marker color based on activity types
+      // Priority: Red for failed logins, Yellow for successful logins (non-owner), Blue for guests only
+      let color = '#3b82f6'; // Default blue for guests
+      let glowColor = 'rgba(59, 130, 246, 0.5)';
+      
+      if (loc.failedLoginCount > 0) {
+        color = '#ef4444'; // Red for failed logins
+        glowColor = 'rgba(239, 68, 68, 0.5)';
+      } else if (loc.successfulLoginCount > 0) {
+        color = '#22c55e'; // Green for successful logins
+        glowColor = 'rgba(34, 197, 94, 0.5)';
+      }
+
       const size = Math.min(20 + loc.totalCount * 5, 50);
       
-      // Create custom marker element
       const el = document.createElement('div');
       el.className = 'cursor-pointer';
       el.innerHTML = `
@@ -243,9 +346,9 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           style="
             width: ${size}px; 
             height: ${size}px; 
-            background: ${isSuspicious ? 'rgba(239, 68, 68, 0.8)' : 'rgba(34, 197, 94, 0.8)'};
-            border: 2px solid ${isSuspicious ? 'rgb(239, 68, 68)' : 'rgb(34, 197, 94)'};
-            box-shadow: 0 0 ${size/2}px ${isSuspicious ? 'rgba(239, 68, 68, 0.5)' : 'rgba(34, 197, 94, 0.5)'};
+            background: ${color}cc;
+            border: 2px solid ${color};
+            box-shadow: 0 0 ${size/2}px ${glowColor};
           "
         >
           <span style="color: white; font-size: ${Math.max(10, size/3)}px; font-weight: bold;">
@@ -280,11 +383,23 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     return 'Other';
   };
 
-  const recentAttempts = useMemo(() => {
-    return showAllAttempts ? loginAttempts : loginAttempts.slice(0, 5);
-  }, [loginAttempts, showAllAttempts]);
+  const filteredActivities = useMemo(() => {
+    let filtered = unifiedActivities;
+    if (activeFilter !== 'all') {
+      filtered = unifiedActivities.filter(a => a.type === activeFilter);
+    }
+    return showAllActivities ? filtered : filtered.slice(0, 10);
+  }, [unifiedActivities, showAllActivities, activeFilter]);
 
-  // Keyboard navigation for cycling through locations
+  const stats = useMemo(() => {
+    return {
+      failedLogins: unifiedActivities.filter(a => a.type === 'failed_login').length,
+      successfulLogins: unifiedActivities.filter(a => a.type === 'successful_login').length,
+      guestVisits: unifiedActivities.filter(a => a.type === 'guest_visit').length,
+      total: unifiedActivities.length
+    };
+  }, [unifiedActivities]);
+
   const navigateToLocation = useCallback((index: number) => {
     if (locations.length === 0 || !map.current) return;
     
@@ -300,12 +415,9 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     });
   }, [locations]);
 
-  // Handle keyboard events for globe navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only respond to arrow keys when not typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      
       if (locations.length === 0) return;
 
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -324,7 +436,39 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [focusedLocationIndex, locations.length, navigateToLocation]);
 
-  // Always show the map, even while loading
+  const getActivityIcon = (type: ActivityType) => {
+    switch (type) {
+      case 'failed_login':
+        return <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />;
+      case 'successful_login':
+        return <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />;
+      case 'guest_visit':
+        return <Eye className="w-4 h-4 text-blue-500 flex-shrink-0" />;
+    }
+  };
+
+  const getActivityLabel = (type: ActivityType) => {
+    switch (type) {
+      case 'failed_login':
+        return 'Failed Login';
+      case 'successful_login':
+        return 'Login Attempt';
+      case 'guest_visit':
+        return 'Guest Visit';
+    }
+  };
+
+  const getActivityBadgeVariant = (type: ActivityType) => {
+    switch (type) {
+      case 'failed_login':
+        return 'destructive';
+      case 'successful_login':
+        return 'default';
+      case 'guest_visit':
+        return 'secondary';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
@@ -336,13 +480,13 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="cursor-help border-b border-dashed border-muted-foreground/50">
-                      Owner Authentication Map
+                      Security & Visitor Map
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
                     <p className="text-sm">
-                      This map shows locations where <strong>you (the owner)</strong> have logged into the dashboard. 
-                      It does not track general visitor activity.
+                      This map shows geographic locations of <strong>failed login attempts</strong>, 
+                      <strong> other login attempts</strong>, and <strong>guest visitors</strong> to your portfolio.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -354,15 +498,34 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
               </Badge>
             )}
           </div>
-          {/* Map Legend */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
-              <span>Successful logins</span>
+          {/* Stats Row */}
+          <div className="flex items-center gap-3 text-xs mt-2">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-500/10">
+              <AlertTriangle className="w-3 h-3 text-red-500" />
+              <span className="text-red-400">{stats.failedLogins} Failed Logins</span>
             </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-green-500/10">
+              <CheckCircle className="w-3 h-3 text-green-500" />
+              <span className="text-green-400">{stats.successfulLogins} Other Logins</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/10">
+              <Eye className="w-3 h-3 text-blue-500" />
+              <span className="text-blue-400">{stats.guestVisits} Guest Visits</span>
+            </div>
+          </div>
+          {/* Map Legend */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
-              <span>Suspicious (more failures)</span>
+              <span>Failed logins (suspicious)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
+              <span>Other login attempts</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]" />
+              <span>Guest visitors</span>
             </div>
           </div>
         </CardHeader>
@@ -386,7 +549,10 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
             <div className="p-4 border-t border-border/50 bg-secondary/20">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <MapPin className={`w-4 h-4 ${selectedLocation.failedCount > selectedLocation.successCount ? 'text-red-500' : 'text-green-500'}`} />
+                  <MapPin className={`w-4 h-4 ${
+                    selectedLocation.failedLoginCount > 0 ? 'text-red-500' : 
+                    selectedLocation.successfulLoginCount > 0 ? 'text-green-500' : 'text-blue-500'
+                  }`} />
                   <div>
                     <p className="font-medium">{selectedLocation.city}, {selectedLocation.country}</p>
                     <p className="text-xs text-muted-foreground font-mono">{selectedLocation.ip}</p>
@@ -400,39 +566,42 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                 </button>
               </div>
               
-              <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="grid grid-cols-4 gap-2 mb-3">
                 <div className="text-center p-2 bg-secondary/30 rounded">
                   <p className="text-lg font-bold">{selectedLocation.totalCount}</p>
                   <p className="text-xs text-muted-foreground">Total</p>
                 </div>
-                <div className="text-center p-2 bg-green-500/10 rounded">
-                  <p className="text-lg font-bold text-green-500">{selectedLocation.successCount}</p>
-                  <p className="text-xs text-muted-foreground">Success</p>
-                </div>
                 <div className="text-center p-2 bg-red-500/10 rounded">
-                  <p className="text-lg font-bold text-red-500">{selectedLocation.failedCount}</p>
+                  <p className="text-lg font-bold text-red-500">{selectedLocation.failedLoginCount}</p>
                   <p className="text-xs text-muted-foreground">Failed</p>
+                </div>
+                <div className="text-center p-2 bg-green-500/10 rounded">
+                  <p className="text-lg font-bold text-green-500">{selectedLocation.successfulLoginCount}</p>
+                  <p className="text-xs text-muted-foreground">Logins</p>
+                </div>
+                <div className="text-center p-2 bg-blue-500/10 rounded">
+                  <p className="text-lg font-bold text-blue-500">{selectedLocation.guestVisitCount}</p>
+                  <p className="text-xs text-muted-foreground">Guests</p>
                 </div>
               </div>
 
               <div className="space-y-2 max-h-32 overflow-y-auto">
-                {selectedLocation.attempts.slice(0, 5).map((attempt) => (
+                {selectedLocation.activities.slice(0, 5).map((activity) => (
                   <div
-                    key={attempt.id}
+                    key={activity.id}
                     className={`flex items-center justify-between text-xs p-2 rounded ${
-                      attempt.success ? 'bg-green-500/10' : 'bg-red-500/10'
+                      activity.type === 'failed_login' ? 'bg-red-500/10' : 
+                      activity.type === 'successful_login' ? 'bg-green-500/10' : 'bg-blue-500/10'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      {attempt.success ? (
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                      ) : (
-                        <AlertTriangle className="w-3 h-3 text-red-500" />
-                      )}
-                      <span className="truncate max-w-[120px]">{attempt.email}</span>
+                      {getActivityIcon(activity.type)}
+                      <span className="truncate max-w-[120px]">
+                        {activity.email || `Session ${activity.session_id?.slice(0, 8)}...`}
+                      </span>
                     </div>
                     <span className="text-muted-foreground">
-                      {new Date(attempt.created_at).toLocaleString()}
+                      {new Date(activity.created_at).toLocaleString()}
                     </span>
                   </div>
                 ))}
@@ -447,57 +616,60 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-help border-b border-dashed border-muted-foreground/50">
-                      Owner Login History
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs">
-                    <p className="text-sm">
-                      Records of your authentication attempts showing when and where you logged into the dashboard.
-                      The location reflects where you were when logging in.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              Activity Log
             </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Use ← → arrow keys to navigate globe locations
-            </p>
+            <div className="flex gap-1">
+              {(['all', 'failed_login', 'successful_login', 'guest_visit'] as const).map(filter => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    activeFilter === filter 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-secondary/50 hover:bg-secondary'
+                  }`}
+                >
+                  {filter === 'all' ? 'All' : 
+                   filter === 'failed_login' ? 'Failed' : 
+                   filter === 'successful_login' ? 'Logins' : 'Guests'}
+                </button>
+              ))}
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Use ← → arrow keys to navigate globe locations
+          </p>
         </CardHeader>
         <CardContent>
-          {recentAttempts.length === 0 ? (
+          {filteredActivities.length === 0 ? (
             <p className="text-center text-muted-foreground text-sm py-4">
-              No login attempts recorded yet.
+              No activity recorded yet.
             </p>
           ) : (
             <>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {recentAttempts.map((attempt) => {
-                  const location = locations.find(l => l.ip === attempt.ip_address);
+                {filteredActivities.map((activity) => {
+                  const location = locations.find(l => l.ip === activity.ip_address);
                   return (
                     <div
-                      key={attempt.id}
+                      key={activity.id}
                       className={`p-3 rounded-lg border ${
-                        attempt.success 
-                          ? 'bg-green-500/5 border-green-500/20' 
-                          : 'bg-red-500/5 border-red-500/20'
+                        activity.type === 'failed_login' 
+                          ? 'bg-red-500/5 border-red-500/20' 
+                          : activity.type === 'successful_login'
+                          ? 'bg-green-500/5 border-green-500/20'
+                          : 'bg-blue-500/5 border-blue-500/20'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          {attempt.success ? (
-                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                          )}
+                          {getActivityIcon(activity.type)}
                           <div>
                             <div className="flex items-center gap-2">
                               <User className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-sm font-medium">{attempt.email}</span>
+                              <span className="text-sm font-medium">
+                                {activity.email || `Guest Session`}
+                              </span>
                             </div>
                             <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                               <TooltipProvider>
@@ -518,7 +690,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                                       disabled={!location}
                                     >
                                       <MapPin className="w-3 h-3" />
-                                      {location ? `${location.city}, ${location.country}` : attempt.ip_address || 'Unknown'}
+                                      {location ? `${location.city}, ${location.country}` : activity.ip_address || 'Unknown'}
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent side="bottom" className="max-w-xs">
@@ -527,8 +699,9 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                                         <p className="font-semibold">{location.city}, {location.country}</p>
                                         <p className="font-mono text-muted-foreground">IP: {location.ip}</p>
                                         <div className="flex gap-3 pt-1">
-                                          <span className="text-green-500">{location.successCount} successful</span>
-                                          <span className="text-red-500">{location.failedCount} failed</span>
+                                          <span className="text-red-500">{location.failedLoginCount} failed</span>
+                                          <span className="text-green-500">{location.successfulLoginCount} logins</span>
+                                          <span className="text-blue-500">{location.guestVisitCount} guests</span>
                                         </div>
                                         <p className="text-muted-foreground italic pt-1">Click to view on globe</p>
                                       </div>
@@ -538,39 +711,41 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
-                              <span className="flex items-center gap-1">
-                                <Monitor className="w-3 h-3" />
-                                {parseBrowser(attempt.user_agent)}
-                              </span>
+                              {activity.user_agent && (
+                                <span className="flex items-center gap-1">
+                                  <Monitor className="w-3 h-3" />
+                                  {parseBrowser(activity.user_agent)}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <Badge variant={attempt.success ? "default" : "destructive"} className="text-xs">
-                            {attempt.success ? 'Success' : 'Failed'}
+                          <Badge variant={getActivityBadgeVariant(activity.type) as any} className="text-xs">
+                            {getActivityLabel(activity.type)}
                           </Badge>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(attempt.created_at).toLocaleString()}
+                            {new Date(activity.created_at).toLocaleString()}
                           </p>
                         </div>
                       </div>
-                      {attempt.failure_reason && (
+                      {activity.failure_reason && (
                         <p className="text-xs text-red-400 mt-2 pl-6">
-                          Reason: {attempt.failure_reason}
+                          Reason: {activity.failure_reason}
                         </p>
                       )}
                     </div>
                   );
                 })}
               </div>
-              {loginAttempts.length > 5 && (
+              {unifiedActivities.length > 10 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowAllAttempts(!showAllAttempts)}
+                  onClick={() => setShowAllActivities(!showAllActivities)}
                   className="w-full mt-3 text-xs"
                 >
-                  {showAllAttempts ? (
+                  {showAllActivities ? (
                     <>
                       <ChevronUp className="w-4 h-4 mr-1" />
                       Show Less
@@ -578,7 +753,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                   ) : (
                     <>
                       <ChevronDown className="w-4 h-4 mr-1" />
-                      View All ({loginAttempts.length} entries)
+                      View All ({unifiedActivities.length} entries)
                     </>
                   )}
                 </Button>
