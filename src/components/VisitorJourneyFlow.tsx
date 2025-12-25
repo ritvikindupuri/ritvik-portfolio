@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Route, ArrowRight, TrendingUp, Users } from "lucide-react";
 
 interface VisitorActivity {
@@ -279,27 +280,91 @@ export const VisitorJourneyFlow = () => {
                   transition={{ delay: index * 0.05 }}
                   className="flex items-center gap-2"
                 >
-                  <span className="text-xs text-muted-foreground w-4">{index + 1}</span>
+                  {/* Rank number with tooltip */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-xs text-muted-foreground w-4 cursor-help">{index + 1}</span>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        <p>#{index + 1} most common path</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
-                  <div className={`px-2 py-1 rounded text-xs font-medium text-white ${getSectionColor(step.from)}`}>
-                    {step.from}
-                  </div>
+                  {/* Source section with tooltip */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={`px-2 py-1 rounded text-xs font-medium text-white cursor-help ${getSectionColor(step.from)}`}>
+                          {step.from}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p className="font-medium">Source: {step.from}</p>
+                        <p className="text-xs text-muted-foreground">Visitors start from this section</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <div className="w-8 h-px bg-border" />
-                    <ArrowRight className="w-3 h-3" />
-                    <div className="w-8 h-px bg-border" />
-                  </div>
+                  {/* Arrow with tooltip */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1 text-muted-foreground cursor-help">
+                          <div className="w-8 h-px bg-border" />
+                          <ArrowRight className="w-3 h-3" />
+                          <div className="w-8 h-px bg-border" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>Navigation direction</p>
+                        <p className="text-xs text-muted-foreground">{step.count} visitors took this path</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
-                  <div className={`px-2 py-1 rounded text-xs font-medium text-white ${getSectionColor(step.to)}`}>
-                    {step.to}
-                  </div>
+                  {/* Target section with tooltip */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={`px-2 py-1 rounded text-xs font-medium text-white cursor-help ${getSectionColor(step.to)}`}>
+                          {step.to}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p className="font-medium">Target: {step.to}</p>
+                        <p className="text-xs text-muted-foreground">Visitors navigate to this section</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
                   <div className="flex-1" />
                   
-                  <Badge variant="secondary" className="text-xs">
-                    {step.count} ({step.percentage}%)
-                  </Badge>
+                  {/* Stats with tooltip - reformatted for better readability */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1.5 cursor-help">
+                          <Badge variant="secondary" className="text-xs px-2">
+                            {step.count}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            ({step.percentage}%)
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[220px]">
+                        <p className="font-medium">{step.count} visitors</p>
+                        <p className="text-xs text-muted-foreground">
+                          navigated from {step.from} → {step.to}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1 pt-1 border-t border-border/50">
+                          This represents {step.percentage}% of all section transitions
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </motion.div>
               ))}
             </div>
@@ -324,23 +389,85 @@ export const VisitorJourneyFlow = () => {
                   transition={{ delay: index * 0.05 }}
                   className="flex items-center gap-3"
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${getSectionColor(stat.section)}`}>
-                    {stat.avgPosition}
-                  </div>
+                  {/* Position circle with tooltip */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-help ${getSectionColor(stat.section)}`}>
+                          {stat.avgPosition}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-[200px]">
+                        <p className="font-medium">Average Position: {stat.avgPosition}</p>
+                        <p className="text-xs text-muted-foreground">
+                          On average, visitors view this section {stat.avgPosition === 1 ? "first" : `at position ${stat.avgPosition}`} in their journey
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
+                  {/* Section info with tooltips */}
                   <div className="flex-1">
-                    <p className="text-sm font-medium">{stat.section}</p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-sm font-medium cursor-help">{stat.section}</p>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="font-medium">{stat.section}</p>
+                          <p className="text-xs text-muted-foreground">Portfolio section</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <div className="flex gap-2 text-xs text-muted-foreground">
-                      <span>Entry: {stat.entryCount}</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help hover:text-foreground transition-colors">Entry: {stat.entryCount}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="font-medium">{stat.entryCount} entry visits</p>
+                            <p className="text-xs text-muted-foreground">
+                              {stat.entryCount} visitors started their journey at {stat.section}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <span>•</span>
-                      <span>Exit: {stat.exitCount}</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help hover:text-foreground transition-colors">Exit: {stat.exitCount}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="font-medium">{stat.exitCount} exit visits</p>
+                            <p className="text-xs text-muted-foreground">
+                              {stat.exitCount} visitors ended their journey at {stat.section}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                   
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Avg Position</p>
-                    <p className="text-sm font-bold">{stat.avgPosition}</p>
-                  </div>
+                  {/* Avg position display with tooltip */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-right cursor-help">
+                          <p className="text-xs text-muted-foreground">Avg Position</p>
+                          <p className="text-sm font-bold">{stat.avgPosition}</p>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[220px]">
+                        <p className="font-medium">Position {stat.avgPosition}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Lower numbers mean visitors see this section earlier in their journey. 
+                          Position 1 = first section viewed.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </motion.div>
               ))}
             </div>
