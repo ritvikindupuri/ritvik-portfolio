@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { GitBranch, TrendingDown, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface VisitorActivity {
@@ -274,10 +275,25 @@ export const VisitorSankeyDiagram = () => {
                       transform: 'translateY(-50%)'
                     }}
                   />
-                  {/* Flow value indicator */}
-                  <span className="absolute left-1/2 transform -translate-x-1/2 text-xs font-bold text-foreground bg-background/80 px-1 rounded">
-                    {link.value}
-                  </span>
+                  {/* Flow value indicator with tooltip */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="absolute left-1/2 transform -translate-x-1/2 text-xs font-bold text-foreground bg-background/80 px-1 rounded cursor-help hover:bg-background">
+                          {link.value}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[250px] text-center">
+                        <p className="font-medium">{link.value} visitors</p>
+                        <p className="text-xs text-muted-foreground">
+                          navigated from <span className="font-medium text-foreground">{link.source}</span> to <span className="font-medium text-foreground">{link.target}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Line thickness: {Math.round((link.value / maxFlowValue) * 100)}% of max traffic
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
 
                 {/* Target Node */}
@@ -288,10 +304,22 @@ export const VisitorSankeyDiagram = () => {
                   {link.target}
                 </div>
 
-                {/* Percentage */}
-                <Badge variant="outline" className="text-xs min-w-[50px] justify-center">
-                  {link.percentage}%
-                </Badge>
+                {/* Percentage with tooltip */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="text-xs min-w-[50px] justify-center cursor-help hover:bg-secondary/50">
+                        {link.percentage}%
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-[250px] text-center">
+                      <p className="font-medium">{link.percentage}% of all transitions</p>
+                      <p className="text-xs text-muted-foreground">
+                        This path ({link.source} → {link.target}) represents {link.percentage}% of all section-to-section navigation across {totalSessions} visitor sessions
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </motion.div>
             ))}
           </div>
