@@ -512,6 +512,48 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_score_history: {
+        Row: {
+          created_at: string
+          factors: string[] | null
+          id: string
+          login_attempts_failed: number | null
+          login_attempts_total: number | null
+          recommendation: string | null
+          risk_level: string
+          risk_score: number
+          summary: string | null
+          threats_count: number | null
+          threats_high_severity: number | null
+        }
+        Insert: {
+          created_at?: string
+          factors?: string[] | null
+          id?: string
+          login_attempts_failed?: number | null
+          login_attempts_total?: number | null
+          recommendation?: string | null
+          risk_level: string
+          risk_score: number
+          summary?: string | null
+          threats_count?: number | null
+          threats_high_severity?: number | null
+        }
+        Update: {
+          created_at?: string
+          factors?: string[] | null
+          id?: string
+          login_attempts_failed?: number | null
+          login_attempts_total?: number | null
+          recommendation?: string | null
+          risk_level?: string
+          risk_score?: number
+          summary?: string | null
+          threats_count?: number | null
+          threats_high_severity?: number | null
+        }
+        Relationships: []
+      }
       skills: {
         Row: {
           category: string

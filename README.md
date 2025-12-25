@@ -13,6 +13,7 @@ This portfolio showcases my work in Cloud Security, Cybersecurity, and Artificia
 - **Real-time visitor analytics** with behavioral classification
 - **MITRE ATT&CK threat detection** for authentication security  
 - **RAG-powered AI chatbot** for natural language queries
+- **AI security risk scoring** powered by Google Gemini 2.5 Pro with historical tracking
 - **Automated email alerts** for visitor engagement and security incidents
 - **Interactive 3D security globe** visualizing login attempts worldwide
 
@@ -46,6 +47,8 @@ After logging in, the portfolio owner has access to an analytics dashboard with:
 | **Visitor Analytics** | Real-time tracking of page views, unique visitors, and session duration |
 | **Behavioral Classification** | AI-based visitor intent detection (recruiter, developer, student, etc.) |
 | **Geographic Mapping** | Interactive 3D globe showing visitor and login attempt locations |
+| **AI Risk Scoring** | LLM-powered security assessment using Google Gemini 2.5 Pro |
+| **Risk Score History** | Historical trend tracking with line chart visualization |
 | **Login Attempt Monitor** | Security log of authentication attempts with IP geolocation |
 | **MITRE ATT&CK Threat Detection** | Automated detection of brute force, password spraying, and credential stuffing |
 | **Resume Analytics** | Track resume views and downloads with referrer data |

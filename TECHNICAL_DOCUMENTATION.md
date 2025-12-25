@@ -26,6 +26,8 @@ This documentation covers the complete system architecture, data flows, implemen
 - [Weekly Digest Flow](#weekly-digest-flow)
 - [Key Features](#key-features)
 - [Screenshots and Visual Reference](#screenshots-and-visual-reference)
+- [AI Security Risk Analysis](#ai-security-risk-analysis)
+- [Risk Score History Chart](#risk-score-history-chart)
 - [Portfolio Analytics System](#portfolio-analytics-system)
 - [Visitor Tracking System](#visitor-tracking-system)
 - [Visitor Classification](#visitor-classification)
@@ -645,6 +647,57 @@ This weekly email provides a high-level overview of portfolio performance and se
 
 ---
 
+### AI Security Risk Analysis
+
+<p align="center">
+  <img src="https://imgur.com/l3WZhnf.png" alt="AI Security Risk Score" width="800"/>
+</p>
+
+**Figure 14: AI Security Risk Analysis** - LLM-powered security assessment providing real-time risk scoring and posture analysis:
+
+- **AI Model**: Google Gemini 2.5 Pro via Lovable AI Gateway
+- **Risk Score Gauge**: Visual 0-100 circular indicator with color-coded severity (green=low, yellow=medium, orange=high, red=critical)
+- **Risk Level Badge**: Categorical classification (LOW RISK, MEDIUM RISK, HIGH RISK, CRITICAL RISK)
+- **Intelligent Summary**: AI-generated 1-2 sentence security posture description
+- **Tooltip Details**: Hover to reveal contributing factors and actionable recommendations
+- **Input Data**: Analyzes login attempts, failed patterns, suspicious IPs, detected MITRE threats
+- **Historical Tracking**: Each analysis is saved to the `risk_score_history` table for trend analysis
+
+The AI Risk Score component (`AIRiskScore.tsx`) invokes the `analyze-security` edge function, which:
+1. Aggregates security metrics (login stats, threat counts, suspicious IPs)
+2. Sends structured data to Google Gemini 2.5 Pro via Lovable AI Gateway
+3. Receives JSON-formatted risk assessment with score, level, factors, and recommendation
+4. Automatically saves the analysis to the database for historical tracking
+
+---
+
+### Risk Score History Chart
+
+The Risk Score History component (`RiskScoreHistory.tsx`) displays historical risk assessments in an interactive line chart:
+
+- **Line Chart**: Visualizes risk score trends over time using Recharts
+- **Reference Lines**: Color-coded thresholds at 25 (low), 50 (medium), 75 (high)
+- **Trend Indicator**: Shows whether security posture is improving, stable, or declining
+- **Average Score**: Displays the average risk score across all historical data
+- **Detailed Tooltips**: Hover to see exact score, timestamp, and risk level for each data point
+
+**Database Schema** (`risk_score_history` table):
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `risk_score` | INTEGER | Score from 0-100 |
+| `risk_level` | TEXT | low/medium/high/critical |
+| `summary` | TEXT | AI-generated summary |
+| `factors` | TEXT[] | Contributing risk factors |
+| `recommendation` | TEXT | Actionable recommendation |
+| `login_attempts_total` | INTEGER | Snapshot of total attempts |
+| `login_attempts_failed` | INTEGER | Snapshot of failed attempts |
+| `threats_count` | INTEGER | Active threat count |
+| `threats_high_severity` | INTEGER | High severity threat count |
+| `created_at` | TIMESTAMPTZ | When analysis was performed |
+
+---
+
 ## Portfolio Analytics System
 
 ### Overview
@@ -890,6 +943,7 @@ Three types of automated emails are sent via **Resend** (edge functions):
 | `visitor_activity` | Stores all tracked visitor actions |
 | `login_attempts` | Logs authentication attempts |
 | `known_login_locations` | Trusted/untrusted login locations with geo data |
+| `risk_score_history` | Historical AI risk score assessments |
 | `profiles` | User profile information |
 | `projects` | Portfolio projects |
 | `skills` | Technical skills with categories |
@@ -914,6 +968,7 @@ Three types of automated emails are sent via **Resend** (edge functions):
 | `send-visitor-alert` | Sends real-time visitor notification emails |
 | `send-threat-alert` | Sends security threat alerts with MITRE mapping |
 | `weekly-digest` | Compiles and sends weekly analytics summary |
+| `analyze-security` | AI-powered security risk assessment using Google Gemini 2.5 Pro |
 | `geolocate-ip` | Resolves IP addresses to geographic coordinates |
 | `get-mapbox-token` | Securely provides Mapbox token to frontend |
 | `log-auth-attempt` | Records login attempts with metadata |
