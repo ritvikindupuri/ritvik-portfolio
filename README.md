@@ -20,6 +20,12 @@ This portfolio showcases my work in Cloud Security, Cybersecurity, and Artificia
 
 ## System Architecture
 
+The architecture follows a three-tier design with clear separation of concerns:
+
+- **Frontend Layer**: React components handle the UI, visitor tracking, threat detection, and AI chatbot interface
+- **Backend Layer**: Supabase provides PostgreSQL with pgvector for semantic search, Edge Functions for serverless logic, and pg_cron for scheduled tasks
+- **External Services**: Resend handles email delivery, Mapbox powers the 3D security globe, and OpenAI provides embeddings and chat responses
+
 ```mermaid
 flowchart TB
     subgraph Frontend["Frontend (React + Vite)"]
