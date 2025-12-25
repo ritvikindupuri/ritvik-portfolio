@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.weekly-digest]
 verify_jwt = false
+
+[functions.analyze-security]
+verify_jwt = false
+
+[functions.send-password-reminder]
+verify_jwt = false

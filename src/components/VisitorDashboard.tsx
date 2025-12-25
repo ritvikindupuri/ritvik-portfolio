@@ -23,6 +23,7 @@ import {
   Line
 } from "recharts";
 import { ChatbotQueryAnalysis } from "@/components/ChatbotQueryAnalysis";
+import { AIVisitorInsights } from "@/components/AIVisitorInsights";
 
 interface VisitorActivity {
   id: string;
@@ -178,6 +179,10 @@ export const VisitorDashboard = () => {
       activityCounts[a.activity_type] = (activityCounts[a.activity_type] || 0) + 1;
     });
 
+    // Calculate engaged visitors and potential recruiters
+    const engagedVisitors = sessions.filter(s => s.chatbotQueries > 2).length;
+    const potentialRecruiters = sessions.filter(s => s.resumeDownloads > 0).length;
+
     return {
       totalSessions: sessions.length,
       totalActivities: activities.length,
@@ -186,7 +191,9 @@ export const VisitorDashboard = () => {
       resumeDownloads: activityCounts['resume_download'] || 0,
       projectClicks: activityCounts['project_click'] || 0,
       sectionViews: activityCounts['section_view'] || 0,
-      pageViews: activityCounts['page_view'] || 0
+      pageViews: activityCounts['page_view'] || 0,
+      engagedVisitors,
+      potentialRecruiters
     };
   }, [activities, sessions]);
 
@@ -284,6 +291,9 @@ export const VisitorDashboard = () => {
           ))}
         </div>
       </div>
+
+      {/* AI Visitor Insights */}
+      <AIVisitorInsights stats={stats} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
