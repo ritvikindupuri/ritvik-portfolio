@@ -354,7 +354,7 @@ export const VisitorJourneyFlow = () => {
                           </span>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-[220px]">
+                      <TooltipContent side="left" className="max-w-[220px] z-50">
                         <p className="font-medium">{step.count} visitors</p>
                         <p className="text-xs text-muted-foreground">
                           navigated from {step.from} → {step.to}
