@@ -9,6 +9,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface RiskScoreEntry {
+  risk_score: number;
+  risk_level: string;
+  summary: string;
+  created_at: string;
+}
+
 interface WeeklyDigestData {
   visitorStats: {
     totalSessions: number;
@@ -29,6 +36,17 @@ interface WeeklyDigestData {
     uniqueIPs: number;
     suspiciousIPs: string[];
   };
+  riskScoreStats: {
+    currentScore: number | null;
+    currentLevel: string | null;
+    weeklyAverage: number | null;
+    trend: "improving" | "stable" | "declining" | null;
+    trendPercentage: number | null;
+    highestScore: number | null;
+    lowestScore: number | null;
+    assessmentCount: number;
+    latestSummary: string | null;
+  };
   dateRange: { start: string; end: string };
 }
 
@@ -47,6 +65,11 @@ const handler = async (req: Request): Promise<Response> => {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 7);
+
+    // Previous week for comparison
+    const prevWeekEnd = new Date(startDate);
+    const prevWeekStart = new Date(prevWeekEnd);
+    prevWeekStart.setDate(prevWeekStart.getDate() - 7);
 
     console.log(`Generating weekly digest for ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
@@ -73,6 +96,26 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error fetching login attempts:", loginError);
       throw loginError;
     }
+
+    // Fetch risk score history for this week
+    const { data: riskScores, error: riskError } = await supabase
+      .from("risk_score_history")
+      .select("risk_score, risk_level, summary, created_at")
+      .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString())
+      .order("created_at", { ascending: true });
+
+    if (riskError) {
+      console.error("Error fetching risk scores:", riskError);
+      // Don't throw, just continue without risk data
+    }
+
+    // Fetch previous week's risk scores for trend comparison
+    const { data: prevRiskScores } = await supabase
+      .from("risk_score_history")
+      .select("risk_score")
+      .gte("created_at", prevWeekStart.toISOString())
+      .lt("created_at", startDate.toISOString());
 
     // Process visitor stats
     const activityCounts: Record<string, number> = {};
@@ -123,6 +166,50 @@ const handler = async (req: Request): Promise<Response> => {
       .filter(([_, count]) => count >= 3)
       .map(([ip]) => ip);
 
+    // Process risk score statistics
+    const typedRiskScores = (riskScores || []) as RiskScoreEntry[];
+    const typedPrevRiskScores = (prevRiskScores || []) as { risk_score: number }[];
+    
+    let riskScoreStats: WeeklyDigestData["riskScoreStats"] = {
+      currentScore: null,
+      currentLevel: null,
+      weeklyAverage: null,
+      trend: null,
+      trendPercentage: null,
+      highestScore: null,
+      lowestScore: null,
+      assessmentCount: typedRiskScores.length,
+      latestSummary: null,
+    };
+
+    if (typedRiskScores.length > 0) {
+      const scores = typedRiskScores.map(r => r.risk_score);
+      const latestEntry = typedRiskScores[typedRiskScores.length - 1];
+      
+      riskScoreStats.currentScore = latestEntry.risk_score;
+      riskScoreStats.currentLevel = latestEntry.risk_level;
+      riskScoreStats.latestSummary = latestEntry.summary;
+      riskScoreStats.weeklyAverage = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+      riskScoreStats.highestScore = Math.max(...scores);
+      riskScoreStats.lowestScore = Math.min(...scores);
+
+      // Calculate trend compared to previous week
+      if (typedPrevRiskScores.length > 0) {
+        const prevAverage = typedPrevRiskScores.reduce((a, b) => a + b.risk_score, 0) / typedPrevRiskScores.length;
+        const currentAverage = riskScoreStats.weeklyAverage;
+        const diff = currentAverage - prevAverage;
+        riskScoreStats.trendPercentage = Math.round(Math.abs(diff));
+        
+        if (diff > 5) {
+          riskScoreStats.trend = "declining"; // Higher score = worse security
+        } else if (diff < -5) {
+          riskScoreStats.trend = "improving"; // Lower score = better security
+        } else {
+          riskScoreStats.trend = "stable";
+        }
+      }
+    }
+
     // Prepare digest data
     const digestData: WeeklyDigestData = {
       visitorStats: {
@@ -153,6 +240,7 @@ const handler = async (req: Request): Promise<Response> => {
         uniqueIPs: uniqueIPs.size,
         suspiciousIPs,
       },
+      riskScoreStats,
       dateRange: {
         start: startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
         end: endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
@@ -201,10 +289,39 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
+function getRiskColor(score: number | null): string {
+  if (score === null) return "#666";
+  if (score >= 75) return "#ef4444";
+  if (score >= 50) return "#f97316";
+  if (score >= 25) return "#eab308";
+  return "#22c55e";
+}
+
+function getTrendIcon(trend: string | null): string {
+  switch (trend) {
+    case "improving": return "📉";
+    case "declining": return "📈";
+    case "stable": return "➡️";
+    default: return "❓";
+  }
+}
+
+function getTrendText(trend: string | null, percentage: number | null): string {
+  if (!trend || percentage === null) return "No previous data";
+  switch (trend) {
+    case "improving": return `↓ ${percentage} points better than last week`;
+    case "declining": return `↑ ${percentage} points worse than last week`;
+    case "stable": return "Stable compared to last week";
+    default: return "";
+  }
+}
+
 function generateEmailHtml(data: WeeklyDigestData): string {
-  const { visitorStats, topQueries, topSections, topProjects, securityStats, dateRange } = data;
+  const { visitorStats, topQueries, topSections, topProjects, securityStats, riskScoreStats, dateRange } = data;
 
   const hasSuspiciousActivity = securityStats.suspiciousIPs.length > 0;
+  const hasRiskData = riskScoreStats.assessmentCount > 0;
+  const riskColor = getRiskColor(riskScoreStats.currentScore);
 
   return `
     <!DOCTYPE html>
@@ -226,6 +343,69 @@ function generateEmailHtml(data: WeeklyDigestData): string {
         <!-- Main Content -->
         <div style="background-color: #1a1a2e; padding: 30px; border-radius: 0 0 16px 16px;">
           
+          <!-- AI Risk Score Summary -->
+          <div style="margin-bottom: 30px;">
+            <h2 style="color: #a855f7; margin: 0 0 20px; font-size: 18px;">
+              🤖 AI Security Risk Analysis
+            </h2>
+            ${hasRiskData ? `
+            <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(${riskScoreStats.currentScore && riskScoreStats.currentScore >= 50 ? '239, 68, 68' : '34, 197, 94'}, 0.1) 100%); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 20px;">
+              <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 15px;">
+                <div style="position: relative; width: 80px; height: 80px;">
+                  <svg viewBox="0 0 100 100" style="width: 80px; height: 80px; transform: rotate(-90deg);">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="${riskColor}" stroke-width="8" stroke-dasharray="${(riskScoreStats.currentScore || 0) * 2.51} 251" stroke-linecap="round"/>
+                  </svg>
+                  <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: ${riskColor}; font-size: 24px; font-weight: 700;">${riskScoreStats.currentScore}</span>
+                    <span style="color: #666; font-size: 10px;">RISK</span>
+                  </div>
+                </div>
+                <div style="flex: 1;">
+                  <div style="color: ${riskColor}; font-size: 14px; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">
+                    ${riskScoreStats.currentLevel} RISK
+                  </div>
+                  <div style="color: #c0c0c0; font-size: 12px; line-height: 1.4;">
+                    ${riskScoreStats.latestSummary || 'No summary available'}
+                  </div>
+                </div>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
+                  <div style="color: #a855f7; font-size: 18px; font-weight: 600;">${riskScoreStats.weeklyAverage}</div>
+                  <div style="color: #888; font-size: 10px;">Avg Score</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
+                  <div style="color: #22c55e; font-size: 18px; font-weight: 600;">${riskScoreStats.lowestScore}</div>
+                  <div style="color: #888; font-size: 10px;">Lowest</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
+                  <div style="color: #ef4444; font-size: 18px; font-weight: 600;">${riskScoreStats.highestScore}</div>
+                  <div style="color: #888; font-size: 10px;">Highest</div>
+                </div>
+              </div>
+              
+              <div style="border-top: 1px solid rgba(168, 85, 247, 0.2); padding-top: 12px;">
+                <div style="color: #c0c0c0; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                  <span>${getTrendIcon(riskScoreStats.trend)}</span>
+                  <span style="color: ${riskScoreStats.trend === 'improving' ? '#22c55e' : riskScoreStats.trend === 'declining' ? '#ef4444' : '#eab308'};">
+                    ${getTrendText(riskScoreStats.trend, riskScoreStats.trendPercentage)}
+                  </span>
+                </div>
+                <div style="color: #666; font-size: 11px; margin-top: 5px;">
+                  Based on ${riskScoreStats.assessmentCount} AI assessments this week • Powered by Google Gemini 2.5 Pro
+                </div>
+              </div>
+            </div>
+            ` : `
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; text-align: center;">
+              <div style="color: #888; font-size: 14px;">No AI risk assessments recorded this week</div>
+              <div style="color: #666; font-size: 12px; margin-top: 5px;">Visit the Security tab in your dashboard to generate risk analysis</div>
+            </div>
+            `}
+          </div>
+
           <!-- Visitor Overview -->
           <div style="margin-bottom: 30px;">
             <h2 style="color: #00d4ff; margin: 0 0 20px; font-size: 18px; display: flex; align-items: center;">

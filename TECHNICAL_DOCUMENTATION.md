@@ -605,6 +605,13 @@ This email provides the portfolio owner with all information needed to assess an
 **Figure 10: Weekly Digest Email** - This comprehensive summary email is automatically generated and sent every Monday at 9:00 AM UTC. The email includes:
 
 - **Header**: "Weekly Portfolio Digest" with the date range covered (e.g., "December 16-22, 2024")
+- **AI Risk Score Summary Section** (NEW):
+  - Current risk score with circular gauge visualization
+  - Risk level badge (LOW/MEDIUM/HIGH/CRITICAL)
+  - Latest AI-generated security summary from Gemini 2.5 Pro
+  - Weekly statistics: average score, lowest score, highest score
+  - Week-over-week trend comparison (improving ↓, stable →, declining ↑)
+  - Number of AI assessments performed during the week
 - **Visitor Overview Section**:
   - Total unique visitors (by session count)
   - Total actions performed across all sessions
@@ -629,7 +636,7 @@ This email provides the portfolio owner with all information needed to assess an
   - List of suspicious IPs (those with 3+ failed attempts)
 - **Footer**: Clean formatting with links to the owner dashboard for deeper analysis
 
-This weekly email provides a high-level overview of portfolio performance and security status without requiring the owner to log in to the dashboard.
+This weekly email provides a high-level overview of portfolio performance, AI-powered security risk trends, and security status without requiring the owner to log in to the dashboard.
 
 ---
 
@@ -662,6 +669,37 @@ This weekly email provides a high-level overview of portfolio performance and se
 - **Tooltip Details**: Hover to reveal contributing factors and actionable recommendations
 - **Input Data**: Analyzes login attempts, failed patterns, suspicious IPs, detected MITRE threats
 - **Historical Tracking**: Each analysis is saved to the `risk_score_history` table for trend analysis
+
+#### How the AI Risk Score is Calculated
+
+The risk scoring system uses **Google Gemini 2.5 Pro**, a state-of-the-art large language model, to analyze security metrics and produce a holistic risk assessment. Here's how it works:
+
+**Input Metrics Sent to Gemini 2.5 Pro:**
+| Metric | Description | Weight in Analysis |
+|--------|-------------|-------------------|
+| Total login attempts | Overall authentication activity | Context indicator |
+| Failed attempts | Number of unsuccessful logins | High impact |
+| Successful attempts | Legitimate access events | Positive signal |
+| Unique IP addresses | Diversity of access sources | Context indicator |
+| Suspicious IPs | IPs with 3+ consecutive failures | High impact |
+| Recent failed from same IP | Concentrated attack patterns | Critical indicator |
+| Active threats | MITRE ATT&CK detections | Critical impact |
+| High severity threats | Brute force, credential stuffing | Maximum impact |
+| MITRE techniques | Specific attack patterns identified | Qualitative context |
+
+**AI Processing Pipeline:**
+1. **Structured Prompt**: Security metrics are formatted into a structured prompt with clear instructions for JSON output
+2. **Contextual Analysis**: Gemini 2.5 Pro evaluates the metrics holistically, considering relationships between different indicators
+3. **Risk Calculation**: The model weighs factors based on severity and produces a 0-100 score
+4. **Classification**: Score is mapped to risk levels (0-24: low, 25-49: medium, 50-74: high, 75-100: critical)
+5. **Explanation Generation**: The model provides human-readable summary, contributing factors, and actionable recommendations
+
+**Accuracy Considerations:**
+- **Strengths**: Gemini 2.5 Pro excels at pattern recognition and contextual understanding, making it effective at identifying subtle attack patterns that rule-based systems might miss
+- **Calibration**: The system prompt includes explicit scoring guidelines to ensure consistent output across different security scenarios
+- **Validation**: Risk assessments are validated against known attack patterns in the MITRE ATT&CK framework
+- **Limitations**: AI assessments are advisory and should be combined with traditional security monitoring; the model may not detect zero-day attack patterns not represented in its training data
+- **Confidence**: For common attack patterns (brute force, credential stuffing), accuracy is high (estimated 85-95%); for novel or sophisticated attacks, manual review is recommended
 
 The AI Risk Score component (`AIRiskScore.tsx`) invokes the `analyze-security` edge function, which:
 1. Aggregates security metrics (login stats, threat counts, suspicious IPs)
