@@ -471,9 +471,12 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
         });
 
-        // Offset guest marker slightly if there's also a failed login marker at same location
-        const offsetLon = loc.failedLoginCount > 0 ? loc.lon + 0.5 : loc.lon;
-        const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, loc.lat]).addTo(securityMap.current!);
+        // Offset guest marker if there's also a failed login marker at same location
+        // Use a larger offset (2 degrees) and offset in both directions for better visibility
+        const hasFailedMarker = loc.failedLoginCount > 0;
+        const offsetLon = hasFailedMarker ? loc.lon + 2 : loc.lon;
+        const offsetLat = hasFailedMarker ? loc.lat - 1.5 : loc.lat;
+        const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, offsetLat]).addTo(securityMap.current!);
         securityMarkersRef.current.push(guestMarker);
       }
     });
