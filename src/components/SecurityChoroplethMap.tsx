@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Globe, MapPin, AlertTriangle, CheckCircle, Clock, Monitor, User, ChevronDown, ChevronUp, Eye, Shield } from "lucide-react";
+import { Globe, MapPin, AlertTriangle, CheckCircle, Clock, Monitor, User, ChevronDown, ChevronUp, Eye, Shield, EyeOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LoginAttempt {
@@ -80,6 +82,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   const [showAllSuccessLogs, setShowAllSuccessLogs] = useState(false);
   const [showAllSecurityLogs, setShowAllSecurityLogs] = useState(false);
   const [securityFilter, setSecurityFilter] = useState<'all' | 'failed_login' | 'guest_visit'>('all');
+  const [showGuestMarkers, setShowGuestMarkers] = useState(true);
 
   // Fetch Mapbox token
   useEffect(() => {
@@ -408,7 +411,15 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     securityMarkersRef.current.forEach(marker => marker.remove());
     securityMarkersRef.current = [];
 
+    // Remove existing connector lines
+    if (securityMap.current.getSource('connector-lines')) {
+      securityMap.current.removeLayer('connector-lines-layer');
+      securityMap.current.removeSource('connector-lines');
+    }
+
     if (securityLocations.length === 0) return;
+
+    const connectorFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
 
     securityLocations.forEach(loc => {
       // Create separate markers for failed logins and guest visits at the same location
@@ -445,7 +456,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       }
 
       // Guest visit marker (blue) - offset slightly if both exist at same location
-      if (loc.guestVisitCount > 0) {
+      if (loc.guestVisitCount > 0 && showGuestMarkers) {
         const guestSize = Math.min(20 + loc.guestVisitCount * 5, 50);
         const guestEl = document.createElement('div');
         guestEl.className = 'cursor-pointer';
@@ -478,9 +489,46 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         const offsetLat = hasFailedMarker ? loc.lat - 1.5 : loc.lat;
         const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, offsetLat]).addTo(securityMap.current!);
         securityMarkersRef.current.push(guestMarker);
+
+        // Add connector line if both markers exist at same location
+        if (hasFailedMarker) {
+          connectorFeatures.push({
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [loc.lon, loc.lat],
+                [offsetLon, offsetLat]
+              ]
+            }
+          });
+        }
       }
     });
-  }, [securityLocations]);
+
+    // Add connector lines to the map
+    if (connectorFeatures.length > 0 && securityMap.current.isStyleLoaded()) {
+      securityMap.current.addSource('connector-lines', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: connectorFeatures
+        }
+      });
+
+      securityMap.current.addLayer({
+        id: 'connector-lines-layer',
+        type: 'line',
+        source: 'connector-lines',
+        paint: {
+          'line-color': 'rgba(168, 85, 247, 0.6)',
+          'line-width': 2,
+          'line-dasharray': [2, 2]
+        }
+      });
+    }
+  }, [securityLocations, showGuestMarkers]);
 
   const parseBrowser = (userAgent: string | null): string => {
     if (!userAgent) return 'Unknown';
@@ -771,14 +819,32 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                 <span className="text-blue-400">{stats.guestVisits} Guests</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
-                <span>Failed</span>
+            <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground mt-2">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
+                  <span>Failed</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]" />
+                  <span>Guests</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-0.5 bg-purple-400/60" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 2px, currentColor 2px, currentColor 4px)' }} />
+                  <span>Same IP</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]" />
-                <span>Guests</span>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-guests"
+                  checked={showGuestMarkers}
+                  onCheckedChange={setShowGuestMarkers}
+                  className="scale-75"
+                />
+                <Label htmlFor="show-guests" className="text-xs cursor-pointer flex items-center gap-1">
+                  {showGuestMarkers ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  Guests
+                </Label>
               </div>
             </div>
           </CardHeader>
