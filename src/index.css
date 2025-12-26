@@ -282,3 +282,16 @@
     border-color: transparent;
   }
 }
+
+/* Mapbox Same IP Popup Styling */
+.same-ip-popup .mapboxgl-popup-content {
+  background: hsl(230 25% 9%);
+  border: 1px solid hsl(280 85% 60% / 0.5);
+  border-radius: 8px;
+  box-shadow: 0 0 20px hsl(280 85% 60% / 0.3);
+  padding: 0;
+}
+
+.same-ip-popup .mapboxgl-popup-tip {
+  border-top-color: hsl(230 25% 9%);
+}

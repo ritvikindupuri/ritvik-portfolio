@@ -70,6 +70,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   const securityMapContainer = useRef<HTMLDivElement>(null);
   const securityMap = useRef<mapboxgl.Map | null>(null);
   const securityMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const securityPopupRef = useRef<mapboxgl.Popup | null>(null);
   
   const [successLocations, setSuccessLocations] = useState<IPLocation[]>([]);
   const [securityLocations, setSecurityLocations] = useState<IPLocation[]>([]);
@@ -494,7 +495,14 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         if (hasFailedMarker) {
           connectorFeatures.push({
             type: 'Feature',
-            properties: { type: 'same-ip' },
+            properties: { 
+              type: 'same-ip',
+              ip: loc.ip,
+              city: loc.city,
+              country: loc.country,
+              failedCount: loc.failedLoginCount,
+              guestCount: loc.guestVisitCount
+            },
             geometry: {
               type: 'LineString',
               coordinates: [
@@ -525,6 +533,64 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           'line-color': 'rgba(168, 85, 247, 0.9)',
           'line-width': 3,
           'line-dasharray': [4, 3]
+        }
+      });
+
+      // Add hover interaction for connector lines
+      const map = securityMap.current;
+      
+      map.on('mouseenter', 'connector-lines-layer', (e) => {
+        map.getCanvas().style.cursor = 'pointer';
+        
+        if (e.features && e.features[0]) {
+          const props = e.features[0].properties;
+          const coordinates = e.lngLat;
+          
+          // Remove existing popup if any
+          if (securityPopupRef.current) {
+            securityPopupRef.current.remove();
+          }
+          
+          const popupContent = `
+            <div style="padding: 8px; font-family: system-ui, sans-serif; min-width: 180px;">
+              <div style="font-weight: 600; color: #a855f7; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 12px;">🔗</span> Same IP Connection
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">
+                <span style="font-weight: 500; color: #e2e8f0;">IP:</span> ${props?.ip || 'Unknown'}
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">
+                <span style="font-weight: 500; color: #e2e8f0;">Location:</span> ${props?.city || 'Unknown'}, ${props?.country || 'Unknown'}
+              </div>
+              <div style="display: flex; gap: 12px; font-size: 11px;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+                  <span style="color: #f87171;">${props?.failedCount || 0} failed</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span>
+                  <span style="color: #60a5fa;">${props?.guestCount || 0} guests</span>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          securityPopupRef.current = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            className: 'same-ip-popup'
+          })
+            .setLngLat(coordinates)
+            .setHTML(popupContent)
+            .addTo(map);
+        }
+      });
+      
+      map.on('mouseleave', 'connector-lines-layer', () => {
+        map.getCanvas().style.cursor = '';
+        if (securityPopupRef.current) {
+          securityPopupRef.current.remove();
+          securityPopupRef.current = null;
         }
       });
     }
