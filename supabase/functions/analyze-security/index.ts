@@ -148,15 +148,25 @@ Provide your analysis as a JSON object.`;
     // Parse JSON from the response
     let analysisResult;
     try {
-      // Try to extract JSON from the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      // Strip markdown code blocks if present (```json ... ``` or ``` ... ```)
+      let cleanedContent = content.trim();
+      if (cleanedContent.startsWith("```")) {
+        // Remove opening code block (```json or ```)
+        cleanedContent = cleanedContent.replace(/^```(?:json)?\s*\n?/, "");
+        // Remove closing code block
+        cleanedContent = cleanedContent.replace(/\n?```\s*$/, "");
+      }
+      
+      // Try to extract JSON from the cleaned response
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         analysisResult = JSON.parse(jsonMatch[0]);
+        console.log("Successfully parsed AI response");
       } else {
         throw new Error("No JSON found in response");
       }
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
+      console.error("Failed to parse AI response:", content.substring(0, 200));
       // Provide fallback response
       if (type === "security") {
         analysisResult = {
