@@ -490,11 +490,11 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, offsetLat]).addTo(securityMap.current!);
         securityMarkersRef.current.push(guestMarker);
 
-        // Add connector line if both markers exist at same location
+        // Add connector line if both markers exist at same location (same IP)
         if (hasFailedMarker) {
           connectorFeatures.push({
             type: 'Feature',
-            properties: {},
+            properties: { type: 'same-ip' },
             geometry: {
               type: 'LineString',
               coordinates: [
@@ -522,9 +522,9 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         type: 'line',
         source: 'connector-lines',
         paint: {
-          'line-color': 'rgba(168, 85, 247, 0.6)',
-          'line-width': 2,
-          'line-dasharray': [2, 2]
+          'line-color': 'rgba(168, 85, 247, 0.9)',
+          'line-width': 3,
+          'line-dasharray': [4, 3]
         }
       });
     }
