@@ -60,13 +60,18 @@ const handler = async (req: Request): Promise<Response> => {
     let userPrompt = "";
 
     if (type === "security") {
-      systemPrompt = `You are a cybersecurity analyst providing brief, actionable security assessments. 
+      systemPrompt = `You are a cybersecurity analyst providing brief, actionable security assessments.
 Analyze the provided security metrics and respond with a JSON object containing:
 1. riskScore: A number from 0-100 representing overall risk level
 2. riskLevel: One of "low", "medium", "high", "critical"
 3. summary: A 1-2 sentence summary of the security posture
 4. factors: An array of 3-5 key factors contributing to the risk score
 5. recommendation: A single actionable recommendation
+
+Output MUST be valid JSON that can be parsed by JSON.parse().
+- Return ONLY the JSON object (no markdown, no code fences, no extra text)
+- Use double quotes for all strings
+- Do not include trailing commas
 
 Be concise and focus on the most important security implications.`;
 
@@ -90,6 +95,11 @@ Analyze the provided visitor metrics and respond with a JSON object containing:
 3. summary: A 1-2 sentence summary of visitor engagement patterns
 4. insights: An array of 3-4 key insights about visitor behavior
 5. suggestion: A single suggestion to improve engagement
+
+Output MUST be valid JSON that can be parsed by JSON.parse().
+- Return ONLY the JSON object (no markdown, no code fences, no extra text)
+- Use double quotes for all strings
+- Do not include trailing commas
 
 Be concise and focus on actionable insights.`;
 
@@ -143,47 +153,83 @@ Provide your analysis as a JSON object.`;
     }
 
     const aiResponse = await response.json();
+    const finishReason = aiResponse.choices?.[0]?.finish_reason;
     const content = aiResponse.choices?.[0]?.message?.content || "";
+    console.log("AI finish_reason:", finishReason);
 
-    // Parse JSON from the response
+    const parseJsonFromContent = (raw: string) => {
+      let cleaned = (raw || "").trim();
+      if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "");
+        cleaned = cleaned.replace(/\n?```\s*$/, "");
+      }
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON found in AI response");
+      return JSON.parse(jsonMatch[0]);
+    };
+
+    // Parse JSON from the response (retry once with a stricter prompt if needed)
     let analysisResult;
     try {
-      // Strip markdown code blocks if present (```json ... ``` or ``` ... ```)
-      let cleanedContent = content.trim();
-      if (cleanedContent.startsWith("```")) {
-        // Remove opening code block (```json or ```)
-        cleanedContent = cleanedContent.replace(/^```(?:json)?\s*\n?/, "");
-        // Remove closing code block
-        cleanedContent = cleanedContent.replace(/\n?```\s*$/, "");
-      }
-      
-      // Try to extract JSON from the cleaned response
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        analysisResult = JSON.parse(jsonMatch[0]);
-        console.log("Successfully parsed AI response");
-      } else {
-        throw new Error("No JSON found in response");
-      }
+      analysisResult = parseJsonFromContent(content);
+      console.log("Successfully parsed AI response");
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content.substring(0, 200));
-      // Provide fallback response
-      if (type === "security") {
-        analysisResult = {
-          riskScore: data.threats?.highSeverity ? 75 : (data.loginAttempts?.failed || 0) > 5 ? 50 : 25,
-          riskLevel: data.threats?.highSeverity ? "high" : "medium",
-          summary: "Unable to generate detailed analysis. Basic metrics indicate moderate security posture.",
-          factors: ["Manual review recommended"],
-          recommendation: "Review login attempt patterns manually."
-        };
-      } else {
-        analysisResult = {
-          engagementScore: 50,
-          engagementLevel: "moderate",
-          summary: "Unable to generate detailed analysis.",
-          insights: ["Manual review recommended"],
-          suggestion: "Review visitor patterns manually."
-        };
+      console.error("Failed to parse AI response (attempt 1):", content.substring(0, 200));
+
+      try {
+        console.log(`Retrying ${type} analysis with google/gemini-2.5-flash (strict JSON)...`);
+
+        const retrySystemPrompt = `You output ONLY valid JSON (no markdown, no code fences, no extra text).\nReturn a single JSON object matching the requested schema exactly.\nUse double quotes for strings. No trailing commas.`;
+
+        const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: retrySystemPrompt },
+              { role: "user", content: `${systemPrompt}\n\n${userPrompt}` },
+            ],
+            temperature: 0.1,
+            max_tokens: 400,
+          }),
+        });
+
+        if (!retryResponse.ok) {
+          const errorText = await retryResponse.text();
+          console.error("AI retry error:", retryResponse.status, errorText);
+          throw new Error(`AI retry error: ${retryResponse.status}`);
+        }
+
+        const retryAiResponse = await retryResponse.json();
+        const retryContent = retryAiResponse.choices?.[0]?.message?.content || "";
+
+        analysisResult = parseJsonFromContent(retryContent);
+        console.log("Successfully parsed AI response (attempt 2)");
+      } catch (retryError) {
+        console.error("AI retry/parse failed, falling back to heuristic analysis:", retryError);
+
+        // Provide fallback response
+        if (type === "security") {
+          analysisResult = {
+            riskScore: data.threats?.highSeverity ? 75 : (data.loginAttempts?.failed || 0) > 5 ? 50 : 25,
+            riskLevel: data.threats?.highSeverity ? "high" : "medium",
+            summary: "Unable to generate detailed analysis. Basic metrics indicate moderate security posture.",
+            factors: ["Manual review recommended"],
+            recommendation: "Review login attempt patterns manually.",
+          };
+        } else {
+          analysisResult = {
+            engagementScore: 50,
+            engagementLevel: "moderate",
+            summary: "Unable to generate detailed analysis.",
+            insights: ["Manual review recommended"],
+            suggestion: "Review visitor patterns manually.",
+          };
+        }
       }
     }
 
