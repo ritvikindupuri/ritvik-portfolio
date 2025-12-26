@@ -769,7 +769,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="relative w-full h-48 md:h-64">
+            <div className="relative w-full h-64 md:h-80 lg:h-96">
               {mapboxToken ? (
                 <div ref={successMapContainer} className="absolute inset-0" />
               ) : (
@@ -849,7 +849,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="relative w-full h-48 md:h-64">
+            <div className="relative w-full h-64 md:h-80 lg:h-96">
               {mapboxToken ? (
                 <div ref={securityMapContainer} className="absolute inset-0" />
               ) : (
