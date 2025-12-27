@@ -430,7 +430,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
 
       const connectorFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
 
-    securityLocations.forEach(loc => {
+      securityLocations.forEach(loc => {
       // Create separate markers for failed logins and guest visits at the same location
       
       // Failed login marker (red)
