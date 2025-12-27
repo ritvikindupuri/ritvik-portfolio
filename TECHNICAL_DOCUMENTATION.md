@@ -526,7 +526,7 @@ The weekly digest email includes five main sections:
 ### Threat Detection Panel
 
 <p align="center">
-  <img src="https://imgur.com/Z8tiQri.png" alt="MITRE ATT&CK Threat Detection" width="800"/>
+  <img src="https://imgur.com/95toIwL.png" alt="MITRE ATT&CK Threat Detection" width="800"/>
 </p>
 
 **Figure 6: MITRE ATT&CK Threat Detection Panel** - Real-time threat analysis displays:
@@ -556,17 +556,16 @@ The weekly digest email includes five main sections:
 
 ### Visitor Alert Email
 
+<p align="center">
+  <img src="https://imgur.com/FsWUW6D.png" alt="Visitor Alert Email" width="600"/>
+</p>
+
 **Figure 8: Visitor Alert Email** - This automated email is sent when a visitor reaches 5 or more tracked actions during their session. The email includes:
 
-- **Header**: "New Visitor Alert" with the portfolio branding and timestamp
-- **Session Information**: The unique session ID (e.g., "vs_1718234567890_abc123def") and the visitor's IP address if captured
-- **Activity Summary Table**: A structured list showing each action the visitor performed, including:
-  - Activity type (section_view, chatbot_query, resume_download, project_click)
-  - Associated data (section name, query text, project name)
-  - Timestamp for each action
-- **Chatbot Queries Section**: If the visitor asked questions, a dedicated section lists all queries with their exact text, providing insight into what information they were seeking
-- **Visitor Email**: If the visitor submitted the contact form, their email address is included
-- **Footer**: Clean HTML formatting consistent with the portfolio's visual branding
+- **Header**: "Portfolio Visitor Alert" with the portfolio branding and timestamp
+- **Visitor Information**: Location, IP address, email (if provided), session ID, and timestamp
+- **Session Summary**: Quick metrics showing total activities, resume views, downloads, and chatbot queries
+- **Activity Log**: A structured list showing each action the visitor performed with timestamps and details
 
 This email enables the portfolio owner to understand visitor intent and engagement patterns in real-time.
 
@@ -574,30 +573,44 @@ This email enables the portfolio owner to understand visitor intent and engageme
 
 ### Threat Alert Email
 
+<p align="center">
+  <img src="https://imgur.com/cCdaHSd.png" alt="Security Threat Detected Email" width="600"/>
+</p>
+
 **Figure 9: Security Threat Alert Email** - This critical security notification is sent immediately when the threat detector identifies high-severity attacks with sufficient confidence. The email includes:
 
-- **Header**: "SECURITY THREAT DETECTED" with red alert styling and priority indicators
+- **Header**: "Security Threat Detected" with red alert styling showing severity and threat count
 - **Attacker Information Section**:
-  - Email address used in the attack attempts
+  - Email/Account used in the attack attempts
   - Source IP address
-  - Geographic location (if resolved)
-- **Attack Timeline Table**: Chronological list of all login attempts from the attacker, showing:
+  - Name (if known)
+  - Detection time with timestamp
+- **Login Attempt Log**: Chronological table showing all authentication attempts with:
   - Timestamp of each attempt
-  - Email used
-  - Success/Failure status
-  - Failure reason for each attempt
+  - Status (Success/Failed with reason)
+  - User Agent information for forensic analysis
+
+<p align="center">
+  <img src="https://imgur.com/ZMJWVqT.png" alt="MITRE ATT&CK Threat Analysis" width="600"/>
+</p>
+
+**Figure 9b: MITRE ATT&CK Threat Analysis** - The email continues with detailed threat analysis:
+
 - **MITRE ATT&CK Analysis Section**:
-  - Technique ID (e.g., T1110)
-  - Technique Name (e.g., Brute Force)
+  - Technique ID (e.g., T1110.001)
+  - Technique Name (e.g., Password Guessing)
   - Tactic Category (e.g., Credential Access)
-  - Severity Level with color coding (Critical/High/Medium/Low)
-  - Confidence Score percentage (e.g., 95%)
+  - Severity Level badge (HIGH)
+  - Confidence Score percentage (e.g., 60%)
   - Evidence list supporting the detection
-- **Remediation Steps Section**: Actionable security recommendations based on the detected technique, such as:
-  - "Implement account lockout after N failed attempts"
-  - "Consider enabling multi-factor authentication"
-  - "Block the source IP address at the firewall level"
-  - "Review all recent successful logins for signs of compromise"
+- **Recommended Actions Section**: Actionable security recommendations including:
+  - Password policy enforcement
+  - Password strength meters implementation
+  - Breach database checking
+  - Account lockout policies
+  - MFA enablement
+- **Reference Documentation**: Links to MITRE ATT&CK framework documentation
+- **Action Footer**: Clear call-to-action for immediate response
 
 This email provides the portfolio owner with all information needed to assess and respond to security threats immediately.
 
