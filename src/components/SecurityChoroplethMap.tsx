@@ -409,18 +409,26 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   useEffect(() => {
     if (!securityMap.current) return;
 
-    securityMarkersRef.current.forEach(marker => marker.remove());
-    securityMarkersRef.current = [];
+    const addMarkersAndConnectors = () => {
+      if (!securityMap.current) return;
+      
+      securityMarkersRef.current.forEach(marker => marker.remove());
+      securityMarkersRef.current = [];
 
-    // Remove existing connector lines
-    if (securityMap.current.getSource('connector-lines')) {
-      securityMap.current.removeLayer('connector-lines-layer');
-      securityMap.current.removeSource('connector-lines');
-    }
+      // Remove existing connector lines and glow layer
+      if (securityMap.current.getLayer('connector-lines-layer')) {
+        securityMap.current.removeLayer('connector-lines-layer');
+      }
+      if (securityMap.current.getLayer('connector-lines-glow')) {
+        securityMap.current.removeLayer('connector-lines-glow');
+      }
+      if (securityMap.current.getSource('connector-lines')) {
+        securityMap.current.removeSource('connector-lines');
+      }
 
-    if (securityLocations.length === 0) return;
+      if (securityLocations.length === 0) return;
 
-    const connectorFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+      const connectorFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
 
     securityLocations.forEach(loc => {
       // Create separate markers for failed logins and guest visits at the same location
@@ -622,6 +630,14 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           securityPopupRef.current = null;
         }
       });
+    }
+    };
+
+    // Wait for style to load before adding connector lines
+    if (securityMap.current.isStyleLoaded()) {
+      addMarkersAndConnectors();
+    } else {
+      securityMap.current.once('style.load', addMarkersAndConnectors);
     }
   }, [securityLocations, showGuestMarkers]);
 
