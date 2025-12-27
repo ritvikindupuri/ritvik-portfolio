@@ -903,6 +903,18 @@ export const VisitorDashboard = () => {
                                           detail: activity.activity_data?.project_name || 'Project',
                                           color: 'text-green-400'
                                         };
+                                      case 'section_duration':
+                                        const durationSecs = activity.activity_data?.duration_seconds || 0;
+                                        const sectionName = activity.activity_data?.section || 'Unknown';
+                                        const durationDisplay = durationSecs < 60 
+                                          ? `${durationSecs}s` 
+                                          : `${Math.floor(durationSecs / 60)}m ${durationSecs % 60}s`;
+                                        return {
+                                          icon: <Clock className="w-3 h-3" />,
+                                          label: `Spent ${durationDisplay} on`,
+                                          detail: sectionName,
+                                          color: 'text-amber-400'
+                                        };
                                       default:
                                         return {
                                           icon: <Activity className="w-3 h-3" />,
