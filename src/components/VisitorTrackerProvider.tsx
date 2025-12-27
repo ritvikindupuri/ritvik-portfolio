@@ -29,6 +29,15 @@ const getSessionId = (): string => {
   return sessionId;
 };
 
+// Recruiter likelihood keywords
+const RECRUITER_KEYWORDS = [
+  'experience', 'resume', 'skills', 'work', 'projects', 'contact', 
+  'hire', 'job', 'position', 'role', 'team', 'available', 'salary', 'rate'
+];
+
+// Professional sections that indicate recruiter interest
+const PROFESSIONAL_SECTIONS = ['experience', 'skills', 'certifications', 'about', 'contact'];
+
 interface VisitorTrackerProviderProps {
   children: React.ReactNode;
   isOwner: boolean;
@@ -39,7 +48,83 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
   const chatbotQueriesRef = useRef<string[]>([]);
   const sessionIdRef = useRef<string>(getSessionId());
   const alertSentRef = useRef<boolean>(false);
+  const recruiterAlertSentRef = useRef<boolean>(false);
   const activityCountRef = useRef<number>(0);
+  const sessionStartRef = useRef<Date>(new Date());
+  
+  // Track specific metrics for recruiter scoring
+  const resumeViewsRef = useRef<number>(0);
+  const resumeDownloadsRef = useRef<number>(0);
+  const sectionsViewedRef = useRef<string[]>([]);
+
+  // Calculate recruiter likelihood score
+  const calculateRecruiterScore = useCallback(() => {
+    let score = 0;
+    
+    // Signal 1: Resume interactions (strong signal - 30 points for download)
+    if (resumeDownloadsRef.current > 0) score += 30;
+    if (resumeViewsRef.current > 0) score += 15;
+    
+    // Signal 2: Relevant chatbot queries
+    const recruiterQueries = chatbotQueriesRef.current.filter(q => 
+      RECRUITER_KEYWORDS.some(kw => q.toLowerCase().includes(kw))
+    );
+    if (recruiterQueries.length > 0) {
+      score += Math.min(recruiterQueries.length * 15, 30);
+    }
+    
+    // Signal 3: Viewed relevant sections
+    const viewedProfessionalSections = sectionsViewedRef.current.filter(s => 
+      PROFESSIONAL_SECTIONS.some(ps => s.toLowerCase().includes(ps))
+    );
+    score += Math.min(viewedProfessionalSections.length * 10, 20);
+    
+    // Signal 4: Session duration (3+ minutes)
+    const sessionDuration = Math.round((new Date().getTime() - sessionStartRef.current.getTime()) / 1000 / 60);
+    if (sessionDuration >= 3) score += 10;
+    
+    // Signal 5: Multiple chatbot interactions
+    if (chatbotQueriesRef.current.length >= 3) score += 10;
+    
+    return score;
+  }, []);
+
+  // Send recruiter-specific alert
+  const sendRecruiterAlert = useCallback(async () => {
+    if (recruiterAlertSentRef.current || isOwner) return;
+    
+    const score = calculateRecruiterScore();
+    if (score < 50) return; // Only alert for likely recruiters
+    
+    recruiterAlertSentRef.current = true;
+    
+    const sessionDuration = Math.round((new Date().getTime() - sessionStartRef.current.getTime()) / 1000 / 60);
+    
+    try {
+      const { error } = await supabase.functions.invoke('send-recruiter-alert', {
+        body: {
+          session_id: sessionIdRef.current,
+          recruiter_score: score,
+          activities: activitiesRef.current,
+          chatbot_queries: chatbotQueriesRef.current,
+          sections_viewed: sectionsViewedRef.current,
+          resume_views: resumeViewsRef.current,
+          resume_downloads: resumeDownloadsRef.current,
+          session_duration_minutes: sessionDuration
+        }
+      });
+
+      if (error) {
+        console.error('Error sending recruiter alert:', error);
+        recruiterAlertSentRef.current = false;
+      } else {
+        console.log('Recruiter alert sent for score:', score);
+      }
+    } catch (e) {
+      console.error('Failed to send recruiter alert:', e);
+      recruiterAlertSentRef.current = false;
+    }
+  }, [isOwner, calculateRecruiterScore]);
 
   // Track activity (only for guests)
   const trackActivity = useCallback((type: string, data: any = {}) => {
@@ -66,11 +151,17 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
         if (error) console.error('Error logging activity:', error);
       });
 
-    // Send alert after significant activity (5+ actions)
+    // Send general alert after significant activity (5+ actions)
     if (activityCountRef.current >= 5 && !alertSentRef.current) {
       sendVisitorAlert();
     }
-  }, [isOwner]);
+    
+    // Check for recruiter alert after each activity
+    const score = calculateRecruiterScore();
+    if (score >= 50 && !recruiterAlertSentRef.current) {
+      sendRecruiterAlert();
+    }
+  }, [isOwner, calculateRecruiterScore, sendRecruiterAlert]);
 
   // Track chatbot query
   const trackChatbotQuery = useCallback((query: string) => {
@@ -80,11 +171,13 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
 
   // Track resume view
   const trackResumeView = useCallback((resumeName: string) => {
+    resumeViewsRef.current++;
     trackActivity('resume_view', { resume_name: resumeName });
   }, [trackActivity]);
 
   // Track resume download
   const trackResumeDownload = useCallback((resumeName: string) => {
+    resumeDownloadsRef.current++;
     trackActivity('resume_download', { resume_name: resumeName });
   }, [trackActivity]);
 
@@ -100,6 +193,9 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
 
   // Track section view
   const trackSectionView = useCallback((sectionName: string) => {
+    if (!sectionsViewedRef.current.includes(sectionName)) {
+      sectionsViewedRef.current.push(sectionName);
+    }
     trackActivity('section_view', { section: sectionName });
   }, [trackActivity]);
 

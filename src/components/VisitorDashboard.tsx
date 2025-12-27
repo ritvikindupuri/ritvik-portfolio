@@ -27,6 +27,7 @@ import { ChatbotQueryAnalysis } from "@/components/ChatbotQueryAnalysis";
 import { AIVisitorInsights } from "@/components/AIVisitorInsights";
 import { VisitorJourneyFlow } from "@/components/VisitorJourneyFlow";
 import { VisitorSankeyDiagram } from "@/components/VisitorSankeyDiagram";
+import { RecruiterFunnel } from "@/components/RecruiterFunnel";
 
 interface VisitorActivity {
   id: string;
@@ -813,6 +814,9 @@ export const VisitorDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Recruiter Funnel Analysis */}
+      <RecruiterFunnel activities={activities} />
 
       {/* Chatbot Query Analysis */}
       <ChatbotQueryAnalysis />

@@ -1683,6 +1683,55 @@ const getVisitorType = () => {
 
 Each session can be expanded to reveal a full **Activity Timeline** showing exactly what the visitor did, in chronological order with timestamps.
 
+### Recruiter Funnel Visualization
+
+The `RecruiterFunnel.tsx` component provides a visual pipeline showing how visitors progress through recruiting signals:
+
+**Funnel Stages**:
+1. **Total Visitors** → All unique sessions
+2. **Professional Section Views** → Viewed Experience/Skills/Certifications/About/Contact
+3. **Resume Views** → Opened the resume
+4. **Resume Downloads** → Downloaded the resume
+
+**Code Structure**:
+
+```typescript
+// Track unique sessions at each stage
+const funnelData = useMemo(() => {
+  const allSessions = new Set(activities.map(a => a.session_id));
+  
+  // Stage 1: Professional sections
+  const sessionsWithProfessionalViews = new Set<string>();
+  activities.filter(a => a.activity_type === 'section_view').forEach(a => {
+    if (professionalSections.some(ps => section.includes(ps))) {
+      sessionsWithProfessionalViews.add(a.session_id);
+    }
+  });
+
+  // Stage 2: Resume views
+  const sessionsWithResumeView = new Set<string>();
+  activities.filter(a => a.activity_type === 'resume_view')
+    .forEach(a => sessionsWithResumeView.add(a.session_id));
+
+  // Stage 3: Resume downloads
+  const sessionsWithResumeDownload = new Set<string>();
+  activities.filter(a => a.activity_type === 'resume_download')
+    .forEach(a => sessionsWithResumeDownload.add(a.session_id));
+  
+  return [allSessions, sessionsWithProfessionalViews, 
+          sessionsWithResumeView, sessionsWithResumeDownload];
+}, [activities]);
+```
+
+**Visual Elements**:
+- Animated progress bars showing funnel width
+- Conversion rate badges between stages
+- Color-coded status (green ≥50%, amber ≥25%, red <25%)
+- Overall funnel efficiency percentage
+- Insights panel with optimization recommendations
+
+**Code Location**: `src/components/RecruiterFunnel.tsx`
+
 ---
 
 ## Security Monitoring
@@ -1785,7 +1834,63 @@ Three types of automated emails are sent via **Resend** (edge functions):
 - All chatbot queries asked
 - Visitor email (if provided via contact form)
 
-### 2. Threat Alert Email (`send-threat-alert`)
+### 2. Recruiter Alert Email (`send-recruiter-alert`)
+
+**Trigger**: Automatically sent when a visitor's **recruiter likelihood score reaches 50+ points**.
+
+**Scoring System** (calculated in `VisitorTrackerProvider.tsx`):
+
+| Signal | Points | Max Points |
+|--------|--------|------------|
+| Resume Download | +30 | 30 |
+| Resume View | +15 | 15 |
+| Recruiting-related chatbot queries | +15 each | 30 |
+| Professional sections viewed | +10 each | 20 |
+| Session duration ≥3 minutes | +10 | 10 |
+| 3+ chatbot interactions | +10 | 10 |
+
+**Score Thresholds**:
+- **50+ points**: Likely Recruiter → Email alert triggered
+- **70+ points**: High Confidence → Highlighted in email
+
+**Email Structure**:
+
+```
+┌─────────────────────────────────────────────┐
+│  🎯 LIKELY RECRUITER Badge                  │
+│  "Recruiter Detected!" Header               │
+│  Score: X/100 points                        │
+├─────────────────────────────────────────────┤
+│  📊 CONFIDENCE SIGNALS                      │
+│  ✓ Downloaded resume Xx                     │
+│  ✓ Viewed resume Xx                         │
+│  ✓ Viewed X professional sections           │
+│  ✓ X+ min session                           │
+│  ✓ Asked X recruiting-related questions     │
+├─────────────────────────────────────────────┤
+│  📈 RECRUITER FUNNEL PROGRESS               │
+│  📄 Sections Viewed: X  ✅                  │
+│  👁️ Resume Views: X     ✅                  │
+│  📥 Resume Downloads: X ✅                  │
+│  [Progress bars for each stage]             │
+├─────────────────────────────────────────────┤
+│  📍 VISITOR DETAILS                         │
+│  Location, IP, Session Duration, Actions    │
+├─────────────────────────────────────────────┤
+│  🔍 RECRUITING-RELATED QUESTIONS            │
+│  "What experience do you have?"             │
+│  "Are you available for hire?"              │
+│  [Up to 5 queries displayed]                │
+├─────────────────────────────────────────────┤
+│  🚀 Call-to-action box                      │
+│  "This visitor shows strong recruiting      │
+│   intent! Check your dashboard..."          │
+└─────────────────────────────────────────────┘
+```
+
+**Code Location**: `supabase/functions/send-recruiter-alert/index.ts`
+
+### 3. Threat Alert Email (`send-threat-alert`)
 
 **Trigger**: Automatically sent when the threat detector identifies **high-severity threats** with **60% or greater confidence**.
 
