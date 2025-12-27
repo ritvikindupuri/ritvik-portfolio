@@ -525,6 +525,18 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         }
       });
 
+      // Add glowing base layer for connector lines
+      securityMap.current.addLayer({
+        id: 'connector-lines-glow',
+        type: 'line',
+        source: 'connector-lines',
+        paint: {
+          'line-color': 'rgba(168, 85, 247, 0.4)',
+          'line-width': 8,
+          'line-blur': 4
+        }
+      });
+
       securityMap.current.addLayer({
         id: 'connector-lines-layer',
         type: 'line',
@@ -535,6 +547,23 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           'line-dasharray': [4, 3]
         }
       });
+
+      // Animate the glow effect with pulsing
+      let glowOpacity = 0.4;
+      let glowDirection = 1;
+      const animateGlow = () => {
+        if (!securityMap.current || !securityMap.current.getLayer('connector-lines-glow')) return;
+        
+        glowOpacity += 0.02 * glowDirection;
+        if (glowOpacity >= 0.8) glowDirection = -1;
+        if (glowOpacity <= 0.3) glowDirection = 1;
+        
+        securityMap.current.setPaintProperty('connector-lines-glow', 'line-color', `rgba(168, 85, 247, ${glowOpacity})`);
+        securityMap.current.setPaintProperty('connector-lines-glow', 'line-width', 6 + (glowOpacity * 6));
+        
+        requestAnimationFrame(animateGlow);
+      };
+      animateGlow();
 
       // Add hover interaction for connector lines
       const map = securityMap.current;
