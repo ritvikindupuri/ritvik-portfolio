@@ -1021,7 +1021,89 @@ const sectionDurationStats = useMemo(() => {
 5. **Sort by Engagement**: Sorts descending by average duration so most engaging sections appear first
 6. **Limit to Top 8**: Returns only the top 8 sections
 
+### Total Section Time Summary
+
+The Total Section Time Summary card provides a cumulative view of how much time ALL visitors spent on each section across all sessions. This differs from the average time per section in that it shows total engagement rather than per-visit averages.
+
+```typescript
+// Total section time summary - calculates total time across all sessions per section
+const totalSectionTime = useMemo(() => {
+  const durations: Record<string, number> = {};
+  let grandTotal = 0;
+  activities
+    .filter(a => a.activity_type === 'section_duration')
+    .forEach(a => {
+      const section = a.activity_data?.section || 'Unknown';
+      const duration = a.activity_data?.duration_seconds || 0;
+      durations[section] = (durations[section] || 0) + duration;
+      grandTotal += duration;
+    });
+  const sections = Object.entries(durations)
+    .map(([section, totalSeconds]) => ({ section, totalSeconds }))
+    .sort((a, b) => b.totalSeconds - a.totalSeconds);
+  return { sections, grandTotal };
+}, [activities]);
+```
+
+**Step-by-Step Explanation:**
+
+1. **Initialize Accumulator**: Creates a `durations` object and a `grandTotal` counter
+2. **Filter Duration Events**: Only processes `section_duration` activity types
+3. **Sum All Time**: For each duration event, adds the `duration_seconds` to both the section's running total and the grand total
+4. **Transform to Array**: Converts to sorted array with each section's total seconds
+5. **Return Both**: Returns both the per-section breakdown and the overall grand total for the summary display
+
+**Display Features:**
+- Grand total engagement time prominently displayed at the top
+- Per-section breakdown showing time in human-readable format (seconds/minutes/hours)
+- Progress bars showing percentage of total time for each section
+- Top 8 sections displayed in a responsive grid layout
+
+### High Engagement Session Filter
+
+The High Engagement Filter allows filtering visitor sessions to show only those where visitors demonstrated significant interest by spending extended time on content.
+
+**Threshold Definition:**
+```typescript
+const HIGH_ENGAGEMENT_THRESHOLD = 30; // seconds
+```
+
+A visitor is considered "high engagement" if they spent **30 or more seconds** viewing any single section. This threshold filters out quick scroll-throughs and highlights visitors who actually read content.
+
+```typescript
+// High engagement sessions - visitors who spent 30+ seconds on any section
+const highEngagementSessions = useMemo(() => {
+  return sessions.filter(session => {
+    // Check if any section_duration activity has 30+ seconds
+    return session.activities.some(activity => 
+      activity.activity_type === 'section_duration' && 
+      (activity.activity_data?.duration_seconds || 0) >= HIGH_ENGAGEMENT_THRESHOLD
+    );
+  });
+}, [sessions]);
+```
+
+**Step-by-Step Explanation:**
+
+1. **Define Threshold**: The constant `HIGH_ENGAGEMENT_THRESHOLD = 30` sets the minimum seconds required
+2. **Filter Sessions**: Uses `sessions.filter()` to keep only sessions with at least one high-engagement section view
+3. **Check Activities**: For each session, uses `some()` to check if ANY activity is a `section_duration` with 30+ seconds
+4. **Return Filtered**: Returns the filtered array of only high-engagement sessions
+
+**Why 30 Seconds?**
+- 30 seconds is considered the minimum time needed to meaningfully engage with content
+- Filters out visitors who quickly scrolled past sections
+- Identifies visitors who stopped to read/watch/interact
+- Correlates with higher likelihood of genuine interest or recruiter behavior
+
+**UI Features:**
+- Toggle button in session list header
+- Shows count of high-engagement sessions when filter is active
+- Helpful tooltip explaining the filter criteria
+- Visual feedback with green styling when filter is active
+
 ### Most Clicked Projects Calculation
+
 
 Tracks which projects generate the most engagement through GitHub/demo link clicks:
 

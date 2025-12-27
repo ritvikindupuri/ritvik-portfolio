@@ -71,6 +71,7 @@ export const VisitorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
+  const [showHighEngagementOnly, setShowHighEngagementOnly] = useState(false);
 
   useEffect(() => {
     fetchActivities();
@@ -277,6 +278,41 @@ export const VisitorDashboard = () => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [activities]);
+
+  // Total section time summary - calculates total time across all sessions per section
+  const totalSectionTime = useMemo(() => {
+    const durations: Record<string, number> = {};
+    let grandTotal = 0;
+    activities
+      .filter(a => a.activity_type === 'section_duration')
+      .forEach(a => {
+        const section = a.activity_data?.section || 'Unknown';
+        const duration = a.activity_data?.duration_seconds || 0;
+        durations[section] = (durations[section] || 0) + duration;
+        grandTotal += duration;
+      });
+    const sections = Object.entries(durations)
+      .map(([section, totalSeconds]) => ({ section, totalSeconds }))
+      .sort((a, b) => b.totalSeconds - a.totalSeconds);
+    return { sections, grandTotal };
+  }, [activities]);
+
+  // High engagement sessions - visitors who spent 30+ seconds on any section
+  const HIGH_ENGAGEMENT_THRESHOLD = 30; // seconds
+  const highEngagementSessions = useMemo(() => {
+    return sessions.filter(session => {
+      // Check if any section_duration activity has 30+ seconds
+      return session.activities.some(activity => 
+        activity.activity_type === 'section_duration' && 
+        (activity.activity_data?.duration_seconds || 0) >= HIGH_ENGAGEMENT_THRESHOLD
+      );
+    });
+  }, [sessions]);
+
+  // Filter sessions based on high engagement toggle
+  const displayedSessions = useMemo(() => {
+    return showHighEngagementOnly ? highEngagementSessions : sessions;
+  }, [showHighEngagementOnly, highEngagementSessions, sessions]);
 
   if (loading) {
     return (
@@ -691,6 +727,93 @@ export const VisitorDashboard = () => {
         </Card>
       </div>
 
+      {/* Total Section Time Summary Card */}
+      <Card className="bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-amber-500">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Timer className="w-4 h-4 text-amber-500" />
+              Total Time Spent Per Section
+            </CardTitle>
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-[280px]">
+                  <p className="font-medium mb-1">Total Section Engagement</p>
+                  <p className="text-xs text-muted-foreground">
+                    Cumulative time ALL visitors spent on each section during the selected time range. 
+                    Longer total times indicate highly engaging content.
+                  </p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Cumulative engagement time across all visitor sessions
+          </p>
+        </CardHeader>
+        <CardContent>
+          {totalSectionTime.sections.length === 0 ? (
+            <p className="text-center text-muted-foreground text-sm py-4">No duration data yet</p>
+          ) : (
+            <div className="space-y-4">
+              {/* Grand total */}
+              <div className="flex items-center justify-between p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                <span className="text-sm font-medium">Total Engagement Time</span>
+                <Badge className="bg-amber-500/20 text-amber-400 text-sm">
+                  {totalSectionTime.grandTotal < 60 
+                    ? `${totalSectionTime.grandTotal}s`
+                    : totalSectionTime.grandTotal < 3600
+                      ? `${Math.floor(totalSectionTime.grandTotal / 60)}m ${totalSectionTime.grandTotal % 60}s`
+                      : `${Math.floor(totalSectionTime.grandTotal / 3600)}h ${Math.floor((totalSectionTime.grandTotal % 3600) / 60)}m`
+                  }
+                </Badge>
+              </div>
+              
+              {/* Section breakdown */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {totalSectionTime.sections.slice(0, 8).map((item, index) => {
+                  const formatTime = (seconds: number) => {
+                    if (seconds < 60) return `${seconds}s`;
+                    if (seconds < 3600) {
+                      const mins = Math.floor(seconds / 60);
+                      const secs = seconds % 60;
+                      return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+                    }
+                    const hours = Math.floor(seconds / 3600);
+                    const mins = Math.floor((seconds % 3600) / 60);
+                    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+                  };
+                  
+                  const percentage = totalSectionTime.grandTotal > 0 
+                    ? Math.round((item.totalSeconds / totalSectionTime.grandTotal) * 100) 
+                    : 0;
+                  
+                  return (
+                    <div key={item.section} className="p-3 bg-secondary/20 rounded-lg border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs text-muted-foreground font-medium">#{index + 1}</span>
+                        <p className="text-xs font-medium truncate flex-1" title={item.section}>{item.section}</p>
+                      </div>
+                      <p className="text-lg font-bold text-amber-400">{formatTime(item.totalSeconds)}</p>
+                      <div className="w-full bg-secondary/30 rounded-full h-1 mt-2">
+                        <div 
+                          className="bg-amber-500 h-full rounded-full"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{percentage}% of total</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Chatbot Query Analysis */}
       <ChatbotQueryAnalysis />
 
@@ -710,22 +833,63 @@ export const VisitorDashboard = () => {
       {/* Sankey Flow & Drop-off Analysis */}
       <VisitorSankeyDiagram />
 
-      {/* Recent Sessions */}
+      {/* Recent Sessions with High Engagement Filter */}
       <Card className="bg-card/50 backdrop-blur-sm border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary" />
-            Recent Visitor Sessions
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary" />
+                Recent Visitor Sessions
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                {showHighEngagementOnly 
+                  ? `Showing ${highEngagementSessions.length} high-engagement sessions (${HIGH_ENGAGEMENT_THRESHOLD}s+ on any section)`
+                  : `Showing all ${sessions.length} sessions`
+                }
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setShowHighEngagementOnly(!showHighEngagementOnly)}
+                      className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors border ${
+                        showHighEngagementOnly 
+                          ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                          : 'bg-secondary/50 hover:bg-secondary border-border/50'
+                      }`}
+                    >
+                      <TrendingUp className="w-3 h-3" />
+                      High Engagement
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-[280px]">
+                    <p className="font-medium mb-1">High Engagement Filter</p>
+                    <p className="text-xs text-muted-foreground">
+                      Shows only sessions where visitors spent {HIGH_ENGAGEMENT_THRESHOLD}+ seconds 
+                      on at least one section. These are your most interested visitors.
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {sessions.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">No visitor sessions yet</p>
+          {displayedSessions.length === 0 ? (
+            <p className="text-center text-muted-foreground py-4">
+              {showHighEngagementOnly 
+                ? 'No high-engagement sessions found. Try removing the filter.'
+                : 'No visitor sessions yet'
+              }
+            </p>
           ) : (
             <div className="space-y-3 max-h-80 overflow-y-auto">
-              {sessions.slice(0, 10).map((session, index) => {
+              {displayedSessions.slice(0, 10).map((session, index) => {
                 // Generate a friendly visitor label
-                const visitorNumber = sessions.length - index;
+                const visitorNumber = displayedSessions.length - index;
                 const timeAgo = getTimeAgo(session.endTime);
                 const sessionDuration = Math.round((session.endTime.getTime() - session.startTime.getTime()) / 1000 / 60);
                 const durationText = sessionDuration < 1 ? 'Quick visit' : sessionDuration < 5 ? `${sessionDuration}m session` : `${sessionDuration}m engaged`;
