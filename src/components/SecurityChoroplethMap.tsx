@@ -431,209 +431,204 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       const connectorFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
 
       securityLocations.forEach(loc => {
-      // Create separate markers for failed logins and guest visits at the same location
-      
-      // Failed login marker (red)
-      if (loc.failedLoginCount > 0) {
-        const failedSize = Math.min(20 + loc.failedLoginCount * 5, 50);
-        const failedEl = document.createElement('div');
-        failedEl.className = 'cursor-pointer';
-        failedEl.innerHTML = `
-          <div 
-            class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
-            style="
-              width: ${failedSize}px; 
-              height: ${failedSize}px; 
-              background: rgba(239, 68, 68, 0.8);
-              border: 2px solid #ef4444;
-              box-shadow: 0 0 ${failedSize/2}px rgba(239, 68, 68, 0.5);
-            "
-          >
-            <span style="color: white; font-size: ${Math.max(10, failedSize/3)}px; font-weight: bold;">
-              ${loc.failedLoginCount}
-            </span>
-          </div>
-        `;
-
-        failedEl.addEventListener('click', () => {
-          setSelectedSecurityLocation(loc);
-          securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
-        });
-
-        const failedMarker = new mapboxgl.Marker(failedEl).setLngLat([loc.lon, loc.lat]).addTo(securityMap.current!);
-        securityMarkersRef.current.push(failedMarker);
-      }
-
-      // Guest visit marker (blue) - offset slightly if both exist at same location
-      if (loc.guestVisitCount > 0 && showGuestMarkers) {
-        const guestSize = Math.min(20 + loc.guestVisitCount * 5, 50);
-        const guestEl = document.createElement('div');
-        guestEl.className = 'cursor-pointer';
-        guestEl.innerHTML = `
-          <div 
-            class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
-            style="
-              width: ${guestSize}px; 
-              height: ${guestSize}px; 
-              background: rgba(59, 130, 246, 0.8);
-              border: 2px solid #3b82f6;
-              box-shadow: 0 0 ${guestSize/2}px rgba(59, 130, 246, 0.5);
-            "
-          >
-            <span style="color: white; font-size: ${Math.max(10, guestSize/3)}px; font-weight: bold;">
-              ${loc.guestVisitCount}
-            </span>
-          </div>
-        `;
-
-        guestEl.addEventListener('click', () => {
-          setSelectedSecurityLocation(loc);
-          securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
-        });
-
-        // Offset guest marker if there's also a failed login marker at same location
-        // Use a larger offset (2 degrees) and offset in both directions for better visibility
-        const hasFailedMarker = loc.failedLoginCount > 0;
-        const offsetLon = hasFailedMarker ? loc.lon + 2 : loc.lon;
-        const offsetLat = hasFailedMarker ? loc.lat - 1.5 : loc.lat;
-        const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, offsetLat]).addTo(securityMap.current!);
-        securityMarkersRef.current.push(guestMarker);
-
-        // Add connector line if both markers exist at same location (same IP)
-        if (hasFailedMarker) {
-          connectorFeatures.push({
-            type: 'Feature',
-            properties: { 
-              type: 'same-ip',
-              ip: loc.ip,
-              city: loc.city,
-              country: loc.country,
-              failedCount: loc.failedLoginCount,
-              guestCount: loc.guestVisitCount
-            },
-            geometry: {
-              type: 'LineString',
-              coordinates: [
-                [loc.lon, loc.lat],
-                [offsetLon, offsetLat]
-              ]
-            }
-          });
-        }
-      }
-    });
-
-    // Add connector lines to the map
-    if (connectorFeatures.length > 0 && securityMap.current.isStyleLoaded()) {
-      securityMap.current.addSource('connector-lines', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: connectorFeatures
-        }
-      });
-
-      // Add glowing base layer for connector lines
-      securityMap.current.addLayer({
-        id: 'connector-lines-glow',
-        type: 'line',
-        source: 'connector-lines',
-        paint: {
-          'line-color': 'rgba(168, 85, 247, 0.4)',
-          'line-width': 8,
-          'line-blur': 4
-        }
-      });
-
-      securityMap.current.addLayer({
-        id: 'connector-lines-layer',
-        type: 'line',
-        source: 'connector-lines',
-        paint: {
-          'line-color': 'rgba(168, 85, 247, 0.9)',
-          'line-width': 3,
-          'line-dasharray': [4, 3]
-        }
-      });
-
-      // Animate the glow effect with pulsing
-      let glowOpacity = 0.4;
-      let glowDirection = 1;
-      const animateGlow = () => {
-        if (!securityMap.current || !securityMap.current.getLayer('connector-lines-glow')) return;
-        
-        glowOpacity += 0.02 * glowDirection;
-        if (glowOpacity >= 0.8) glowDirection = -1;
-        if (glowOpacity <= 0.3) glowDirection = 1;
-        
-        securityMap.current.setPaintProperty('connector-lines-glow', 'line-color', `rgba(168, 85, 247, ${glowOpacity})`);
-        securityMap.current.setPaintProperty('connector-lines-glow', 'line-width', 6 + (glowOpacity * 6));
-        
-        requestAnimationFrame(animateGlow);
-      };
-      animateGlow();
-
-      // Add hover interaction for connector lines
-      const map = securityMap.current;
-      
-      map.on('mouseenter', 'connector-lines-layer', (e) => {
-        map.getCanvas().style.cursor = 'pointer';
-        
-        if (e.features && e.features[0]) {
-          const props = e.features[0].properties;
-          const coordinates = e.lngLat;
-          
-          // Remove existing popup if any
-          if (securityPopupRef.current) {
-            securityPopupRef.current.remove();
-          }
-          
-          const popupContent = `
-            <div style="padding: 8px; font-family: system-ui, sans-serif; min-width: 180px;">
-              <div style="font-weight: 600; color: #a855f7; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span style="font-size: 12px;">🔗</span> Same IP Connection
-              </div>
-              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">
-                <span style="font-weight: 500; color: #e2e8f0;">IP:</span> ${props?.ip || 'Unknown'}
-              </div>
-              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">
-                <span style="font-weight: 500; color: #e2e8f0;">Location:</span> ${props?.city || 'Unknown'}, ${props?.country || 'Unknown'}
-              </div>
-              <div style="display: flex; gap: 12px; font-size: 11px;">
-                <div style="display: flex; align-items: center; gap: 4px;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
-                  <span style="color: #f87171;">${props?.failedCount || 0} failed</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span>
-                  <span style="color: #60a5fa;">${props?.guestCount || 0} guests</span>
-                </div>
-              </div>
+        // Failed login marker (red)
+        if (loc.failedLoginCount > 0) {
+          const failedSize = Math.min(20 + loc.failedLoginCount * 5, 50);
+          const failedEl = document.createElement('div');
+          failedEl.className = 'cursor-pointer';
+          failedEl.innerHTML = `
+            <div 
+              class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
+              style="
+                width: ${failedSize}px; 
+                height: ${failedSize}px; 
+                background: rgba(239, 68, 68, 0.8);
+                border: 2px solid #ef4444;
+                box-shadow: 0 0 ${failedSize/2}px rgba(239, 68, 68, 0.5);
+              "
+            >
+              <span style="color: white; font-size: ${Math.max(10, failedSize/3)}px; font-weight: bold;">
+                ${loc.failedLoginCount}
+              </span>
             </div>
           `;
+
+          failedEl.addEventListener('click', () => {
+            setSelectedSecurityLocation(loc);
+            securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
+          });
+
+          const failedMarker = new mapboxgl.Marker(failedEl).setLngLat([loc.lon, loc.lat]).addTo(securityMap.current!);
+          securityMarkersRef.current.push(failedMarker);
+        }
+
+        // Guest visit marker (blue) - offset slightly if both exist at same location
+        if (loc.guestVisitCount > 0 && showGuestMarkers) {
+          const guestSize = Math.min(20 + loc.guestVisitCount * 5, 50);
+          const guestEl = document.createElement('div');
+          guestEl.className = 'cursor-pointer';
+          guestEl.innerHTML = `
+            <div 
+              class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
+              style="
+                width: ${guestSize}px; 
+                height: ${guestSize}px; 
+                background: rgba(59, 130, 246, 0.8);
+                border: 2px solid #3b82f6;
+                box-shadow: 0 0 ${guestSize/2}px rgba(59, 130, 246, 0.5);
+              "
+            >
+              <span style="color: white; font-size: ${Math.max(10, guestSize/3)}px; font-weight: bold;">
+                ${loc.guestVisitCount}
+              </span>
+            </div>
+          `;
+
+          guestEl.addEventListener('click', () => {
+            setSelectedSecurityLocation(loc);
+            securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
+          });
+
+          const hasFailedMarker = loc.failedLoginCount > 0;
+          const offsetLon = hasFailedMarker ? loc.lon + 2 : loc.lon;
+          const offsetLat = hasFailedMarker ? loc.lat - 1.5 : loc.lat;
+          const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, offsetLat]).addTo(securityMap.current!);
+          securityMarkersRef.current.push(guestMarker);
+
+          // Add connector line if both markers exist at same location (same IP)
+          if (hasFailedMarker) {
+            connectorFeatures.push({
+              type: 'Feature',
+              properties: { 
+                type: 'same-ip',
+                ip: loc.ip,
+                city: loc.city,
+                country: loc.country,
+                failedCount: loc.failedLoginCount,
+                guestCount: loc.guestVisitCount
+              },
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [loc.lon, loc.lat],
+                  [offsetLon, offsetLat]
+                ]
+              }
+            });
+          }
+        }
+      });
+
+      // Add connector lines to the map
+      if (connectorFeatures.length > 0 && securityMap.current.isStyleLoaded()) {
+        securityMap.current.addSource('connector-lines', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: connectorFeatures
+          }
+        });
+
+        // Add glowing base layer for connector lines
+        securityMap.current.addLayer({
+          id: 'connector-lines-glow',
+          type: 'line',
+          source: 'connector-lines',
+          paint: {
+            'line-color': 'rgba(168, 85, 247, 0.4)',
+            'line-width': 8,
+            'line-blur': 4
+          }
+        });
+
+        securityMap.current.addLayer({
+          id: 'connector-lines-layer',
+          type: 'line',
+          source: 'connector-lines',
+          paint: {
+            'line-color': 'rgba(168, 85, 247, 0.9)',
+            'line-width': 3,
+            'line-dasharray': [4, 3]
+          }
+        });
+
+        // Animate the glow effect with pulsing
+        let glowOpacity = 0.4;
+        let glowDirection = 1;
+        const animateGlow = () => {
+          if (!securityMap.current || !securityMap.current.getLayer('connector-lines-glow')) return;
           
-          securityPopupRef.current = new mapboxgl.Popup({
-            closeButton: false,
-            closeOnClick: false,
-            className: 'same-ip-popup'
-          })
-            .setLngLat(coordinates)
-            .setHTML(popupContent)
-            .addTo(map);
-        }
-      });
-      
-      map.on('mouseleave', 'connector-lines-layer', () => {
-        map.getCanvas().style.cursor = '';
-        if (securityPopupRef.current) {
-          securityPopupRef.current.remove();
-          securityPopupRef.current = null;
-        }
-      });
-    }
+          glowOpacity += 0.02 * glowDirection;
+          if (glowOpacity >= 0.8) glowDirection = -1;
+          if (glowOpacity <= 0.3) glowDirection = 1;
+          
+          securityMap.current.setPaintProperty('connector-lines-glow', 'line-color', `rgba(168, 85, 247, ${glowOpacity})`);
+          securityMap.current.setPaintProperty('connector-lines-glow', 'line-width', 6 + (glowOpacity * 6));
+          
+          requestAnimationFrame(animateGlow);
+        };
+        animateGlow();
+
+        // Add hover interaction for connector lines
+        const map = securityMap.current;
+        
+        map.on('mouseenter', 'connector-lines-layer', (e) => {
+          map.getCanvas().style.cursor = 'pointer';
+          
+          if (e.features && e.features[0]) {
+            const props = e.features[0].properties;
+            const coordinates = e.lngLat;
+            
+            if (securityPopupRef.current) {
+              securityPopupRef.current.remove();
+            }
+            
+            const popupContent = `
+              <div style="padding: 8px; font-family: system-ui, sans-serif; min-width: 180px;">
+                <div style="font-weight: 600; color: #a855f7; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 12px;">🔗</span> Same IP Connection
+                </div>
+                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">
+                  <span style="font-weight: 500; color: #e2e8f0;">IP:</span> ${props?.ip || 'Unknown'}
+                </div>
+                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">
+                  <span style="font-weight: 500; color: #e2e8f0;">Location:</span> ${props?.city || 'Unknown'}, ${props?.country || 'Unknown'}
+                </div>
+                <div style="display: flex; gap: 12px; font-size: 11px;">
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+                    <span style="color: #f87171;">${props?.failedCount || 0} failed</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span>
+                    <span style="color: #60a5fa;">${props?.guestCount || 0} guests</span>
+                  </div>
+                </div>
+              </div>
+            `;
+            
+            securityPopupRef.current = new mapboxgl.Popup({
+              closeButton: false,
+              closeOnClick: false,
+              className: 'same-ip-popup'
+            })
+              .setLngLat(coordinates)
+              .setHTML(popupContent)
+              .addTo(map);
+          }
+        });
+        
+        map.on('mouseleave', 'connector-lines-layer', () => {
+          map.getCanvas().style.cursor = '';
+          if (securityPopupRef.current) {
+            securityPopupRef.current.remove();
+            securityPopupRef.current = null;
+          }
+        });
+      }
     };
 
-    // Wait for style to load before adding connector lines
+    // Wait for style to load before adding markers
     if (securityMap.current.isStyleLoaded()) {
       addMarkersAndConnectors();
     } else {
