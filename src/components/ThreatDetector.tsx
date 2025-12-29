@@ -1,9 +1,10 @@
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, ShieldAlert, Target, Info } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Target, Info, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // MITRE ATT&CK Technique Mapping for Authentication Attacks
 const MITRE_TECHNIQUES = {
@@ -63,6 +64,16 @@ const MITRE_TECHNIQUES = {
   }
 };
 
+// Confidence calculation explanations for each technique
+const CONFIDENCE_EXPLANATIONS: Record<string, string> = {
+  T1110: "Confidence = Base 50% + 10% per failed attempt in window (max 95%). More failures = higher confidence.",
+  "T1110.001": "Confidence = Fixed 60% baseline when total failures meet threshold. Pattern matching adds certainty.",
+  "T1110.003": "Confidence = Base 55% + 3% per distinct account + 1% per excess failure (max 85%). Spray pattern confirmation.",
+  T1078: "Confidence = Fixed 50% baseline. Multiple login locations suggest credential reuse or compromise.",
+  T1090: "Confidence = Variable based on proxy detection signals.",
+  T1531: "Confidence = Based on lockout attempt frequency and pattern."
+};
+
 interface LoginAttempt {
   id: string;
   email: string;
@@ -76,6 +87,7 @@ interface LoginAttempt {
 interface DetectedThreat {
   technique: typeof MITRE_TECHNIQUES[keyof typeof MITRE_TECHNIQUES];
   confidence: number;
+  confidenceExplanation: string;
   evidence: string[];
   affectedIps: string[];
   timestamp: string;
@@ -85,8 +97,60 @@ interface ThreatDetectorProps {
   loginAttempts: LoginAttempt[];
 }
 
+interface ThreatSettings {
+  brute_force_window_minutes: number;
+  brute_force_min_failures: number;
+  password_guessing_min_failures: number;
+  spray_window_minutes: number;
+  spray_min_distinct_accounts: number;
+  spray_min_total_failures: number;
+  spray_max_failures_per_account: number;
+  valid_accounts_min_locations: number;
+}
+
+const DEFAULT_SETTINGS: ThreatSettings = {
+  brute_force_window_minutes: 60,
+  brute_force_min_failures: 5,
+  password_guessing_min_failures: 3,
+  spray_window_minutes: 30,
+  spray_min_distinct_accounts: 5,
+  spray_min_total_failures: 8,
+  spray_max_failures_per_account: 2,
+  valid_accounts_min_locations: 3,
+};
+
 export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
   const alertSentRef = useRef<Set<string>>(new Set());
+  const [settings, setSettings] = useState<ThreatSettings>(DEFAULT_SETTINGS);
+
+  // Fetch settings from backend
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('threat_detection_settings')
+          .select('*')
+          .limit(1)
+          .maybeSingle();
+
+        if (!error && data) {
+          setSettings({
+            brute_force_window_minutes: data.brute_force_window_minutes,
+            brute_force_min_failures: data.brute_force_min_failures,
+            password_guessing_min_failures: data.password_guessing_min_failures,
+            spray_window_minutes: data.spray_window_minutes,
+            spray_min_distinct_accounts: data.spray_min_distinct_accounts,
+            spray_min_total_failures: data.spray_min_total_failures,
+            spray_max_failures_per_account: data.spray_max_failures_per_account,
+            valid_accounts_min_locations: data.valid_accounts_min_locations,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching threat settings:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const detectedThreats = useMemo(() => {
     const threats: DetectedThreat[] = [];
@@ -103,29 +167,34 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
       }
     });
 
+    const bruteForceWindowMs = settings.brute_force_window_minutes * 60 * 1000;
+
     // Detect Brute Force (T1110) - Multiple failed attempts from same IP
     Object.entries(ipAttempts).forEach(([ip, attempts]) => {
       const failedAttempts = attempts.filter(a => !a.success);
       const recentFailed = failedAttempts.filter(a => {
         const attemptTime = new Date(a.created_at);
-        return (now.getTime() - attemptTime.getTime()) < 3600000; // Last hour
+        return (now.getTime() - attemptTime.getTime()) < bruteForceWindowMs;
       });
 
-      if (recentFailed.length >= 5) {
+      if (recentFailed.length >= settings.brute_force_min_failures) {
+        const confidence = Math.min(0.95, 0.5 + (recentFailed.length * 0.1));
         threats.push({
           technique: MITRE_TECHNIQUES.T1110,
-          confidence: Math.min(0.95, 0.5 + (recentFailed.length * 0.1)),
+          confidence,
+          confidenceExplanation: `Base 50% + (${recentFailed.length} failures × 10%) = ${Math.round(confidence * 100)}% (capped at 95%)`,
           evidence: [
-            `${recentFailed.length} failed attempts in last hour`,
+            `${recentFailed.length} failed attempts in last ${settings.brute_force_window_minutes} minutes`,
             `Target emails: ${[...new Set(recentFailed.map(a => a.email))].join(", ")}`
           ],
           affectedIps: [ip],
           timestamp: recentFailed[0]?.created_at || now.toISOString()
         });
-      } else if (failedAttempts.length >= 3) {
+      } else if (failedAttempts.length >= settings.password_guessing_min_failures) {
         threats.push({
           technique: MITRE_TECHNIQUES.T1110_001,
           confidence: 0.6,
+          confidenceExplanation: `Fixed 60% baseline when ≥${settings.password_guessing_min_failures} total failures detected`,
           evidence: [
             `${failedAttempts.length} total failed attempts`,
             `Pattern suggests password guessing`
@@ -137,17 +206,13 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
     });
 
     // Detect Password Spraying (T1110.003)
-    // Heuristic: within a short window, a *single IP* produces low-volume failures across many accounts.
-    const SPRAY_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
-    const SPRAY_MIN_DISTINCT_ACCOUNTS = 5;
-    const SPRAY_MIN_TOTAL_FAILURES = 8;
-    const SPRAY_MAX_FAILURES_PER_ACCOUNT = 2;
+    const sprayWindowMs = settings.spray_window_minutes * 60 * 1000;
 
     const recentFailed = loginAttempts.filter(a => {
       if (a.success) return false;
       if (!a.ip_address) return false;
       const t = new Date(a.created_at).getTime();
-      return (now.getTime() - t) < SPRAY_WINDOW_MS;
+      return (now.getTime() - t) < sprayWindowMs;
     });
 
     const failedByIp: Record<string, LoginAttempt[]> = {};
@@ -168,22 +233,21 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
       const maxFailuresPerAccount = Math.max(0, ...Object.values(byEmail));
 
       if (
-        distinctAccounts >= SPRAY_MIN_DISTINCT_ACCOUNTS &&
-        totalFailures >= SPRAY_MIN_TOTAL_FAILURES &&
-        maxFailuresPerAccount <= SPRAY_MAX_FAILURES_PER_ACCOUNT
+        distinctAccounts >= settings.spray_min_distinct_accounts &&
+        totalFailures >= settings.spray_min_total_failures &&
+        maxFailuresPerAccount <= settings.spray_max_failures_per_account
       ) {
         const sampleAccounts = Object.keys(byEmail).slice(0, 5);
-        const confidence = Math.min(
-          0.85,
-          0.55 + distinctAccounts * 0.03 + (totalFailures - SPRAY_MIN_TOTAL_FAILURES) * 0.01
-        );
+        const excessFailures = totalFailures - settings.spray_min_total_failures;
+        const confidence = Math.min(0.85, 0.55 + distinctAccounts * 0.03 + excessFailures * 0.01);
 
         threats.push({
           technique: MITRE_TECHNIQUES.T1110_003,
           confidence,
+          confidenceExplanation: `Base 55% + (${distinctAccounts} accounts × 3%) + (${excessFailures} excess failures × 1%) = ${Math.round(confidence * 100)}% (capped at 85%)`,
           evidence: [
-            `${totalFailures} failed attempts in last 30 minutes from one IP`,
-            `${distinctAccounts} distinct target accounts (≤${SPRAY_MAX_FAILURES_PER_ACCOUNT} attempts/account)`,
+            `${totalFailures} failed attempts in last ${settings.spray_window_minutes} minutes from one IP`,
+            `${distinctAccounts} distinct target accounts (≤${settings.spray_max_failures_per_account} attempts/account)`,
             `Source IP: ${ip}`,
             `Sample targets: ${sampleAccounts.join(", ")}${distinctAccounts > sampleAccounts.length ? "…" : ""}`
           ],
@@ -196,10 +260,11 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
     // Detect unusual login patterns (T1078)
     const successfulLogins = loginAttempts.filter(a => a.success);
     const uniqueSuccessIps = [...new Set(successfulLogins.map(a => a.ip_address).filter(Boolean))];
-    if (uniqueSuccessIps.length >= 3) {
+    if (uniqueSuccessIps.length >= settings.valid_accounts_min_locations) {
       threats.push({
         technique: MITRE_TECHNIQUES.T1078,
         confidence: 0.5,
+        confidenceExplanation: `Fixed 50% baseline when ≥${settings.valid_accounts_min_locations} unique login locations detected`,
         evidence: [
           `Successful logins from ${uniqueSuccessIps.length} different locations`,
           `May indicate compromised credentials or legitimate travel`
@@ -210,7 +275,7 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
     }
 
     return threats.sort((a, b) => b.confidence - a.confidence);
-  }, [loginAttempts]);
+  }, [loginAttempts, settings]);
 
   // Send threat alert email when high-severity threats detected
   useEffect(() => {
@@ -246,6 +311,7 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
           tactic: t.technique.tactic,
           severity: t.technique.severity,
           confidence: t.confidence,
+          confidence_explanation: t.confidenceExplanation,
           description: t.technique.description,
           evidence: t.evidence
         }))
@@ -329,9 +395,20 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
                 <Badge variant="outline" className={getSeverityBadge(threat.technique.severity)}>
                   {threat.technique.severity.toUpperCase()}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {Math.round(threat.confidence * 100)}% confidence
-                </span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1 cursor-help">
+                        {Math.round(threat.confidence * 100)}% confidence
+                        <HelpCircle className="w-3 h-3" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="text-xs font-medium mb-1">How confidence is calculated:</p>
+                      <p className="text-xs text-muted-foreground">{threat.confidenceExplanation}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
             

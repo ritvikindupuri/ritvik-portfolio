@@ -596,6 +596,48 @@ export type Database = {
         }
         Relationships: []
       }
+      threat_detection_settings: {
+        Row: {
+          brute_force_min_failures: number
+          brute_force_window_minutes: number
+          created_at: string
+          id: string
+          password_guessing_min_failures: number
+          spray_max_failures_per_account: number
+          spray_min_distinct_accounts: number
+          spray_min_total_failures: number
+          spray_window_minutes: number
+          updated_at: string
+          valid_accounts_min_locations: number
+        }
+        Insert: {
+          brute_force_min_failures?: number
+          brute_force_window_minutes?: number
+          created_at?: string
+          id?: string
+          password_guessing_min_failures?: number
+          spray_max_failures_per_account?: number
+          spray_min_distinct_accounts?: number
+          spray_min_total_failures?: number
+          spray_window_minutes?: number
+          updated_at?: string
+          valid_accounts_min_locations?: number
+        }
+        Update: {
+          brute_force_min_failures?: number
+          brute_force_window_minutes?: number
+          created_at?: string
+          id?: string
+          password_guessing_min_failures?: number
+          spray_max_failures_per_account?: number
+          spray_min_distinct_accounts?: number
+          spray_min_total_failures?: number
+          spray_window_minutes?: number
+          updated_at?: string
+          valid_accounts_min_locations?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
