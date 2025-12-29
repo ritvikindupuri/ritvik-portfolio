@@ -61,6 +61,14 @@ const REMEDIATION_STEPS: Record<string, string[]> = {
     "Monitor for unusual access patterns",
     "Implement session management best practices"
   ],
+  "T1078.001": [
+    "Remove or disable all default accounts",
+    "Rename common admin account names to unique identifiers",
+    "Implement account enumeration protection",
+    "Block login attempts for non-existent accounts after threshold",
+    "Use honeypot accounts to detect attackers (e.g., fake admin@ account)",
+    "Enable alerts for any login attempt using default usernames"
+  ],
   T1090: [
     "Block known VPN/proxy IP ranges if not needed",
     "Implement additional verification for proxy-sourced logins",
