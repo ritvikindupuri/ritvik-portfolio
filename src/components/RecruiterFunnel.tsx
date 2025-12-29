@@ -169,6 +169,8 @@ export const RecruiterFunnel = ({ activities }: RecruiterFunnelProps) => {
               ? Math.max(20, (step.count / funnelData[0].count) * 100)
               : 100;
             const conversionFromPrevious = index > 0 ? getConversionRate(index - 1, index) : 100;
+            const nextStep = index < funnelData.length - 1 ? funnelData[index + 1] : null;
+            const conversionToNext = nextStep ? getConversionRate(index, index + 1) : 0;
             
             return (
               <motion.div
@@ -180,31 +182,58 @@ export const RecruiterFunnel = ({ activities }: RecruiterFunnelProps) => {
               >
                 <div className="flex items-center gap-3">
                   {/* Step indicator */}
-                  <div className={`w-10 h-10 rounded-lg ${step.bgColor} flex items-center justify-center shrink-0`}>
-                    <Icon className={`w-5 h-5 ${step.color}`} />
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={`w-10 h-10 rounded-lg ${step.bgColor} flex items-center justify-center shrink-0 cursor-help`}>
+                          <Icon className={`w-5 h-5 ${step.color}`} />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-[200px]">
+                        <p className="text-xs font-medium">{step.label}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {step.id === 'visitors' && 'Total unique visitors to your portfolio'}
+                          {step.id === 'sections' && 'Visitors who viewed professional sections like Experience, Skills, or About'}
+                          {step.id === 'resume_view' && 'Visitors who opened and viewed your resume'}
+                          {step.id === 'resume_download' && 'Visitors who downloaded your resume - likely recruiters!'}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
 
                   {/* Funnel bar */}
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium">{step.label}</span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-lg font-bold ${step.color}`}>{step.count}</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className={`text-lg font-bold ${step.color} cursor-help`}>{step.count}</span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">{step.count} unique session{step.count !== 1 ? 's' : ''} at this stage</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         {index > 0 && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Badge 
                                   variant="outline" 
-                                  className={`text-xs ${conversionFromPrevious >= 50 ? 'text-green-400 border-green-500/30' : conversionFromPrevious >= 25 ? 'text-amber-400 border-amber-500/30' : 'text-red-400 border-red-500/30'}`}
+                                  className={`text-xs cursor-help ${conversionFromPrevious >= 50 ? 'text-green-400 border-green-500/30' : conversionFromPrevious >= 25 ? 'text-amber-400 border-amber-500/30' : 'text-red-400 border-red-500/30'}`}
                                 >
                                   {conversionFromPrevious}%
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p className="text-xs">
-                                  {conversionFromPrevious}% of {funnelData[index - 1].shortLabel} 
-                                  → {step.shortLabel}
+                                <p className="text-xs font-medium">Conversion Rate</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {conversionFromPrevious}% of visitors from "{funnelData[index - 1].shortLabel}" converted to "{step.shortLabel}"
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {conversionFromPrevious >= 50 ? '🟢 Excellent conversion' : conversionFromPrevious >= 25 ? '🟡 Average conversion' : '🔴 Needs improvement'}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -212,24 +241,53 @@ export const RecruiterFunnel = ({ activities }: RecruiterFunnelProps) => {
                         )}
                       </div>
                     </div>
-                    <div className="relative h-8 bg-secondary/30 rounded-lg overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${widthPercentage}%` }}
-                        transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className={`absolute left-0 top-0 h-full ${step.bgColor} border-r-2 ${step.color.replace('text-', 'border-')}`}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">
-                          {Math.round(widthPercentage)}% of total
-                        </span>
-                      </div>
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="relative h-8 bg-secondary/30 rounded-lg overflow-hidden cursor-help">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${widthPercentage}%` }}
+                              transition={{ duration: 0.5, delay: index * 0.1 }}
+                              className={`absolute left-0 top-0 h-full ${step.bgColor} border-r-2 ${step.color.replace('text-', 'border-')}`}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">
+                                {Math.round(widthPercentage)}% of total
+                              </span>
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs font-medium">Funnel Position</p>
+                          <p className="text-xs text-muted-foreground">
+                            {Math.round(widthPercentage)}% of all visitors reached this stage ({step.count} of {funnelData[0].count})
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
 
-                  {/* Arrow to next step */}
+                  {/* Arrow to next step with tooltip */}
                   {index < funnelData.length - 1 && (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground/50 shrink-0" />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="shrink-0 cursor-help hover:bg-secondary/30 p-1 rounded transition-colors">
+                            <ChevronRight className="w-5 h-5 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p className="text-xs font-medium">Next Stage: {nextStep?.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {conversionToNext}% conversion ({step.count} → {nextStep?.count})
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {step.count - (nextStep?.count || 0)} visitor{step.count - (nextStep?.count || 0) !== 1 ? 's' : ''} dropped off at this stage
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               </motion.div>

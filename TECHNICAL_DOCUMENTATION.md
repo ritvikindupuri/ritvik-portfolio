@@ -38,6 +38,7 @@ This documentation covers the complete system architecture, data flows, implemen
 - [Known Login Locations System](#known-login-locations-system)
 - [Security & Visitors Map](#security--visitors-map)
 - [MITRE ATT&CK Threat Detection](#mitre-attck-threat-detection)
+- [Honeypot Account System](#honeypot-account-system)
 - [Automated Email System](#automated-email-system)
 - [Database Architecture](#database-architecture)
 - [Edge Functions](#edge-functions)
@@ -1959,7 +1960,171 @@ The confidence explanation is displayed in:
 
 ---
 
-## Automated Email System
+## Honeypot Account System
+
+The Honeypot Account System creates fake "default" accounts designed to catch and track attackers who attempt to login using common administrative usernames. This deception technology provides early warning of credential-based attacks while mapping to **MITRE ATT&CK T1078.001 (Default Accounts)**.
+
+<p align="center">
+  <img src="https://imgur.com/RrtNb4W.png" alt="Honeypot Account Management Interface" width="600"/>
+</p>
+
+**Figure: Honeypot Account Management** - The Honeypots tab in the Security section shows all configured honeypot accounts with their status (active/inactive), trigger counts, and the MITRE ATT&CK mapping. Owners can add new honeypot emails, toggle activation, and monitor which fake accounts attackers are attempting to use.
+
+### How It Works
+
+1. **Fake Accounts are Created**: The owner creates fake email accounts like `admin@portfolio.dev` or `root@portfolio.dev` that look like legitimate administrative accounts
+
+2. **No Real Account Exists**: These emails are never associated with real Supabase Auth users - they exist only in the `honeypot_accounts` database table
+
+3. **Login Attempts are Monitored**: When anyone attempts to login with a honeypot email, the `log-auth-attempt` edge function detects it before authentication even occurs
+
+4. **Immediate Alert Triggered**: An email alert is sent to the owner with:
+   - The honeypot email that was triggered
+   - Attacker's IP address
+   - Geolocation (city, country)
+   - Browser and OS information
+   - Timestamp of the attack
+
+5. **Attack is Logged**: The attempt is recorded in `honeypot_triggers` table and the honeypot's `times_triggered` counter is incremented
+
+6. **Generic Error Returned**: The attacker receives a standard "Invalid login credentials" error, giving no indication that they've triggered a honeypot
+
+### Database Schema
+
+```sql
+-- Honeypot accounts table
+CREATE TABLE honeypot_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  description TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  times_triggered INTEGER NOT NULL DEFAULT 0,
+  last_triggered_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Honeypot triggers log
+CREATE TABLE honeypot_triggers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  honeypot_id UUID NOT NULL REFERENCES honeypot_accounts(id),
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Automatic trigger counter update
+CREATE TRIGGER update_honeypot_on_trigger
+  AFTER INSERT ON honeypot_triggers
+  FOR EACH ROW
+  EXECUTE FUNCTION update_honeypot_on_trigger();
+```
+
+### Default Honeypot Accounts
+
+The system comes pre-configured with commonly targeted accounts:
+
+| Email | Description | Attack Vector |
+|-------|-------------|---------------|
+| `admin@portfolio.dev` | Classic admin account | Highest priority target for attackers |
+| `root@portfolio.dev` | Unix-style root account | Common on Linux servers |
+| `test@portfolio.dev` | Test account probe | Often left in production by accident |
+| `administrator@portfolio.dev` | Windows-style admin | Microsoft environment target |
+| `user@portfolio.dev` | Generic user account | Enumeration attempts |
+| `demo@portfolio.dev` | Demo account | Often has weak/no password |
+| `info@portfolio.dev` | Info email account | Common business email pattern |
+| `support@portfolio.dev` | Support account | May have elevated privileges |
+| `guest@portfolio.dev` | Guest access probe | Anonymous access attempts |
+
+### Alert Email Format
+
+When a honeypot is triggered, the owner receives an email alert:
+
+```
+┌─────────────────────────────────────────────┐
+│  🍯 HONEYPOT TRIGGERED                       │
+│  "admin@portfolio.dev" was attempted!        │
+├─────────────────────────────────────────────┤
+│  📍 ATTACKER DETAILS                         │
+│  IP: 192.168.1.100                          │
+│  Location: Los Angeles, US                   │
+│  Browser: Chrome 120                         │
+│  OS: Windows 10                              │
+│  Timestamp: 2025-01-15 14:30:00 UTC         │
+├─────────────────────────────────────────────┤
+│  🎯 MITRE ATT&CK MAPPING                     │
+│  T1078.001 - Default Accounts                │
+│  Attackers attempt to use default or         │
+│  well-known credentials for initial access   │
+├─────────────────────────────────────────────┤
+│  ⚠️ RECOMMENDED ACTIONS                      │
+│  • Block IP if from unknown location         │
+│  • Review other login attempts from this IP  │
+│  • Check for related attack patterns         │
+└─────────────────────────────────────────────┘
+```
+
+### Edge Function Integration
+
+The honeypot check occurs in `log-auth-attempt/index.ts`:
+
+```typescript
+async function checkHoneypot(email: string): Promise<HoneypotAccount | null> {
+  const { data } = await supabaseAdmin
+    .from('honeypot_accounts')
+    .select('*')
+    .eq('email', email.toLowerCase())
+    .eq('is_active', true)
+    .single();
+  
+  return data;
+}
+
+// In the main handler, BEFORE authentication:
+const honeypot = await checkHoneypot(email);
+if (honeypot) {
+  // Log the trigger
+  await supabaseAdmin.from('honeypot_triggers').insert({
+    honeypot_id: honeypot.id,
+    ip_address: ip,
+    user_agent: userAgent
+  });
+  
+  // Send alert email
+  await sendHoneypotAlert(honeypot, ip, userAgent, location);
+  
+  // Return generic error (don't reveal it's a honeypot)
+  return new Response(
+    JSON.stringify({ error: 'Invalid login credentials' }),
+    { status: 401 }
+  );
+}
+```
+
+### Security Benefits
+
+| Benefit | Description |
+|---------|-------------|
+| **Early Warning** | Detect attacks before they reach real accounts |
+| **Zero False Positives** | Legitimate users never know these accounts exist |
+| **Attacker Intel** | Gather IP, location, and browser info on attackers |
+| **MITRE Mapping** | Direct alignment with T1078.001 framework |
+| **No Infrastructure** | Runs entirely within existing authentication flow |
+| **Deception Technology** | Attackers waste time on fake targets |
+
+### Management UI
+
+The `HoneypotManager.tsx` component provides:
+
+- **Statistics Dashboard**: Total honeypots, active count, total triggers
+- **Add New Honeypot**: Create custom honeypot emails with descriptions
+- **Toggle Activation**: Enable/disable individual honeypots
+- **Delete Honeypots**: Remove honeypots that are no longer needed
+- **MITRE ATT&CK Info**: Educational panel explaining T1078.001
+
+**Code Location**: `src/components/HoneypotManager.tsx`
+
+---
 
 Three types of automated emails are sent via **Resend** (edge functions):
 
