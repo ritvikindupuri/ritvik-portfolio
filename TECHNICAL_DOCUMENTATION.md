@@ -2080,6 +2080,57 @@ The portfolio includes a sophisticated location tracking system that monitors lo
 
 ### Location Tracking Architecture
 
+```mermaid
+flowchart TD
+    subgraph Login["Login Attempt"]
+        AUTH[Authentication Request]
+        IP[Source IP Address]
+    end
+    
+    subgraph Lookup["Database Lookup"]
+        CHECK{IP in known_login_locations?}
+    end
+    
+    subgraph Existing["Existing Location"]
+        UPDATE[Increment times_seen]
+        UPDATETS[Update last_seen_at]
+        THRESHOLD{times_seen >= 5?}
+        AUTOTRUST[Set is_trusted = true]
+        TRUSTED{is_trusted?}
+    end
+    
+    subgraph New["New Location"]
+        GEO[Geolocate IP]
+        CREATE[Create entry with is_trusted = false]
+        ALERT[Send New Location Alert Email]
+    end
+    
+    subgraph Result["Outcome"]
+        SILENT[Silent Login - No Alert]
+        NOTIFY[Owner Notified]
+    end
+    
+    AUTH --> IP
+    IP --> CHECK
+    
+    CHECK -->|Yes| UPDATE
+    UPDATE --> UPDATETS
+    UPDATETS --> THRESHOLD
+    THRESHOLD -->|Yes & not trusted| AUTOTRUST
+    THRESHOLD -->|No or already trusted| TRUSTED
+    AUTOTRUST --> TRUSTED
+    
+    TRUSTED -->|Yes| SILENT
+    TRUSTED -->|No| ALERT
+    ALERT --> NOTIFY
+    
+    CHECK -->|No| GEO
+    GEO --> CREATE
+    CREATE --> ALERT
+```
+
+**Figure 2: Auto-Trust Decision Flow** - Flowchart showing the complete decision logic for handling login locations, from IP lookup through auto-trust evaluation and alert triggering.
+
 When a login attempt occurs, the `log-auth-attempt` edge function:
 
 1. **Checks Known Locations**: Queries `known_login_locations` table for the source IP
