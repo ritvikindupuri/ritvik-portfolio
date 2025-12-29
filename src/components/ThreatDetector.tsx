@@ -190,17 +190,41 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
           affectedIps: [ip],
           timestamp: recentFailed[0]?.created_at || now.toISOString()
         });
-      } else if (failedAttempts.length >= settings.password_guessing_min_failures) {
+      }
+      
+      // Password Guessing (T1110.001) - More restrictive to avoid false positives
+      // Requires: multiple failed attempts within the same window as brute force
+      // AND must have at least 2 unique failed attempt timestamps (not just a single login retry)
+      const recentGuessing = failedAttempts.filter(a => {
+        const attemptTime = new Date(a.created_at);
+        return (now.getTime() - attemptTime.getTime()) < bruteForceWindowMs;
+      });
+      
+      // Get unique timestamps (rounded to minute) to distinguish real attack patterns
+      const uniqueTimestamps = new Set(
+        recentGuessing.map(a => Math.floor(new Date(a.created_at).getTime() / 60000))
+      );
+      
+      // Only flag as password guessing if:
+      // 1. Met minimum failures threshold
+      // 2. Failures occurred across multiple distinct minutes (not a single rapid retry)
+      // 3. Didn't already get flagged as brute force (less failures but still suspicious)
+      if (
+        recentGuessing.length >= settings.password_guessing_min_failures &&
+        recentGuessing.length < settings.brute_force_min_failures &&
+        uniqueTimestamps.size >= 2
+      ) {
         threats.push({
           technique: MITRE_TECHNIQUES.T1110_001,
           confidence: 0.6,
-          confidenceExplanation: `Fixed 60% baseline when ≥${settings.password_guessing_min_failures} total failures detected`,
+          confidenceExplanation: `Fixed 60% baseline when ≥${settings.password_guessing_min_failures} failures across ${uniqueTimestamps.size} distinct attempts`,
           evidence: [
-            `${failedAttempts.length} total failed attempts`,
-            `Pattern suggests password guessing`
+            `${recentGuessing.length} failed attempts in last ${settings.brute_force_window_minutes} minutes`,
+            `${uniqueTimestamps.size} distinct attempt timeframes detected`,
+            `Pattern suggests methodical password guessing`
           ],
           affectedIps: [ip],
-          timestamp: failedAttempts[0]?.created_at || now.toISOString()
+          timestamp: recentGuessing[0]?.created_at || now.toISOString()
         });
       }
     });

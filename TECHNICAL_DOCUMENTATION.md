@@ -1771,10 +1771,60 @@ The `ThreatDetector.tsx` component analyzes login patterns against the **MITRE A
 
 | Technique ID | Name | Detection Trigger | Severity |
 |-------------|------|-------------------|----------|
-| **T1110** | Brute Force | 5+ failed attempts from same IP in 1 hour | High |
-| **T1110.001** | Password Guessing | 3+ failed attempts from same IP | Medium |
-| **T1110.003** | Password Spraying | 3+ unique emails attempted from same IP | High |
-| **T1078** | Valid Accounts | Successful login after 3+ failures | Critical |
+| **T1110** | Brute Force | Configurable failed attempts from same IP in configurable window | High |
+| **T1110.001** | Password Guessing | Configurable failed attempts across multiple distinct timeframes | High |
+| **T1110.003** | Password Spraying | Configurable distinct accounts targeted from same IP | Medium |
+| **T1078** | Valid Accounts | Successful logins from configurable number of locations | Medium |
+
+### Configurable Detection Thresholds
+
+All threat detection thresholds are **owner-configurable** via the Settings tab in the Security section of the Owner Dashboard. Settings are persisted in the `threat_detection_settings` database table.
+
+#### Threshold Configuration UI
+
+The `ThreatDetectionSettings.tsx` component provides:
+- Per-technique threshold configuration
+- Real-time validation warnings for risky settings
+- Reset to defaults functionality
+
+#### Available Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `brute_force_window_minutes` | 60 | Time window for counting brute force attempts |
+| `brute_force_min_failures` | 5 | Minimum failed attempts to trigger brute force alert |
+| `password_guessing_min_failures` | 3 | Minimum failures across multiple timeframes |
+| `spray_window_minutes` | 30 | Time window for password spray detection |
+| `spray_min_distinct_accounts` | 5 | Minimum unique target accounts |
+| `spray_min_total_failures` | 8 | Minimum total failures for spray detection |
+| `spray_max_failures_per_account` | 2 | Maximum failures per account (spray pattern) |
+| `valid_accounts_min_locations` | 3 | Minimum unique login locations |
+
+#### Validation Warnings
+
+The settings form provides **real-time validation feedback** to prevent misconfiguration:
+
+**False Positive Risk (Threshold Too Low)**
+| Setting | Warning Trigger | Risk |
+|---------|-----------------|------|
+| Brute Force Window | <15 minutes | Normal user typos flagged as attacks |
+| Brute Force Failures | <3 | Login mistakes flagged as brute force |
+| Password Guessing Failures | <3 | Forgotten passwords flagged as attacks |
+| Spray Window | <10 minutes | May miss slow spray attacks |
+| Spray Distinct Accounts | <3 | Multi-account usage flagged as spray |
+| Spray Total Failures | <5 | Normal failures flagged as spray |
+| Valid Accounts Locations | <2 | VPN/mobile usage flagged as suspicious |
+
+**Detection Gap Risk (Threshold Too High)**
+| Setting | Warning Trigger | Risk |
+|---------|-----------------|------|
+| Brute Force Window | >24 hours | Delayed detection of real attacks |
+| Brute Force Failures | >20 | May miss attacks before lockout |
+| Password Guessing Failures | >10 | May miss targeted password attacks |
+| Spray Window | >2 hours | May aggregate unrelated failures |
+| Spray Distinct Accounts | >15 | Only catches large-scale attacks |
+| Spray Total Failures | >25 | Only catches sustained attacks |
+| Valid Accounts Locations | >10 | May miss credential compromise |
 
 ### Threat Analysis Process
 
@@ -1788,17 +1838,18 @@ loginAttempts.forEach(attempt => {
   }
 });
 
-// Detect Brute Force (T1110)
+// Detect Brute Force (T1110) - uses configurable settings
 Object.entries(ipAttempts).forEach(([ip, attempts]) => {
+  const windowMs = settings.brute_force_window_minutes * 60 * 1000;
   const recentFailed = failedAttempts.filter(a => {
-    return (now.getTime() - new Date(a.created_at).getTime()) < 3600000; // 1 hour
+    return (now.getTime() - new Date(a.created_at).getTime()) < windowMs;
   });
 
-  if (recentFailed.length >= 5) {
+  if (recentFailed.length >= settings.brute_force_min_failures) {
     threats.push({
       technique: MITRE_TECHNIQUES.T1110,
       confidence: Math.min(0.95, 0.5 + (recentFailed.length * 0.1)),
-      evidence: [`${recentFailed.length} failed attempts in last hour`],
+      evidence: [`${recentFailed.length} failed attempts in last ${settings.brute_force_window_minutes} minutes`],
       affectedIps: [ip],
       timestamp: recentFailed[0]?.created_at
     });
@@ -1806,14 +1857,44 @@ Object.entries(ipAttempts).forEach(([ip, attempts]) => {
 });
 ```
 
+### Password Guessing False Positive Prevention
+
+To avoid flagging legitimate login retries as password guessing attacks, the detection requires:
+
+1. **Minimum failures threshold** - Configurable via settings (default: 3)
+2. **Multiple distinct timeframes** - Failures must occur across at least 2 different minutes
+3. **Below brute force threshold** - If already flagged as brute force, don't double-flag
+
+```typescript
+// Get unique timestamps (rounded to minute) to distinguish real attack patterns
+const uniqueTimestamps = new Set(
+  recentGuessing.map(a => Math.floor(new Date(a.created_at).getTime() / 60000))
+);
+
+// Only flag if failures occurred across multiple distinct minutes
+if (uniqueTimestamps.size >= 2) {
+  // ... flag as password guessing
+}
+```
+
+This prevents a single user mistyping their password 2-3 times in quick succession from being flagged as an attack.
+
 ### Confidence Scoring
 
-Each threat includes a **confidence score** (0-100%) based on:
-- Number of failed attempts
-- Time window concentration
-- Pattern consistency
+Each threat includes a **confidence score** (0-100%) with a **tooltip explanation** showing how it was calculated:
 
-Example: 5 failed attempts = 50% + (5 x 10%) = **100% confidence** (capped at 95%)
+| Technique | Calculation | Cap |
+|-----------|-------------|-----|
+| **T1110 (Brute Force)** | Base 50% + 10% per failed attempt | 95% |
+| **T1110.001 (Password Guessing)** | Fixed 60% baseline when threshold met | 60% |
+| **T1110.003 (Password Spraying)** | Base 55% + 3% per account + 1% per excess failure | 85% |
+| **T1078 (Valid Accounts)** | Fixed 50% baseline | 50% |
+
+Example: 5 failed attempts = 50% + (5 x 10%) = **100%** → capped at **95% confidence**
+
+The confidence explanation is displayed in:
+- **UI tooltips** - Hover over the confidence percentage to see the calculation
+- **Threat alert emails** - Each threat includes the confidence breakdown
 
 ---
 
