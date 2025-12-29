@@ -2131,13 +2131,37 @@ flowchart TD
 
 **Figure 2: Auto-Trust Decision Flow** - Flowchart showing the complete decision logic for handling login locations, from IP lookup through auto-trust evaluation and alert triggering.
 
-When a login attempt occurs, the `log-auth-attempt` edge function:
+### Auto-Trust Decision Flow Explanation
 
-1. **Checks Known Locations**: Queries `known_login_locations` table for the source IP
-2. **Updates Existing**: If found, increments `times_seen` and updates `last_seen_at`
-3. **Auto-Trust Logic**: If `times_seen >= 5`, automatically sets `is_trusted = true`
-4. **Creates New Entry**: If IP is unknown, geolocates it and creates a new entry marked as `is_trusted = false`
-5. **Sends Alert**: For new/untrusted locations, triggers an email alert to the owner
+This flowchart illustrates the intelligent location tracking system that balances security awareness with user convenience by automatically trusting frequently-used login locations.
+
+**Login Attempt Processing**
+
+When an authentication request arrives, the system extracts the source IP address and begins the location evaluation process.
+
+**Database Lookup**
+
+The `log-auth-attempt` edge function queries the `known_login_locations` table to check if this IP has been seen before. This lookup determines whether to update an existing record or create a new one.
+
+**Existing Location Path**
+
+If the IP exists in the database:
+1. **Increment Counter**: The `times_seen` field is incremented to track login frequency
+2. **Update Timestamp**: The `last_seen_at` field is set to the current time
+3. **Auto-Trust Check**: If `times_seen >= 5` and the location is not already trusted, automatically set `is_trusted = true`
+4. **Alert Decision**: If the location is trusted (either manually or auto-trusted), no alert is sent. If still untrusted, an email alert notifies the owner
+
+**New Location Path**
+
+If the IP is not found in the database:
+1. **Geolocate IP**: Call external geolocation API to get city, country, and coordinates
+2. **Create Entry**: Insert new record with `is_trusted = false` and `times_seen = 1`
+3. **Send Alert**: Always send a "New Login Location" email to the owner for review
+
+**Outcome States**
+
+- **Silent Login**: Trusted locations allow seamless authentication without owner notification
+- **Owner Notified**: New or untrusted locations trigger immediate email alerts for security awareness
 
 ### Known Locations Manager
 
