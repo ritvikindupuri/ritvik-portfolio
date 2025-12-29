@@ -13,6 +13,7 @@ interface ThreatInfo {
   tactic: string;
   severity: string;
   confidence: number;
+  confidence_explanation?: string;
   description: string;
   evidence: string[];
 }
@@ -170,7 +171,14 @@ const handler = async (req: Request): Promise<Response> => {
               </tr>
               <tr>
                 <td style="padding: 4px 16px 4px 0; color: #6b7280;">Confidence</td>
-                <td style="padding: 4px 0; color: #111827;">${Math.round(threat.confidence * 100)}%</td>
+                <td style="padding: 4px 0; color: #111827;">
+                  ${Math.round(threat.confidence * 100)}%
+                  ${threat.confidence_explanation ? `
+                    <div style="font-size: 11px; color: #6b7280; margin-top: 4px; padding: 6px 8px; background: #f3f4f6; border-radius: 4px;">
+                      <strong>How calculated:</strong> ${sanitizeHtml(threat.confidence_explanation)}
+                    </div>
+                  ` : ''}
+                </td>
               </tr>
             </table>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Shield, Users, MapPin } from "lucide-react";
+import { BarChart3, Shield, Users, MapPin, Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResumeAnalytics } from "@/components/ResumeAnalytics";
 import { SecurityChoroplethMap } from "@/components/SecurityChoroplethMap";
@@ -9,6 +9,7 @@ import { VisitorDashboard } from "@/components/VisitorDashboard";
 import { KnownLocationsManager } from "@/components/KnownLocationsManager";
 import { AIRiskScore } from "@/components/AIRiskScore";
 import { RiskScoreHistory } from "@/components/RiskScoreHistory";
+import { ThreatDetectionSettings } from "@/components/ThreatDetectionSettings";
 
 interface LoginAttempt {
   id: string;
@@ -90,7 +91,7 @@ export const PortfolioAnalytics = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="visitors" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Visitors
@@ -102,6 +103,10 @@ export const PortfolioAnalytics = () => {
           <TabsTrigger value="locations" className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
             Locations
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Settings
           </TabsTrigger>
         </TabsList>
 
@@ -132,6 +137,18 @@ export const PortfolioAnalytics = () => {
             </p>
           </div>
           <KnownLocationsManager />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold">Threat Detection Configuration</h3>
+            <p className="text-sm text-muted-foreground">
+              Adjust thresholds for MITRE ATT&CK technique detection. Changes apply immediately.
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <ThreatDetectionSettings />
+          </div>
         </TabsContent>
       </Tabs>
     </motion.section>
