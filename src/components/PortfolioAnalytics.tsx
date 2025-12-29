@@ -11,6 +11,7 @@ import { AIRiskScore } from "@/components/AIRiskScore";
 import { RiskScoreHistory } from "@/components/RiskScoreHistory";
 import { ThreatDetectionSettings } from "@/components/ThreatDetectionSettings";
 import { HoneypotManager } from "@/components/HoneypotManager";
+import { BlockedIPsManager } from "@/components/BlockedIPsManager";
 
 interface LoginAttempt {
   id: string;
@@ -137,13 +138,14 @@ export const PortfolioAnalytics = () => {
 
         <TabsContent value="honeypots" className="space-y-6">
           <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold">Honeypot Account Management</h3>
+            <h3 className="text-lg font-semibold">Honeypot & IP Block Management</h3>
             <p className="text-sm text-muted-foreground">
-              Create fake accounts to catch and track attackers attempting default usernames (MITRE T1078.001)
+              Create fake accounts to catch attackers and manage blocked IPs (MITRE T1078.001)
             </p>
           </div>
-          <div className="max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <HoneypotManager />
+            <BlockedIPsManager />
           </div>
         </TabsContent>
 
