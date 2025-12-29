@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_ips: {
+        Row: {
+          blocked_at: string
+          created_at: string
+          expires_at: string | null
+          honeypot_triggers: number
+          id: string
+          ip_address: string
+          is_active: boolean
+          last_honeypot_email: string | null
+          notes: string | null
+          reason: string
+          updated_at: string
+        }
+        Insert: {
+          blocked_at?: string
+          created_at?: string
+          expires_at?: string | null
+          honeypot_triggers?: number
+          id?: string
+          ip_address: string
+          is_active?: boolean
+          last_honeypot_email?: string | null
+          notes?: string | null
+          reason: string
+          updated_at?: string
+        }
+        Update: {
+          blocked_at?: string
+          created_at?: string
+          expires_at?: string | null
+          honeypot_triggers?: number
+          id?: string
+          ip_address?: string
+          is_active?: boolean
+          last_honeypot_email?: string | null
+          notes?: string | null
+          reason?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           created_at: string | null

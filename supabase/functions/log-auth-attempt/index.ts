@@ -22,6 +22,10 @@ const RATE_LIMIT_WINDOW = 900000; // 15 minutes
 const MAX_FAILED_ATTEMPTS = 5;
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
+// Auto-block configuration
+const HONEYPOT_BLOCK_THRESHOLD = 3; // Block IP after 3 honeypot triggers
+const DEFAULT_BLOCK_DURATION_HOURS = 24; // 24-hour block by default
+
 async function getLocationFromIP(ip: string): Promise<{ city: string; country: string; countryCode: string } | null> {
   try {
     if (!ip || ip === 'unknown') return null;
@@ -294,6 +298,107 @@ function checkRateLimit(key: string, success: boolean): { blocked: boolean; coun
   return { blocked, count: entry.count };
 }
 
+// Check if IP is blocked
+async function checkBlockedIP(
+  supabase: any,
+  ipAddress: string
+): Promise<{ isBlocked: boolean; reason?: string; expiresAt?: string }> {
+  try {
+    const { data: blockedIp, error } = await supabase
+      .from('blocked_ips')
+      .select('*')
+      .eq('ip_address', ipAddress)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error || !blockedIp) {
+      return { isBlocked: false };
+    }
+
+    // Check if block has expired
+    if (blockedIp.expires_at && new Date(blockedIp.expires_at) < new Date()) {
+      // Block expired, deactivate it
+      await supabase
+        .from('blocked_ips')
+        .update({ is_active: false })
+        .eq('id', blockedIp.id);
+      console.log(`Block expired for IP ${ipAddress}`);
+      return { isBlocked: false };
+    }
+
+    console.log(`🚫 BLOCKED IP ATTEMPTED LOGIN: ${ipAddress} - ${blockedIp.reason}`);
+    return { 
+      isBlocked: true, 
+      reason: blockedIp.reason,
+      expiresAt: blockedIp.expires_at 
+    };
+  } catch (err) {
+    console.error("Error checking blocked IP:", err);
+    return { isBlocked: false };
+  }
+}
+
+// Auto-block IP after honeypot threshold
+async function checkAndAutoBlockIP(
+  supabase: any,
+  ipAddress: string,
+  honeypotEmail: string
+): Promise<{ blocked: boolean; triggerCount: number }> {
+  try {
+    // Count honeypot triggers from this IP
+    const { data: triggers, error } = await supabase
+      .from('honeypot_triggers')
+      .select('id')
+      .eq('ip_address', ipAddress);
+
+    if (error) {
+      console.error("Error counting honeypot triggers:", error);
+      return { blocked: false, triggerCount: 0 };
+    }
+
+    const triggerCount = triggers?.length || 0;
+
+    if (triggerCount >= HONEYPOT_BLOCK_THRESHOLD) {
+      // Check if already blocked
+      const { data: existingBlock } = await supabase
+        .from('blocked_ips')
+        .select('id')
+        .eq('ip_address', ipAddress)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (!existingBlock) {
+        // Auto-block the IP
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + DEFAULT_BLOCK_DURATION_HOURS);
+
+        const { error: blockError } = await supabase
+          .from('blocked_ips')
+          .insert({
+            ip_address: ipAddress,
+            reason: `Auto-blocked: ${triggerCount} honeypot triggers`,
+            honeypot_triggers: triggerCount,
+            last_honeypot_email: honeypotEmail,
+            expires_at: expiresAt.toISOString(),
+            is_active: true
+          });
+
+        if (blockError) {
+          console.error("Error auto-blocking IP:", blockError);
+        } else {
+          console.log(`🚫 AUTO-BLOCKED IP ${ipAddress} after ${triggerCount} honeypot triggers (expires: ${expiresAt.toISOString()})`);
+          return { blocked: true, triggerCount };
+        }
+      }
+    }
+
+    return { blocked: false, triggerCount };
+  } catch (err) {
+    console.error("Error in auto-block check:", err);
+    return { blocked: false, triggerCount: 0 };
+  }
+}
+
 // Check if email matches a honeypot account and log the trigger
 async function checkHoneypot(
   supabase: any,
@@ -472,6 +577,34 @@ const handler = async (req: Request): Promise<Response> => {
     // Create Supabase client with service role for inserting
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Check if IP is blocked FIRST
+    const blockedCheck = await checkBlockedIP(supabase, ipAddress);
+    if (blockedCheck.isBlocked) {
+      // Log the attempt anyway for monitoring
+      await supabase
+        .from('login_attempts')
+        .insert({
+          email,
+          ip_address: ipAddress,
+          user_agent: userAgent || null,
+          success: false,
+          failure_reason: `Blocked IP: ${blockedCheck.reason}`,
+        });
+
+      return new Response(
+        JSON.stringify({ 
+          error: "Access denied",
+          blocked: true,
+          reason: blockedCheck.reason,
+          expiresAt: blockedCheck.expiresAt
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     // Check if this is a honeypot account FIRST
     const honeypotResult = await checkHoneypot(supabase, email, ipAddress, userAgent || null);
     
@@ -491,6 +624,9 @@ const handler = async (req: Request): Promise<Response> => {
       // Send honeypot alert
       await sendHoneypotAlert(email, ipAddress, userAgent || "Unknown", location);
 
+      // Check if we should auto-block this IP
+      const autoBlockResult = await checkAndAutoBlockIP(supabase, ipAddress, email);
+
       // Still log the attempt
       await supabase
         .from('login_attempts')
@@ -499,7 +635,9 @@ const handler = async (req: Request): Promise<Response> => {
           ip_address: ipAddress,
           user_agent: userAgent || null,
           success: false,
-          failure_reason: 'Honeypot account triggered',
+          failure_reason: autoBlockResult.blocked 
+            ? `Honeypot triggered - IP auto-blocked (${autoBlockResult.triggerCount} triggers)`
+            : 'Honeypot account triggered',
         });
 
       // Return a generic error to not reveal honeypot
@@ -507,8 +645,10 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ 
           error: "Invalid login credentials",
           logged: true,
-          blocked: false,
-          honeypotTriggered: true // Only visible in response for tracking
+          blocked: autoBlockResult.blocked,
+          honeypotTriggered: true, // Only visible in response for tracking
+          autoBlocked: autoBlockResult.blocked,
+          triggerCount: autoBlockResult.triggerCount
         }),
         {
           status: 401,
