@@ -338,11 +338,124 @@ async function checkBlockedIP(
   }
 }
 
+// Send auto-block notification email
+async function sendAutoBlockNotification(
+  ipAddress: string,
+  triggerCount: number,
+  honeypotEmail: string,
+  expiresAt: Date,
+  location: { city: string; country: string } | null
+): Promise<void> {
+  if (!RESEND_API_KEY) {
+    console.error("RESEND_API_KEY not configured, skipping auto-block notification");
+    return;
+  }
+
+  const locationStr = location ? `${location.city}, ${location.country}` : 'Unknown Location';
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Portfolio Security <onboarding@resend.dev>",
+        to: ["ritvik.indupuri@gmail.com"],
+        subject: `🚫 IP AUTO-BLOCKED: ${ipAddress}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 32px 16px;">
+              <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+                
+                <!-- Header -->
+                <div style="background: #dc2626; padding: 32px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 22px; font-weight: 600;">🚫 IP Address Auto-Blocked</h1>
+                  <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">Honeypot Threshold Exceeded</p>
+                </div>
+                
+                <!-- Content -->
+                <div style="padding: 32px;">
+                  <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0; text-align: center;">
+                    An IP address has been automatically blocked after triggering honeypot accounts ${triggerCount} times.
+                  </p>
+                  
+                  <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; width: 140px;">Blocked IP</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #dc2626; font-weight: 600; font-family: 'SF Mono', Monaco, monospace; font-size: 13px;">${ipAddress}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Location</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500; font-size: 14px;">${locationStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Honeypot Triggers</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 600; font-size: 14px;">${triggerCount}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Last Honeypot</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #7c3aed; font-weight: 500; font-size: 14px;">${honeypotEmail}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Block Duration</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${DEFAULT_BLOCK_DURATION_HOURS} hours</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; color: #6b7280; font-size: 14px;">Expires At</td>
+                        <td style="padding: 14px 16px; color: #111827; font-size: 14px;">${expiresAt.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' })}</td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <!-- Protection Status -->
+                  <div style="margin-top: 24px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px;">
+                    <p style="color: #166534; font-weight: 600; margin: 0 0 8px 0; font-size: 14px;">✓ Protection Active</p>
+                    <p style="color: #166534; margin: 0; font-size: 14px; line-height: 1.5;">All login attempts from this IP will be rejected until the block expires or is manually removed.</p>
+                  </div>
+
+                  <!-- Action -->
+                  <div style="margin-top: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                    <p style="color: #6b7280; font-weight: 600; margin: 0 0 8px 0; font-size: 14px;">Manage Blocked IPs</p>
+                    <p style="color: #6b7280; margin: 0; font-size: 14px; line-height: 1.5;">You can view and manage blocked IPs from your dashboard's Security tab under "Honeypot & IP Block Management".</p>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="background: #fef2f2; padding: 20px 32px; text-align: center; border-top: 1px solid #fecaca;">
+                  <p style="color: #dc2626; font-size: 12px; margin: 0;">This is an automated security action from your portfolio threat detection system.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      console.error("Failed to send auto-block notification email:", error);
+    } else {
+      console.log("Auto-block notification email sent successfully");
+    }
+  } catch (error) {
+    console.error("Error sending auto-block notification email:", error);
+  }
+}
+
 // Auto-block IP after honeypot threshold
 async function checkAndAutoBlockIP(
   supabase: any,
   ipAddress: string,
-  honeypotEmail: string
+  honeypotEmail: string,
+  location: { city: string; country: string } | null
 ): Promise<{ blocked: boolean; triggerCount: number }> {
   try {
     // Count honeypot triggers from this IP
@@ -387,6 +500,10 @@ async function checkAndAutoBlockIP(
           console.error("Error auto-blocking IP:", blockError);
         } else {
           console.log(`🚫 AUTO-BLOCKED IP ${ipAddress} after ${triggerCount} honeypot triggers (expires: ${expiresAt.toISOString()})`);
+          
+          // Send email notification about the auto-block
+          await sendAutoBlockNotification(ipAddress, triggerCount, honeypotEmail, expiresAt, location);
+          
           return { blocked: true, triggerCount };
         }
       }
@@ -625,7 +742,7 @@ const handler = async (req: Request): Promise<Response> => {
       await sendHoneypotAlert(email, ipAddress, userAgent || "Unknown", location);
 
       // Check if we should auto-block this IP
-      const autoBlockResult = await checkAndAutoBlockIP(supabase, ipAddress, email);
+      const autoBlockResult = await checkAndAutoBlockIP(supabase, ipAddress, email, location);
 
       // Still log the attempt
       await supabase
