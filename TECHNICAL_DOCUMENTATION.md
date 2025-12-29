@@ -1778,9 +1778,19 @@ The `ThreatDetector.tsx` component analyzes login patterns against the **MITRE A
 
 ### Configurable Detection Thresholds
 
-All threat detection thresholds are **owner-configurable** via the Settings tab in the Security section of the Owner Dashboard. Settings are persisted in the `threat_detection_settings` database table.
+<p align="center">
+  <img src="https://imgur.com/PEpdqjQ.png" alt="Threat Detection Thresholds Configuration" width="700"/>
+</p>
 
-#### Threshold Configuration UI
+**Figure 15: Threat Detection Thresholds Configuration** - The Settings tab in the Security section provides owner-configurable thresholds for each MITRE ATT&CK technique:
+- **Brute Force (T1110)**: Configure time window (minutes) and minimum failures required
+- **Password Guessing (T1110.001)**: Set minimum total failures across multiple timeframes
+- **Password Spraying (T1110.003)**: Adjust window, distinct account count, total failures, and max per account
+- **Valid Accounts (T1078)**: Configure minimum unique locations threshold
+- **Real-time Validation**: Warnings appear for settings that may cause false positives (too low) or miss threats (too high)
+- **Save Settings Button**: Persists changes immediately to the database
+
+All threat detection thresholds are **owner-configurable** via the Settings tab in the Security section of the Owner Dashboard. Settings are persisted in the `threat_detection_settings` database table.
 
 The `ThreatDetectionSettings.tsx` component provides:
 - Per-technique threshold configuration
@@ -2071,6 +2081,17 @@ When a login attempt occurs, the `log-auth-attempt` edge function:
 5. **Sends Alert**: For new/untrusted locations, triggers an email alert to the owner
 
 ### Known Locations Manager
+
+<p align="center">
+  <img src="https://imgur.com/hlp9zty.png" alt="Login Location Management" width="800"/>
+</p>
+
+**Figure 14: Login Location Management** - The Locations tab in the Owner Dashboard provides comprehensive location tracking:
+- **Trusted Locations Section**: Displays verified safe locations with green checkmarks, showing city/country, IP address, first seen date, last seen date, and login count
+- **Untrust Button**: Allows revoking trust status for any location
+- **Delete Button**: Removes locations from the tracking system
+- **New/Unverified Locations Section**: Shows locations that triggered login alerts, pending owner review
+- **Location Count Badges**: Displays total count for each category (trusted vs unverified)
 
 The **Locations** tab in the Owner Dashboard (`KnownLocationsManager.tsx`) provides:
 
