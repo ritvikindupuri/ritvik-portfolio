@@ -1783,6 +1783,47 @@ The `ThreatDetector.tsx` component analyzes login patterns against the **MITRE A
 | **T1110.001** | Password Guessing | Configurable failed attempts across multiple distinct timeframes | High |
 | **T1110.003** | Password Spraying | Configurable distinct accounts targeted from same IP | Medium |
 | **T1078** | Valid Accounts | Successful logins from configurable number of locations | Medium |
+| **T1078.001** | Default Accounts | Login attempts using common default usernames (admin@, test@, root@, etc.) | High |
+
+### Default Accounts Detection (T1078.001)
+
+The system detects login attempts using common default or enumeration usernames that attackers frequently try when probing for misconfigured accounts.
+
+**Detected Username Patterns:**
+- Administrative: `admin`, `administrator`, `root`, `superuser`, `sysadmin`
+- Test accounts: `test`, `demo`, `user`, `guest`, `default`
+- Service accounts: `info`, `support`, `contact`, `sales`, `help`, `service`, `mail`
+- System accounts: `webmaster`, `postmaster`, `hostmaster`, `abuse`, `noreply`, `system`, `operator`, `manager`
+
+**Detection Logic:**
+```typescript
+const DEFAULT_ACCOUNT_PATTERNS = [
+  'admin', 'administrator', 'root', 'test', 'user', 'guest', 'demo',
+  'info', 'support', 'contact', 'sales', 'help', 'service', 'mail',
+  'webmaster', 'postmaster', 'hostmaster', 'abuse', 'noreply', 'no-reply',
+  'system', 'sysadmin', 'operator', 'manager', 'superuser', 'default'
+];
+
+// Check if email prefix matches any default pattern
+const emailPrefix = attempt.email.split('@')[0].toLowerCase();
+const isDefaultAccount = DEFAULT_ACCOUNT_PATTERNS.some(pattern => 
+  emailPrefix === pattern || 
+  emailPrefix.startsWith(pattern) ||
+  emailPrefix.endsWith(pattern)
+);
+```
+
+**Confidence Calculation:**
+- Base 70% for any default account attempt
+- +5% for each additional unique default account attempted
+- Maximum 95% confidence
+
+**Why This Matters:**
+Attackers commonly try default usernames to find:
+- Misconfigured test accounts left in production
+- Default admin accounts with weak/unchanged passwords
+- Service accounts that may have elevated privileges
+- Honeypot opportunities for security monitoring
 
 ### Configurable Detection Thresholds
 
@@ -1795,6 +1836,7 @@ The `ThreatDetector.tsx` component analyzes login patterns against the **MITRE A
 - **Password Guessing (T1110.001)**: Set minimum total failures across multiple timeframes
 - **Password Spraying (T1110.003)**: Adjust window, distinct account count, total failures, and max per account
 - **Valid Accounts (T1078)**: Configure minimum unique locations threshold
+- **Default Accounts (T1078.001)**: Automatically detected - triggers on any default username pattern
 - **Real-time Validation**: Warnings appear for settings that may cause false positives (too low) or miss threats (too high)
 - **Save Settings Button**: Persists changes immediately to the database
 
@@ -1907,6 +1949,7 @@ Each threat includes a **confidence score** (0-100%) with a **tooltip explanatio
 | **T1110.001 (Password Guessing)** | Fixed 60% baseline when threshold met | 60% |
 | **T1110.003 (Password Spraying)** | Base 55% + 3% per account + 1% per excess failure | 85% |
 | **T1078 (Valid Accounts)** | Fixed 50% baseline | 50% |
+| **T1078.001 (Default Accounts)** | Base 70% + 5% per additional default account | 95% |
 
 Example: 5 failed attempts = 50% + (5 x 10%) = **100%** → capped at **95% confidence**
 

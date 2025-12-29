@@ -44,6 +44,15 @@ const MITRE_TECHNIQUES = {
     severity: "medium",
     color: "orange"
   },
+  T1078_001: {
+    id: "T1078.001",
+    name: "Default Accounts",
+    tactic: "Credential Access",
+    description: "Adversaries may attempt to gain access using default or common account names.",
+    indicators: ["Login attempts using admin@, test@, root@, user@", "Common default username patterns"],
+    severity: "high",
+    color: "red"
+  },
   T1090: {
     id: "T1090",
     name: "Proxy",
@@ -70,9 +79,18 @@ const CONFIDENCE_EXPLANATIONS: Record<string, string> = {
   "T1110.001": "Confidence = Fixed 60% baseline when total failures meet threshold. Pattern matching adds certainty.",
   "T1110.003": "Confidence = Base 55% + 3% per distinct account + 1% per excess failure (max 85%). Spray pattern confirmation.",
   T1078: "Confidence = Fixed 50% baseline. Multiple login locations suggest credential reuse or compromise.",
+  "T1078.001": "Confidence = Base 70% + 5% per additional default account attempt (max 95%). High certainty due to obvious attack pattern.",
   T1090: "Confidence = Variable based on proxy detection signals.",
   T1531: "Confidence = Based on lockout attempt frequency and pattern."
 };
+
+// Common default/enumeration usernames that attackers try
+const DEFAULT_ACCOUNT_PATTERNS = [
+  'admin', 'administrator', 'root', 'test', 'user', 'guest', 'demo',
+  'info', 'support', 'contact', 'sales', 'help', 'service', 'mail',
+  'webmaster', 'postmaster', 'hostmaster', 'abuse', 'noreply', 'no-reply',
+  'system', 'sysadmin', 'operator', 'manager', 'superuser', 'default'
+];
 
 interface LoginAttempt {
   id: string;
@@ -280,6 +298,39 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
         });
       }
     });
+
+    // Detect Default Accounts (T1078.001) - attempts using common default usernames
+    const defaultAccountAttempts = loginAttempts.filter(a => {
+      const emailPrefix = a.email.split('@')[0].toLowerCase();
+      return DEFAULT_ACCOUNT_PATTERNS.some(pattern => 
+        emailPrefix === pattern || 
+        emailPrefix.startsWith(pattern) ||
+        emailPrefix.endsWith(pattern)
+      );
+    });
+    
+    if (defaultAccountAttempts.length >= 1) {
+      const uniqueDefaultEmails = [...new Set(defaultAccountAttempts.map(a => a.email))];
+      const failedDefaults = defaultAccountAttempts.filter(a => !a.success);
+      const affectedIps = [...new Set(defaultAccountAttempts.map(a => a.ip_address).filter(Boolean))] as string[];
+      
+      // Higher confidence with more default account attempts
+      const confidence = Math.min(0.95, 0.7 + (uniqueDefaultEmails.length - 1) * 0.05);
+      
+      threats.push({
+        technique: MITRE_TECHNIQUES.T1078_001,
+        confidence,
+        confidenceExplanation: `Base 70% + (${uniqueDefaultEmails.length - 1} additional default accounts × 5%) = ${Math.round(confidence * 100)}% (capped at 95%)`,
+        evidence: [
+          `${defaultAccountAttempts.length} login attempt(s) using default/common usernames`,
+          `${failedDefaults.length} failed, ${defaultAccountAttempts.length - failedDefaults.length} succeeded`,
+          `Target accounts: ${uniqueDefaultEmails.slice(0, 5).join(', ')}${uniqueDefaultEmails.length > 5 ? '...' : ''}`,
+          `Attackers commonly try admin@, test@, root@ to find misconfigured accounts`
+        ],
+        affectedIps,
+        timestamp: defaultAccountAttempts[0]?.created_at || now.toISOString()
+      });
+    }
 
     // Detect unusual login patterns (T1078)
     const successfulLogins = loginAttempts.filter(a => a.success);
