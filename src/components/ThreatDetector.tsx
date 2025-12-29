@@ -136,32 +136,62 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
       }
     });
 
-    // Detect Password Spraying (T1110.003) - Same pattern across accounts
-    const emailAttempts: Record<string, LoginAttempt[]> = {};
-    loginAttempts.forEach(attempt => {
-      if (!emailAttempts[attempt.email]) {
-        emailAttempts[attempt.email] = [];
-      }
-      emailAttempts[attempt.email].push(attempt);
+    // Detect Password Spraying (T1110.003)
+    // Heuristic: within a short window, a *single IP* produces low-volume failures across many accounts.
+    const SPRAY_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+    const SPRAY_MIN_DISTINCT_ACCOUNTS = 5;
+    const SPRAY_MIN_TOTAL_FAILURES = 8;
+    const SPRAY_MAX_FAILURES_PER_ACCOUNT = 2;
+
+    const recentFailed = loginAttempts.filter(a => {
+      if (a.success) return false;
+      if (!a.ip_address) return false;
+      const t = new Date(a.created_at).getTime();
+      return (now.getTime() - t) < SPRAY_WINDOW_MS;
     });
 
-    const failedEmails = Object.entries(emailAttempts)
-      .filter(([_, attempts]) => attempts.some(a => !a.success))
-      .map(([email]) => email);
+    const failedByIp: Record<string, LoginAttempt[]> = {};
+    recentFailed.forEach(a => {
+      const ip = a.ip_address!;
+      if (!failedByIp[ip]) failedByIp[ip] = [];
+      failedByIp[ip].push(a);
+    });
 
-    if (failedEmails.length >= 3) {
-      const uniqueIps = [...new Set(loginAttempts.filter(a => !a.success && a.ip_address).map(a => a.ip_address!))];
-      threats.push({
-        technique: MITRE_TECHNIQUES.T1110_003,
-        confidence: 0.7,
-        evidence: [
-          `Failed attempts across ${failedEmails.length} accounts`,
-          `From ${uniqueIps.length} unique IPs`
-        ],
-        affectedIps: uniqueIps,
-        timestamp: now.toISOString()
+    Object.entries(failedByIp).forEach(([ip, attempts]) => {
+      const byEmail: Record<string, number> = {};
+      attempts.forEach(a => {
+        byEmail[a.email] = (byEmail[a.email] || 0) + 1;
       });
-    }
+
+      const distinctAccounts = Object.keys(byEmail).length;
+      const totalFailures = attempts.length;
+      const maxFailuresPerAccount = Math.max(0, ...Object.values(byEmail));
+
+      if (
+        distinctAccounts >= SPRAY_MIN_DISTINCT_ACCOUNTS &&
+        totalFailures >= SPRAY_MIN_TOTAL_FAILURES &&
+        maxFailuresPerAccount <= SPRAY_MAX_FAILURES_PER_ACCOUNT
+      ) {
+        const sampleAccounts = Object.keys(byEmail).slice(0, 5);
+        const confidence = Math.min(
+          0.85,
+          0.55 + distinctAccounts * 0.03 + (totalFailures - SPRAY_MIN_TOTAL_FAILURES) * 0.01
+        );
+
+        threats.push({
+          technique: MITRE_TECHNIQUES.T1110_003,
+          confidence,
+          evidence: [
+            `${totalFailures} failed attempts in last 30 minutes from one IP`,
+            `${distinctAccounts} distinct target accounts (≤${SPRAY_MAX_FAILURES_PER_ACCOUNT} attempts/account)`,
+            `Source IP: ${ip}`,
+            `Sample targets: ${sampleAccounts.join(", ")}${distinctAccounts > sampleAccounts.length ? "…" : ""}`
+          ],
+          affectedIps: [ip],
+          timestamp: attempts[0]?.created_at || now.toISOString()
+        });
+      }
+    });
 
     // Detect unusual login patterns (T1078)
     const successfulLogins = loginAttempts.filter(a => a.success);
