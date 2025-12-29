@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Shield, Users, MapPin, Settings } from "lucide-react";
+import { BarChart3, Shield, Users, MapPin, Settings, Bug } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResumeAnalytics } from "@/components/ResumeAnalytics";
 import { SecurityChoroplethMap } from "@/components/SecurityChoroplethMap";
@@ -10,6 +10,7 @@ import { KnownLocationsManager } from "@/components/KnownLocationsManager";
 import { AIRiskScore } from "@/components/AIRiskScore";
 import { RiskScoreHistory } from "@/components/RiskScoreHistory";
 import { ThreatDetectionSettings } from "@/components/ThreatDetectionSettings";
+import { HoneypotManager } from "@/components/HoneypotManager";
 
 interface LoginAttempt {
   id: string;
@@ -27,6 +28,7 @@ const MITRE_TECHNIQUES = {
   T1110_001: { id: "T1110.001", name: "Password Guessing", severity: "high" },
   T1110_003: { id: "T1110.003", name: "Password Spraying", severity: "medium" },
   T1078: { id: "T1078", name: "Valid Accounts", severity: "medium" },
+  T1078_001: { id: "T1078.001", name: "Default Accounts", severity: "high" },
 };
 
 export const PortfolioAnalytics = () => {
@@ -91,7 +93,7 @@ export const PortfolioAnalytics = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-5 mb-6">
           <TabsTrigger value="visitors" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Visitors
@@ -99,6 +101,10 @@ export const PortfolioAnalytics = () => {
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
             Security
+          </TabsTrigger>
+          <TabsTrigger value="honeypots" className="flex items-center gap-2">
+            <Bug className="w-4 h-4" />
+            Honeypots
           </TabsTrigger>
           <TabsTrigger value="locations" className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
@@ -127,6 +133,18 @@ export const PortfolioAnalytics = () => {
           
           {/* Threat Detection */}
           <ThreatDetector loginAttempts={loginAttempts} />
+        </TabsContent>
+
+        <TabsContent value="honeypots" className="space-y-6">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold">Honeypot Account Management</h3>
+            <p className="text-sm text-muted-foreground">
+              Create fake accounts to catch and track attackers attempting default usernames (MITRE T1078.001)
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <HoneypotManager />
+          </div>
         </TabsContent>
 
         <TabsContent value="locations" className="space-y-6">

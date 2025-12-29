@@ -373,19 +373,28 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   // Add markers to Success Map
   useEffect(() => {
     const map = successMap.current;
-    if (!map) return;
+    if (!map || !mapboxToken) return;
 
     let cancelled = false;
+    let timeoutId: NodeJS.Timeout | null = null;
 
     const addMarkers = () => {
-      if (cancelled) return;
+      if (cancelled || !successMap.current) return;
 
+      // Clear existing markers
       successMarkersRef.current.forEach(marker => marker.remove());
       successMarkersRef.current = [];
 
-      if (successLocations.length === 0) return;
+      if (successLocations.length === 0) {
+        console.log('No success locations to display');
+        return;
+      }
+
+      console.log(`Adding ${successLocations.length} success markers`);
 
       successLocations.forEach(loc => {
+        if (!successMap.current) return;
+        
         const size = Math.min(20 + loc.totalCount * 5, 50);
 
         const el = document.createElement('div');
@@ -412,32 +421,47 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           successMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
         });
 
-        const marker = new mapboxgl.Marker(el).setLngLat([loc.lon, loc.lat]).addTo(map);
-        successMarkersRef.current.push(marker);
+        try {
+          const marker = new mapboxgl.Marker(el).setLngLat([loc.lon, loc.lat]).addTo(successMap.current);
+          successMarkersRef.current.push(marker);
+        } catch (err) {
+          console.error('Error adding success marker:', err);
+        }
       });
     };
 
-    if (map.isStyleLoaded()) {
-      addMarkers();
-    } else {
-      map.once('style.load', addMarkers);
-    }
+    const tryAddMarkers = () => {
+      if (cancelled) return;
+      
+      if (map.isStyleLoaded()) {
+        addMarkers();
+      } else {
+        // Wait a bit and try again
+        timeoutId = setTimeout(tryAddMarkers, 100);
+      }
+    };
+
+    // Start trying to add markers
+    tryAddMarkers();
 
     return () => {
       cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [mapboxToken, successLocations]);
 
   // Add markers to Security Map - separate markers for failed logins and guest visits
   useEffect(() => {
     const map = securityMap.current;
-    if (!map) return;
+    if (!map || !mapboxToken) return;
 
     let cancelled = false;
+    let timeoutId: NodeJS.Timeout | null = null;
 
     const addMarkersAndConnectors = () => {
-      if (cancelled) return;
+      if (cancelled || !securityMap.current) return;
 
+      // Clear existing markers
       securityMarkersRef.current.forEach(marker => marker.remove());
       securityMarkersRef.current = [];
 
@@ -461,7 +485,12 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       }
       connectorHoverHandlersRef.current = {};
 
-      if (securityLocations.length === 0) return;
+      if (securityLocations.length === 0) {
+        console.log('No security locations to display');
+        return;
+      }
+
+      console.log(`Adding ${securityLocations.length} security markers`);
 
       const connectorFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
 
@@ -666,15 +695,21 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       }
     };
 
-    // Wait for style to load before adding markers
-    if (map.isStyleLoaded()) {
-      addMarkersAndConnectors();
-    } else {
-      map.once('style.load', addMarkersAndConnectors);
-    }
+    const tryAddMarkers = () => {
+      if (cancelled) return;
+      
+      if (map.isStyleLoaded()) {
+        addMarkersAndConnectors();
+      } else {
+        timeoutId = setTimeout(tryAddMarkers, 100);
+      }
+    };
+
+    tryAddMarkers();
 
     return () => {
       cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [mapboxToken, securityLocations, showGuestMarkers]);
 

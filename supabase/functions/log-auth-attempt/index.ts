@@ -294,6 +294,167 @@ function checkRateLimit(key: string, success: boolean): { blocked: boolean; coun
   return { blocked, count: entry.count };
 }
 
+// Check if email matches a honeypot account and log the trigger
+async function checkHoneypot(
+  supabase: any,
+  email: string,
+  ipAddress: string,
+  userAgent: string | null
+): Promise<{ isHoneypot: boolean; honeypotId?: string; honeypotEmail?: string }> {
+  try {
+    // Check if the email matches any active honeypot account
+    const { data: honeypot, error } = await supabase
+      .from('honeypot_accounts')
+      .select('id, email')
+      .eq('email', email.toLowerCase())
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error || !honeypot) {
+      return { isHoneypot: false };
+    }
+
+    // Log the honeypot trigger
+    const { error: triggerError } = await supabase
+      .from('honeypot_triggers')
+      .insert({
+        honeypot_id: honeypot.id,
+        ip_address: ipAddress,
+        user_agent: userAgent
+      });
+
+    if (triggerError) {
+      console.error("Error logging honeypot trigger:", triggerError);
+    } else {
+      console.log(`🍯 HONEYPOT TRIGGERED: ${email} from IP ${ipAddress}`);
+    }
+
+    return { isHoneypot: true, honeypotId: honeypot.id, honeypotEmail: honeypot.email };
+  } catch (err) {
+    console.error("Error checking honeypot:", err);
+    return { isHoneypot: false };
+  }
+}
+
+// Send honeypot alert email
+async function sendHoneypotAlert(
+  email: string,
+  ipAddress: string,
+  userAgent: string,
+  location: { city: string; country: string } | null
+): Promise<void> {
+  if (!RESEND_API_KEY) {
+    console.error("RESEND_API_KEY not configured, skipping honeypot alert");
+    return;
+  }
+
+  const locationStr = location ? `${location.city}, ${location.country}` : 'Unknown Location';
+  const browser = parseBrowser(userAgent);
+  const os = parseOS(userAgent);
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Portfolio Security <onboarding@resend.dev>",
+        to: ["ritvik.indupuri@gmail.com"],
+        subject: `🍯 HONEYPOT TRIGGERED: ${email}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 32px 16px;">
+              <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+                
+                <!-- Header -->
+                <div style="background: #7c3aed; padding: 32px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 22px; font-weight: 600;">🍯 Honeypot Account Triggered!</h1>
+                  <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">Attacker Detected - MITRE T1078.001</p>
+                </div>
+                
+                <!-- Content -->
+                <div style="padding: 32px;">
+                  <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0; text-align: center;">
+                    An attacker attempted to login using a honeypot account. This is a fake account designed to catch malicious actors.
+                  </p>
+                  
+                  <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; width: 140px;">Honeypot Email</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #7c3aed; font-weight: 600; font-size: 14px;">${email}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Attacker IP</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-family: 'SF Mono', Monaco, monospace; font-size: 13px;">${ipAddress}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Location</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${locationStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Browser</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${browser}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">Operating System</td>
+                        <td style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${os}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 14px 16px; color: #6b7280; font-size: 14px;">Time</td>
+                        <td style="padding: 14px 16px; color: #111827; font-size: 14px;">${new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' })}</td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <!-- MITRE Info -->
+                  <div style="margin-top: 24px; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 16px;">
+                    <p style="color: #7c3aed; font-weight: 600; margin: 0 0 8px 0; font-size: 14px;">MITRE ATT&CK Classification</p>
+                    <p style="color: #6b21a8; margin: 0; font-size: 14px; line-height: 1.5;">
+                      <strong>T1078.001 - Default Accounts:</strong> Adversaries may attempt to use default or common usernames to gain initial access.
+                    </p>
+                  </div>
+
+                  <!-- Action -->
+                  <div style="margin-top: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px;">
+                    <p style="color: #dc2626; font-weight: 600; margin: 0 0 8px 0; font-size: 14px;">Recommended Actions</p>
+                    <ul style="color: #991b1b; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                      <li>Block IP address ${ipAddress} if persistent</li>
+                      <li>Monitor for additional reconnaissance activity</li>
+                      <li>Check other accounts for attempted access</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="background: #f9fafb; padding: 20px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #6b7280; font-size: 12px; margin: 0;">This is an automated honeypot alert from your portfolio security system.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      console.error("Failed to send honeypot alert email:", error);
+    } else {
+      console.log("Honeypot alert email sent successfully");
+    }
+  } catch (error) {
+    console.error("Error sending honeypot alert email:", error);
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -307,6 +468,54 @@ const handler = async (req: Request): Promise<Response> => {
     const realIp = req.headers.get("x-real-ip");
     const cfConnectingIp = req.headers.get("cf-connecting-ip");
     const ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || cfConnectingIp || "unknown";
+
+    // Create Supabase client with service role for inserting
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Check if this is a honeypot account FIRST
+    const honeypotResult = await checkHoneypot(supabase, email, ipAddress, userAgent || null);
+    
+    if (honeypotResult.isHoneypot) {
+      // Get location for the alert
+      let location: { city: string; country: string } | null = null;
+      try {
+        const geoResponse = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,country,status`);
+        const geoData = await geoResponse.json();
+        if (geoData.status === 'success') {
+          location = { city: geoData.city, country: geoData.country };
+        }
+      } catch (e) {
+        console.error("Error getting location for honeypot alert:", e);
+      }
+
+      // Send honeypot alert
+      await sendHoneypotAlert(email, ipAddress, userAgent || "Unknown", location);
+
+      // Still log the attempt
+      await supabase
+        .from('login_attempts')
+        .insert({
+          email,
+          ip_address: ipAddress,
+          user_agent: userAgent || null,
+          success: false,
+          failure_reason: 'Honeypot account triggered',
+        });
+
+      // Return a generic error to not reveal honeypot
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid login credentials",
+          logged: true,
+          blocked: false,
+          honeypotTriggered: true // Only visible in response for tracking
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
     // Check rate limit
     const rateLimitKey = `${email}:${ipAddress}`;
@@ -326,9 +535,6 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
-
-    // Create Supabase client with service role for inserting
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Check if this IP is in known locations table
     let isNewLocation: boolean = false;
