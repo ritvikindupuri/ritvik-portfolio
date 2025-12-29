@@ -1782,7 +1782,7 @@ The `ThreatDetector.tsx` component analyzes login patterns against the **MITRE A
   <img src="https://imgur.com/PEpdqjQ.png" alt="Threat Detection Thresholds Configuration" width="700"/>
 </p>
 
-**Figure 15: Threat Detection Thresholds Configuration** - The Settings tab in the Security section provides owner-configurable thresholds for each MITRE ATT&CK technique:
+**Figure 1: Threat Detection Thresholds Configuration** - The Settings tab in the Security section provides owner-configurable thresholds for each MITRE ATT&CK technique:
 - **Brute Force (T1110)**: Configure time window (minutes) and minimum failures required
 - **Password Guessing (T1110.001)**: Set minimum total failures across multiple timeframes
 - **Password Spraying (T1110.003)**: Adjust window, distinct account count, total failures, and max per account
@@ -2086,7 +2086,7 @@ When a login attempt occurs, the `log-auth-attempt` edge function:
   <img src="https://imgur.com/hlp9zty.png" alt="Login Location Management" width="800"/>
 </p>
 
-**Figure 14: Login Location Management** - The Locations tab in the Owner Dashboard provides comprehensive location tracking:
+**Figure 1: Login Location Management** - The Locations tab in the Owner Dashboard provides comprehensive location tracking:
 - **Trusted Locations Section**: Displays verified safe locations with green checkmarks, showing city/country, IP address, first seen date, last seen date, and login count
 - **Untrust Button**: Allows revoking trust status for any location
 - **Delete Button**: Removes locations from the tracking system
