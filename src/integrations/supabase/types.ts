@@ -167,6 +167,71 @@ export type Database = {
         }
         Relationships: []
       }
+      honeypot_accounts: {
+        Row: {
+          created_at: string
+          description: string | null
+          email: string
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          times_triggered: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          email: string
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          times_triggered?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          times_triggered?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      honeypot_triggers: {
+        Row: {
+          created_at: string
+          honeypot_id: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          honeypot_id: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          honeypot_id?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "honeypot_triggers_honeypot_id_fkey"
+            columns: ["honeypot_id"]
+            isOneToOne: false
+            referencedRelation: "honeypot_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       known_login_locations: {
         Row: {
           city: string | null
