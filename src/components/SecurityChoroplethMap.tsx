@@ -71,6 +71,10 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
   const securityMap = useRef<mapboxgl.Map | null>(null);
   const securityMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const securityPopupRef = useRef<mapboxgl.Popup | null>(null);
+  const connectorHoverHandlersRef = useRef<{
+    onEnter?: (e: mapboxgl.MapLayerMouseEvent) => void;
+    onLeave?: () => void;
+  }>({});
   
   const [successLocations, setSuccessLocations] = useState<IPLocation[]>([]);
   const [securityLocations, setSecurityLocations] = useState<IPLocation[]>([]);
@@ -368,63 +372,94 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
 
   // Add markers to Success Map
   useEffect(() => {
-    if (!successMap.current || successLocations.length === 0) return;
+    const map = successMap.current;
+    if (!map) return;
 
-    successMarkersRef.current.forEach(marker => marker.remove());
-    successMarkersRef.current = [];
+    let cancelled = false;
 
-    successLocations.forEach(loc => {
-      const size = Math.min(20 + loc.totalCount * 5, 50);
-      
-      const el = document.createElement('div');
-      el.className = 'cursor-pointer';
-      el.innerHTML = `
-        <div 
-          class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
-          style="
-            width: ${size}px; 
-            height: ${size}px; 
-            background: rgba(34, 197, 94, 0.8);
-            border: 2px solid rgb(34, 197, 94);
-            box-shadow: 0 0 ${size/2}px rgba(34, 197, 94, 0.5);
-          "
-        >
-          <span style="color: white; font-size: ${Math.max(10, size/3)}px; font-weight: bold;">
-            ${loc.totalCount}
-          </span>
-        </div>
-      `;
+    const addMarkers = () => {
+      if (cancelled) return;
 
-      el.addEventListener('click', () => {
-        setSelectedSuccessLocation(loc);
-        successMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
+      successMarkersRef.current.forEach(marker => marker.remove());
+      successMarkersRef.current = [];
+
+      if (successLocations.length === 0) return;
+
+      successLocations.forEach(loc => {
+        const size = Math.min(20 + loc.totalCount * 5, 50);
+
+        const el = document.createElement('div');
+        el.className = 'cursor-pointer';
+        el.innerHTML = `
+          <div 
+            class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
+            style="
+              width: ${size}px; 
+              height: ${size}px; 
+              background: rgba(34, 197, 94, 0.8);
+              border: 2px solid rgb(34, 197, 94);
+              box-shadow: 0 0 ${size/2}px rgba(34, 197, 94, 0.5);
+            "
+          >
+            <span style="color: white; font-size: ${Math.max(10, size/3)}px; font-weight: bold;">
+              ${loc.totalCount}
+            </span>
+          </div>
+        `;
+
+        el.addEventListener('click', () => {
+          setSelectedSuccessLocation(loc);
+          successMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
+        });
+
+        const marker = new mapboxgl.Marker(el).setLngLat([loc.lon, loc.lat]).addTo(map);
+        successMarkersRef.current.push(marker);
       });
+    };
 
-      const marker = new mapboxgl.Marker(el).setLngLat([loc.lon, loc.lat]).addTo(successMap.current!);
-      successMarkersRef.current.push(marker);
-    });
-  }, [successLocations]);
+    if (map.isStyleLoaded()) {
+      addMarkers();
+    } else {
+      map.once('style.load', addMarkers);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapboxToken, successLocations]);
 
   // Add markers to Security Map - separate markers for failed logins and guest visits
   useEffect(() => {
-    if (!securityMap.current) return;
+    const map = securityMap.current;
+    if (!map) return;
+
+    let cancelled = false;
 
     const addMarkersAndConnectors = () => {
-      if (!securityMap.current) return;
-      
+      if (cancelled) return;
+
       securityMarkersRef.current.forEach(marker => marker.remove());
       securityMarkersRef.current = [];
 
       // Remove existing connector lines and glow layer
-      if (securityMap.current.getLayer('connector-lines-layer')) {
-        securityMap.current.removeLayer('connector-lines-layer');
+      if (map.getLayer('connector-lines-layer')) {
+        map.removeLayer('connector-lines-layer');
       }
-      if (securityMap.current.getLayer('connector-lines-glow')) {
-        securityMap.current.removeLayer('connector-lines-glow');
+      if (map.getLayer('connector-lines-glow')) {
+        map.removeLayer('connector-lines-glow');
       }
-      if (securityMap.current.getSource('connector-lines')) {
-        securityMap.current.removeSource('connector-lines');
+      if (map.getSource('connector-lines')) {
+        map.removeSource('connector-lines');
       }
+
+      // Remove prior hover handlers to avoid stacking
+      if (connectorHoverHandlersRef.current.onEnter) {
+        map.off('mouseenter', 'connector-lines-layer', connectorHoverHandlersRef.current.onEnter);
+      }
+      if (connectorHoverHandlersRef.current.onLeave) {
+        map.off('mouseleave', 'connector-lines-layer', connectorHoverHandlersRef.current.onLeave);
+      }
+      connectorHoverHandlersRef.current = {};
 
       if (securityLocations.length === 0) return;
 
@@ -458,7 +493,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
             securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
           });
 
-          const failedMarker = new mapboxgl.Marker(failedEl).setLngLat([loc.lon, loc.lat]).addTo(securityMap.current!);
+          const failedMarker = new mapboxgl.Marker(failedEl).setLngLat([loc.lon, loc.lat]).addTo(map);
           securityMarkersRef.current.push(failedMarker);
         }
 
@@ -492,14 +527,14 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           const hasFailedMarker = loc.failedLoginCount > 0;
           const offsetLon = hasFailedMarker ? loc.lon + 2 : loc.lon;
           const offsetLat = hasFailedMarker ? loc.lat - 1.5 : loc.lat;
-          const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, offsetLat]).addTo(securityMap.current!);
+          const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, offsetLat]).addTo(map);
           securityMarkersRef.current.push(guestMarker);
 
           // Add connector line if both markers exist at same location (same IP)
           if (hasFailedMarker) {
             connectorFeatures.push({
               type: 'Feature',
-              properties: { 
+              properties: {
                 type: 'same-ip',
                 ip: loc.ip,
                 city: loc.city,
@@ -520,8 +555,8 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       });
 
       // Add connector lines to the map
-      if (connectorFeatures.length > 0 && securityMap.current.isStyleLoaded()) {
-        securityMap.current.addSource('connector-lines', {
+      if (connectorFeatures.length > 0 && map.isStyleLoaded()) {
+        map.addSource('connector-lines', {
           type: 'geojson',
           data: {
             type: 'FeatureCollection',
@@ -530,7 +565,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         });
 
         // Add glowing base layer for connector lines
-        securityMap.current.addLayer({
+        map.addLayer({
           id: 'connector-lines-glow',
           type: 'line',
           source: 'connector-lines',
@@ -541,7 +576,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           }
         });
 
-        securityMap.current.addLayer({
+        map.addLayer({
           id: 'connector-lines-layer',
           type: 'line',
           source: 'connector-lines',
@@ -557,32 +592,30 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         let glowDirection = 1;
         const animateGlow = () => {
           if (!securityMap.current || !securityMap.current.getLayer('connector-lines-glow')) return;
-          
+
           glowOpacity += 0.02 * glowDirection;
           if (glowOpacity >= 0.8) glowDirection = -1;
           if (glowOpacity <= 0.3) glowDirection = 1;
-          
+
           securityMap.current.setPaintProperty('connector-lines-glow', 'line-color', `rgba(168, 85, 247, ${glowOpacity})`);
           securityMap.current.setPaintProperty('connector-lines-glow', 'line-width', 6 + (glowOpacity * 6));
-          
+
           requestAnimationFrame(animateGlow);
         };
         animateGlow();
 
         // Add hover interaction for connector lines
-        const map = securityMap.current;
-        
-        map.on('mouseenter', 'connector-lines-layer', (e) => {
+        const onEnter = (e: mapboxgl.MapLayerMouseEvent) => {
           map.getCanvas().style.cursor = 'pointer';
-          
+
           if (e.features && e.features[0]) {
             const props = e.features[0].properties;
             const coordinates = e.lngLat;
-            
+
             if (securityPopupRef.current) {
               securityPopupRef.current.remove();
             }
-            
+
             const popupContent = `
               <div style="padding: 8px; font-family: system-ui, sans-serif; min-width: 180px;">
                 <div style="font-weight: 600; color: #a855f7; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
@@ -606,7 +639,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                 </div>
               </div>
             `;
-            
+
             securityPopupRef.current = new mapboxgl.Popup({
               closeButton: false,
               closeOnClick: false,
@@ -616,25 +649,34 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
               .setHTML(popupContent)
               .addTo(map);
           }
-        });
-        
-        map.on('mouseleave', 'connector-lines-layer', () => {
+        };
+
+        const onLeave = () => {
           map.getCanvas().style.cursor = '';
           if (securityPopupRef.current) {
             securityPopupRef.current.remove();
             securityPopupRef.current = null;
           }
-        });
+        };
+
+        connectorHoverHandlersRef.current = { onEnter, onLeave };
+
+        map.on('mouseenter', 'connector-lines-layer', onEnter);
+        map.on('mouseleave', 'connector-lines-layer', onLeave);
       }
     };
 
     // Wait for style to load before adding markers
-    if (securityMap.current.isStyleLoaded()) {
+    if (map.isStyleLoaded()) {
       addMarkersAndConnectors();
     } else {
-      securityMap.current.once('style.load', addMarkersAndConnectors);
+      map.once('style.load', addMarkersAndConnectors);
     }
-  }, [securityLocations, showGuestMarkers]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapboxToken, securityLocations, showGuestMarkers]);
 
   const parseBrowser = (userAgent: string | null): string => {
     if (!userAgent) return 'Unknown';
