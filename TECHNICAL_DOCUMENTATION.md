@@ -118,6 +118,8 @@ flowchart TB
     GMT -->|Token| SCM
 ```
 
+**Figure 1: System Architecture Diagram** - Complete technical stack showing the React frontend components, Supabase backend with PostgreSQL database, Edge Functions, and external service integrations for email, mapping, and AI.
+
 ### System Architecture Diagram Explanation
 
 The System Architecture diagram illustrates the complete technical stack and data flow of the portfolio application, organized into three main layers:
@@ -225,6 +227,8 @@ sequenceDiagram
     Note over O: Email contains:<br/>- Session ID<br/>- Activity log<br/>- Chatbot queries<br/>- Timestamps
 ```
 
+**Figure 1: Visitor Action to Email Alert Flow** - Sequence diagram showing how visitor interactions are tracked, aggregated, and trigger automated email alerts when engagement thresholds are reached.
+
 ### Visitor Action to Email Alert Flow Explanation
 
 This sequence diagram traces the complete lifecycle of a visitor interaction from initial page view to email notification delivery.
@@ -319,6 +323,8 @@ sequenceDiagram
     Note over O: Email contains:<br/>- Attacker IP & email<br/>- Login attempt log<br/>- MITRE technique details<br/>- Remediation steps
 ```
 
+**Figure 1: Threat Detection to Alert Flow** - Sequence diagram illustrating how the security system detects authentication attacks in real-time through pattern analysis and MITRE ATT&CK mapping.
+
 ### Threat Detection to Alert Flow Explanation
 
 This sequence diagram illustrates how the security monitoring system detects and responds to authentication-based attacks in real-time.
@@ -407,6 +413,8 @@ flowchart LR
     VS --> RS[Resend API]
     RS --> OWNER[Owner Inbox]
 ```
+
+**Figure 1: Weekly Digest Flow** - Flowchart showing how the automated weekly summary email is generated via pg_cron scheduler, aggregating visitor and security data into a comprehensive digest.
 
 ### Weekly Digest Flow Explanation
 
@@ -2228,6 +2236,8 @@ flowchart LR
     Q --> GPT
     GPT --> RESP
 ```
+
+**Figure 1: RAG Pipeline Flow** - Flowchart showing the Retrieval Augmented Generation process from user query through embedding, vector search, context assembly, and response generation.
 
 ### RAG Pipeline Explanation
 
