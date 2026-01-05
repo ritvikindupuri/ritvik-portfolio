@@ -2126,6 +2126,147 @@ The `HoneypotManager.tsx` component provides:
 
 ---
 
+## IP Block List System
+
+The IP Block List system works alongside the Honeypot Account System to automatically block malicious IP addresses after they trigger honeypot accounts multiple times. This creates a layered defense that first detects attackers (honeypots) and then prevents further access (IP blocking).
+
+<p align="center">
+  <img src="./public/images/honeypot-ip-blocking.png" alt="Honeypot & IP Block Management Interface" width="800"/>
+</p>
+
+**Figure: Honeypot & IP Block Management** - The combined interface shows both honeypot accounts (left) and the IP Block List (right). The honeypot section displays fake accounts with trigger counts, while the IP Block List shows blocked IPs with their status, reason, and expiration.
+
+### How IP Blocking Works
+
+1. **Detection via Honeypots**: When an attacker attempts to login with a honeypot email (e.g., `admin@portfolio.dev`), the attempt is logged and a trigger is recorded.
+
+2. **Automatic Threshold**: After **3 honeypot triggers** from the same IP address, the system automatically blocks that IP.
+
+3. **Temporary Block**: Blocked IPs are blocked for **24 hours** by default. After expiration, the block is automatically lifted.
+
+4. **Login Rejection**: Any login attempt from a blocked IP is immediately rejected with "Access denied" before authentication even occurs.
+
+5. **Email Notification**: The owner receives an email alert when an IP is auto-blocked, including:
+   - The blocked IP address
+   - Number of honeypot triggers
+   - The honeypot email that triggered the block
+   - Block expiration time
+   - Geographic location of the attacker
+
+### Database Schema
+
+```sql
+-- Blocked IPs table
+CREATE TABLE blocked_ips (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ip_address TEXT NOT NULL UNIQUE,
+  reason TEXT NOT NULL,
+  blocked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ,
+  honeypot_triggers INTEGER NOT NULL DEFAULT 0,
+  last_honeypot_email TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+### Manual IP Blocking
+
+In addition to automatic blocking, owners can manually block IPs through the dashboard:
+
+1. Navigate to **Honeypots** tab in Analytics & Security Center
+2. In the **IP Block List** section, enter an IP address
+3. Optionally add a reason for the block
+4. Click the **+** button to add the block
+
+Manual blocks do not expire unless an expiration is set.
+
+### Management Features
+
+- **Toggle Block Status**: Enable/disable blocks without deleting them
+- **View Trigger Count**: See how many honeypot triggers occurred for each IP
+- **View Expiration**: Check when automatic blocks will expire
+- **Delete Blocks**: Remove blocks that are no longer needed
+- **Real-time Updates**: Changes are reflected immediately via Supabase Realtime
+
+**Code Location**: `src/components/BlockedIPsManager.tsx`
+
+---
+
+## Geographic Blocking Rules System
+
+The Geographic Blocking Rules system allows the portfolio owner to block or flag login attempts from specific countries or regions. This provides an additional layer of protection against attacks originating from high-risk geographic locations.
+
+### How Geographic Blocking Works
+
+1. **Geolocation Detection**: When a login attempt occurs, the system resolves the IP address to a country code using IP geolocation.
+
+2. **Rule Matching**: The country code is checked against configured geographic blocking rules.
+
+3. **Action Execution**:
+   - **Block**: Login is immediately rejected with "Access denied from your location"
+   - **Flag**: Login is allowed but triggers an email alert for review
+
+4. **Trigger Tracking**: Each time a rule is triggered, the counter is incremented and the last trigger time is recorded.
+
+5. **Email Notifications**: If enabled for a rule, an email alert is sent containing:
+   - The email that was attempted
+   - IP address and geographic location
+   - Whether the login was blocked or flagged
+   - Browser and OS information
+
+### Database Schema
+
+```sql
+-- Geographic blocking rules table
+CREATE TABLE geographic_blocking_rules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  country_code TEXT NOT NULL UNIQUE,
+  country_name TEXT NOT NULL,
+  action TEXT NOT NULL DEFAULT 'block' CHECK (action IN ('block', 'flag')),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  notify_on_trigger BOOLEAN NOT NULL DEFAULT true,
+  reason TEXT,
+  trigger_count INTEGER NOT NULL DEFAULT 0,
+  last_triggered_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+### Common Use Cases
+
+| Country | Typical Reason |
+|---------|----------------|
+| China (CN) | High volume of automated attacks |
+| Russia (RU) | State-sponsored threat actors |
+| North Korea (KP) | APT groups targeting various sectors |
+| Iran (IR) | Cyber espionage concerns |
+
+### Block vs Flag
+
+| Action | Behavior | Use Case |
+|--------|----------|----------|
+| **Block** | Immediately rejects the login | Countries with no legitimate visitors |
+| **Flag** | Allows login but sends alert | Countries with possible legitimate visitors that need monitoring |
+
+### Management UI
+
+The `GeographicBlockingManager.tsx` component provides:
+
+- **Statistics Dashboard**: Active blocks, flags, and total triggers
+- **Country Selection**: Quick-select common high-risk countries
+- **Custom Countries**: Add any country by code and name
+- **Action Selection**: Choose between block or flag
+- **Notification Toggle**: Enable/disable email alerts per rule
+- **Real-time Updates**: Changes are reflected immediately via Supabase Realtime
+
+**Code Location**: `src/components/GeographicBlockingManager.tsx`
+
+---
+
 Three types of automated emails are sent via **Resend** (edge functions):
 
 ### 1. Visitor Alert Email (`send-visitor-alert`)
