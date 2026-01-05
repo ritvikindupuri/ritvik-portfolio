@@ -2006,12 +2006,6 @@ Complementing the MITRE ATT&CK detection, the Honeypot Account System provides p
 
 The Honeypot Account System creates fake "default" accounts designed to catch and track attackers who attempt to login using common administrative usernames. This deception technology provides early warning of credential-based attacks while mapping to **MITRE ATT&CK T1078.001 (Default Accounts)**.
 
-<p align="center">
-  <img src="https://imgur.com/RrtNb4W.png" alt="Honeypot Account Management Interface" width="600"/>
-</p>
-
-**Figure: Honeypot Account Management** - The Honeypots tab in the Security section shows all configured honeypot accounts with their status (active/inactive), trigger counts, and the MITRE ATT&CK mapping. Owners can add new honeypot emails, toggle activation, and monitor which fake accounts attackers are attempting to use.
-
 ### How It Works
 
 1. **Fake Accounts are Created**: The owner creates fake email accounts like `admin@portfolio.dev` or `root@portfolio.dev` that look like legitimate administrative accounts
@@ -2178,7 +2172,23 @@ The IP Block List system works alongside the Honeypot Account System to automati
   <img src="./public/images/honeypot-ip-blocking.png" alt="Honeypot & IP Block Management Interface" width="800"/>
 </p>
 
-**Figure: Honeypot & IP Block Management** - The combined interface shows both honeypot accounts (left) and the IP Block List (right). The honeypot section displays fake accounts with trigger counts, while the IP Block List shows blocked IPs with their status, reason, and expiration.
+**Figure 1: Honeypot & IP Block Management Interface** - The combined security management interface showing both deception and blocking capabilities:
+
+**Honeypot Accounts Section (Left Panel):**
+- **Statistics Dashboard**: Displays total honeypot accounts, active count, and cumulative trigger count
+- **Account List**: Each honeypot email shows its active status (toggle switch), description, and trigger count
+- **Add New Honeypot**: Form to create custom honeypot emails with optional descriptions
+- **MITRE ATT&CK Badge**: T1078.001 indicator showing framework alignment
+
+**IP Block List Section (Right Panel):**
+- **Block Statistics**: Shows total blocked IPs, active blocks, and auto-blocked count
+- **IP Block Table**: Lists all blocked IPs with:
+  - IP address and blocking reason
+  - Block status (active/inactive toggle)
+  - Honeypot trigger count that led to the block
+  - Expiration time for auto-blocks
+- **Manual Block Input**: Add IPs manually with custom reason
+- **Real-time Updates**: Changes sync immediately via Supabase Realtime
 
 ### How IP Blocking Works
 
@@ -2322,6 +2332,10 @@ The `GeographicBlockingManager.tsx` component provides:
 - **Action Selection**: Choose between "Block" (immediate rejection) or "Flag" (allow but alert)
 - **Rule Management Table**: Displays all configured rules with toggle switches for activation and notification settings
 - **Delete Functionality**: Remove rules that are no longer needed
+
+With security systems in place to block threats, the portfolio keeps the owner informed through a comprehensive automated email notification system.
+
+---
 
 ## Automated Email System
 
@@ -2538,7 +2552,7 @@ flowchart TD
     CREATE --> ALERT
 ```
 
-**Figure 2: Auto-Trust Decision Flow** - Flowchart showing the complete decision logic for handling login locations, from IP lookup through auto-trust evaluation and alert triggering.
+**Figure 1: Auto-Trust Decision Flow** - Flowchart showing the complete decision logic for handling login locations, from IP lookup through auto-trust evaluation and alert triggering.
 
 ### Auto-Trust Decision Flow Explanation
 
@@ -2578,7 +2592,7 @@ If the IP is not found in the database:
   <img src="https://imgur.com/hlp9zty.png" alt="Login Location Management" width="800"/>
 </p>
 
-**Figure 1: Login Location Management** - The Locations tab in the Owner Dashboard provides comprehensive location tracking:
+**Figure 2: Login Location Management** - The Locations tab in the Owner Dashboard provides comprehensive location tracking:
 - **Trusted Locations Section**: Displays verified safe locations with green checkmarks, showing city/country, IP address, first seen date, last seen date, and login count
 - **Untrust Button**: Allows revoking trust status for any location
 - **Delete Button**: Removes locations from the tracking system
