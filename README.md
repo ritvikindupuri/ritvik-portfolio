@@ -2,7 +2,7 @@
 
 A modern, full-stack portfolio website featuring enterprise-grade security monitoring, AI-powered chatbot, and comprehensive visitor analytics.
 
-**[View Live Demo](https://ritvik-website.netlify.app/)** | **[Technical Documentation](./TECHNICAL_DOCUMENTATION.md)**
+**[View Live Demo](https://ritvik-website.netlify.app/)** | **[Technical Documentation](./TECHNICAL_DOCUMENTATION.md)** | **[Security Architecture Report (PDF)](./Portfolio%20Security%20Architecture%20and%20Threat%20Mitigation%20Report%20(1).pdf)**
 
 ---
 
@@ -213,6 +213,20 @@ For detailed technical documentation including:
 - Database schema
 
 See **[TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md)**
+
+### Security Architecture Report
+
+For an in-depth analysis of the portfolio's security architecture, threat mitigation strategies, and MITRE ATT&CK mappings, see the comprehensive security report:
+
+📄 **[Portfolio Security Architecture and Threat Mitigation Report (PDF)](./Portfolio%20Security%20Architecture%20and%20Threat%20Mitigation%20Report%20(1).pdf)**
+
+This document covers:
+- Honeypot detection system design
+- Automatic IP blocking mechanisms
+- Authentication threat detection (brute force, password spraying, credential stuffing)
+- Geographic blocking rules
+- AI-powered risk scoring methodology
+- Email notification workflows
 
 ---
 
