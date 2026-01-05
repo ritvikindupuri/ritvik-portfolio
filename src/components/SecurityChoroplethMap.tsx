@@ -29,7 +29,7 @@ interface VisitorActivity {
   created_at: string;
 }
 
-type ActivityType = 'failed_login' | 'successful_login' | 'guest_visit';
+type ActivityType = 'failed_login' | 'successful_login' | 'guest_visit' | 'geo_blocked' | 'geo_flagged';
 
 interface UnifiedActivity {
   id: string;
@@ -40,6 +40,8 @@ interface UnifiedActivity {
   failure_reason?: string | null;
   session_id?: string;
   created_at: string;
+  country?: string;
+  countryCode?: string;
 }
 
 interface IPLocation {
@@ -54,6 +56,8 @@ interface IPLocation {
   failedLoginCount: number;
   successfulLoginCount: number;
   guestVisitCount: number;
+  geoBlockedCount: number;
+  geoFlaggedCount: number;
 }
 
 interface SecurityChoroplethMapProps {
@@ -157,9 +161,17 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       const unified: UnifiedActivity[] = [];
 
       (loginData || []).forEach(attempt => {
+        // Determine activity type based on failure_reason
+        let activityType: ActivityType = attempt.success ? 'successful_login' : 'failed_login';
+        if (attempt.failure_reason?.includes('Geographic block')) {
+          activityType = 'geo_blocked';
+        } else if (attempt.failure_reason?.includes('Geographic flag')) {
+          activityType = 'geo_flagged';
+        }
+        
         unified.push({
           id: attempt.id,
-          type: attempt.success ? 'successful_login' : 'failed_login',
+          type: activityType,
           ip_address: attempt.ip_address,
           user_agent: attempt.user_agent,
           email: attempt.email,
@@ -220,14 +232,16 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                 totalCount: 0,
                 failedLoginCount: 0,
                 successfulLoginCount: 0,
-                guestVisitCount: 0
+                guestVisitCount: 0,
+                geoBlockedCount: 0,
+                geoFlaggedCount: 0
               };
             }
             successLocationMap[key].activities.push(activity);
             successLocationMap[key].totalCount++;
             successLocationMap[key].successfulLoginCount++;
           } else {
-            // Add to security map (failed logins + guests)
+            // Add to security map (failed logins + guests + geo-blocked)
             if (!securityLocationMap[key]) {
               securityLocationMap[key] = {
                 ip: activity.ip_address,
@@ -240,13 +254,19 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                 totalCount: 0,
                 failedLoginCount: 0,
                 successfulLoginCount: 0,
-                guestVisitCount: 0
+                guestVisitCount: 0,
+                geoBlockedCount: 0,
+                geoFlaggedCount: 0
               };
             }
             securityLocationMap[key].activities.push(activity);
             securityLocationMap[key].totalCount++;
             if (activity.type === 'failed_login') {
               securityLocationMap[key].failedLoginCount++;
+            } else if (activity.type === 'geo_blocked') {
+              securityLocationMap[key].geoBlockedCount++;
+            } else if (activity.type === 'geo_flagged') {
+              securityLocationMap[key].geoFlaggedCount++;
             } else {
               securityLocationMap[key].guestVisitCount++;
             }
@@ -495,11 +515,77 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       const connectorFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
 
       securityLocations.forEach(loc => {
+        // Geo-blocked marker (purple) - highest priority, shown first
+        if (loc.geoBlockedCount > 0) {
+          const geoBlockedSize = Math.min(25 + loc.geoBlockedCount * 8, 60);
+          const geoBlockedEl = document.createElement('div');
+          geoBlockedEl.className = 'cursor-pointer';
+          geoBlockedEl.innerHTML = `
+            <div 
+              class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
+              style="
+                width: ${geoBlockedSize}px; 
+                height: ${geoBlockedSize}px; 
+                background: rgba(147, 51, 234, 0.9);
+                border: 3px solid #a855f7;
+                box-shadow: 0 0 ${geoBlockedSize/1.5}px rgba(147, 51, 234, 0.7), 0 0 ${geoBlockedSize}px rgba(147, 51, 234, 0.4);
+              "
+            >
+              <span style="color: white; font-size: ${Math.max(11, geoBlockedSize/2.5)}px; font-weight: bold;">
+                ${loc.geoBlockedCount}
+              </span>
+            </div>
+          `;
+
+          geoBlockedEl.addEventListener('click', () => {
+            setSelectedSecurityLocation(loc);
+            securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
+          });
+
+          const geoBlockedMarker = new mapboxgl.Marker(geoBlockedEl).setLngLat([loc.lon, loc.lat]).addTo(map);
+          securityMarkersRef.current.push(geoBlockedMarker);
+        }
+
+        // Geo-flagged marker (orange) - warning level
+        if (loc.geoFlaggedCount > 0) {
+          const geoFlaggedSize = Math.min(22 + loc.geoFlaggedCount * 6, 55);
+          const geoFlaggedEl = document.createElement('div');
+          geoFlaggedEl.className = 'cursor-pointer';
+          const hasGeoBlocked = loc.geoBlockedCount > 0;
+          geoFlaggedEl.innerHTML = `
+            <div 
+              class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
+              style="
+                width: ${geoFlaggedSize}px; 
+                height: ${geoFlaggedSize}px; 
+                background: rgba(249, 115, 22, 0.9);
+                border: 3px solid #fb923c;
+                box-shadow: 0 0 ${geoFlaggedSize/1.5}px rgba(249, 115, 22, 0.6);
+              "
+            >
+              <span style="color: white; font-size: ${Math.max(10, geoFlaggedSize/2.5)}px; font-weight: bold;">
+                ${loc.geoFlaggedCount}
+              </span>
+            </div>
+          `;
+
+          geoFlaggedEl.addEventListener('click', () => {
+            setSelectedSecurityLocation(loc);
+            securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
+          });
+
+          const offsetLon = hasGeoBlocked ? loc.lon + 2.5 : loc.lon;
+          const offsetLat = hasGeoBlocked ? loc.lat - 2 : loc.lat;
+          const geoFlaggedMarker = new mapboxgl.Marker(geoFlaggedEl).setLngLat([offsetLon, offsetLat]).addTo(map);
+          securityMarkersRef.current.push(geoFlaggedMarker);
+        }
+
         // Failed login marker (red)
         if (loc.failedLoginCount > 0) {
           const failedSize = Math.min(20 + loc.failedLoginCount * 5, 50);
           const failedEl = document.createElement('div');
           failedEl.className = 'cursor-pointer';
+          const hasGeoMarkers = loc.geoBlockedCount > 0 || loc.geoFlaggedCount > 0;
           failedEl.innerHTML = `
             <div 
               class="rounded-full flex items-center justify-center transition-transform hover:scale-110"
@@ -522,7 +608,9 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
             securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
           });
 
-          const failedMarker = new mapboxgl.Marker(failedEl).setLngLat([loc.lon, loc.lat]).addTo(map);
+          const offsetLon = hasGeoMarkers ? loc.lon - 2 : loc.lon;
+          const offsetLat = hasGeoMarkers ? loc.lat + 2 : loc.lat;
+          const failedMarker = new mapboxgl.Marker(failedEl).setLngLat([offsetLon, offsetLat]).addTo(map);
           securityMarkersRef.current.push(failedMarker);
         }
 
@@ -553,14 +641,14 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
             securityMap.current?.flyTo({ center: [loc.lon, loc.lat], zoom: 4, duration: 1500 });
           });
 
-          const hasFailedMarker = loc.failedLoginCount > 0;
-          const offsetLon = hasFailedMarker ? loc.lon + 2 : loc.lon;
-          const offsetLat = hasFailedMarker ? loc.lat - 1.5 : loc.lat;
+          const hasOtherMarkers = loc.failedLoginCount > 0 || loc.geoBlockedCount > 0 || loc.geoFlaggedCount > 0;
+          const offsetLon = hasOtherMarkers ? loc.lon + 3 : loc.lon;
+          const offsetLat = hasOtherMarkers ? loc.lat - 2.5 : loc.lat;
           const guestMarker = new mapboxgl.Marker(guestEl).setLngLat([offsetLon, offsetLat]).addTo(map);
           securityMarkersRef.current.push(guestMarker);
 
           // Add connector line if both markers exist at same location (same IP)
-          if (hasFailedMarker) {
+          if (loc.failedLoginCount > 0) {
             connectorFeatures.push({
               type: 'Feature',
               properties: {
@@ -740,6 +828,8 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     successfulLogins: allActivities.filter(a => a.type === 'successful_login').length,
     failedLogins: allActivities.filter(a => a.type === 'failed_login').length,
     guestVisits: allActivities.filter(a => a.type === 'guest_visit').length,
+    geoBlocked: allActivities.filter(a => a.type === 'geo_blocked').length,
+    geoFlagged: allActivities.filter(a => a.type === 'geo_flagged').length,
   }), [allActivities]);
 
   const getActivityIcon = (type: ActivityType) => {
@@ -747,6 +837,8 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       case 'failed_login': return <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />;
       case 'successful_login': return <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />;
       case 'guest_visit': return <Eye className="w-4 h-4 text-blue-500 flex-shrink-0" />;
+      case 'geo_blocked': return <Shield className="w-4 h-4 text-purple-500 flex-shrink-0" />;
+      case 'geo_flagged': return <Globe className="w-4 h-4 text-orange-500 flex-shrink-0" />;
     }
   };
 
@@ -755,6 +847,8 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       case 'failed_login': return 'Failed Login';
       case 'successful_login': return 'Successful Login';
       case 'guest_visit': return 'Guest Visit';
+      case 'geo_blocked': return 'Geo-Blocked';
+      case 'geo_flagged': return 'Geo-Flagged';
     }
   };
 
@@ -763,6 +857,8 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <MapPin className={`w-4 h-4 ${
+            location.geoBlockedCount > 0 ? 'text-purple-500' :
+            location.geoFlaggedCount > 0 ? 'text-orange-500' :
             location.failedLoginCount > 0 ? 'text-red-500' : 
             location.successfulLoginCount > 0 ? 'text-green-500' : 'text-blue-500'
           }`} />
@@ -779,6 +875,18 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           <p className="text-lg font-bold">{location.totalCount}</p>
           <p className="text-xs text-muted-foreground">Total</p>
         </div>
+        {location.geoBlockedCount > 0 && (
+          <div className="text-center p-2 bg-purple-500/10 rounded">
+            <p className="text-lg font-bold text-purple-500">{location.geoBlockedCount}</p>
+            <p className="text-xs text-muted-foreground">Geo-Blocked</p>
+          </div>
+        )}
+        {location.geoFlaggedCount > 0 && (
+          <div className="text-center p-2 bg-orange-500/10 rounded">
+            <p className="text-lg font-bold text-orange-500">{location.geoFlaggedCount}</p>
+            <p className="text-xs text-muted-foreground">Geo-Flagged</p>
+          </div>
+        )}
         {location.successfulLoginCount > 0 && (
           <div className="text-center p-2 bg-green-500/10 rounded">
             <p className="text-lg font-bold text-green-500">{location.successfulLoginCount}</p>
@@ -804,6 +912,8 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           <div
             key={activity.id}
             className={`flex items-center justify-between text-xs p-2 rounded ${
+              activity.type === 'geo_blocked' ? 'bg-purple-500/10' :
+              activity.type === 'geo_flagged' ? 'bg-orange-500/10' :
               activity.type === 'failed_login' ? 'bg-red-500/10' : 
               activity.type === 'successful_login' ? 'bg-green-500/10' : 'bg-blue-500/10'
             }`}
@@ -834,7 +944,11 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
       <div
         key={activity.id}
         className={`p-3 rounded-lg border ${
-          activity.type === 'failed_login' 
+          activity.type === 'geo_blocked' 
+            ? 'bg-purple-500/5 border-purple-500/20'
+            : activity.type === 'geo_flagged'
+            ? 'bg-orange-500/5 border-orange-500/20'
+            : activity.type === 'failed_login' 
             ? 'bg-red-500/5 border-red-500/20' 
             : activity.type === 'successful_login'
             ? 'bg-green-500/5 border-green-500/20'
@@ -893,8 +1007,16 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           </div>
           <div className="text-right">
             <Badge 
-              variant={activity.type === 'failed_login' ? 'destructive' : activity.type === 'successful_login' ? 'default' : 'secondary'} 
-              className="text-xs"
+              variant={
+                activity.type === 'geo_blocked' ? 'destructive' :
+                activity.type === 'geo_flagged' ? 'outline' :
+                activity.type === 'failed_login' ? 'destructive' : 
+                activity.type === 'successful_login' ? 'default' : 'secondary'
+              } 
+              className={`text-xs ${
+                activity.type === 'geo_blocked' ? 'bg-purple-500 text-white' :
+                activity.type === 'geo_flagged' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' : ''
+              }`}
             >
               {getActivityLabel(activity.type)}
             </Badge>
@@ -904,7 +1026,10 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
           </div>
         </div>
         {activity.failure_reason && (
-          <p className="text-xs text-red-400 mt-2 pl-6">Reason: {activity.failure_reason}</p>
+          <p className={`text-xs mt-2 pl-6 ${
+            activity.type === 'geo_blocked' ? 'text-purple-400' :
+            activity.type === 'geo_flagged' ? 'text-orange-400' : 'text-red-400'
+          }`}>Reason: {activity.failure_reason}</p>
         )}
       </div>
     );
@@ -993,6 +1118,18 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
               )}
             </div>
             <div className="flex items-center gap-3 text-xs mt-2 flex-wrap">
+              {stats.geoBlocked > 0 && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-500/10">
+                  <Shield className="w-3 h-3 text-purple-500" />
+                  <span className="text-purple-400">{stats.geoBlocked} Geo-Blocked</span>
+                </div>
+              )}
+              {stats.geoFlagged > 0 && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-orange-500/10">
+                  <Globe className="w-3 h-3 text-orange-500" />
+                  <span className="text-orange-400">{stats.geoFlagged} Geo-Flagged</span>
+                </div>
+              )}
               <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-500/10">
                 <AlertTriangle className="w-3 h-3 text-red-500" />
                 <span className="text-red-400">{stats.failedLogins} Failed</span>
@@ -1003,7 +1140,15 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
               </div>
             </div>
             <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground mt-2">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_6px_rgba(147,51,234,0.5)]" />
+                  <span>Geo-Blocked</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.5)]" />
+                  <span>Geo-Flagged</span>
+                </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
                   <span>Failed</span>
@@ -1011,10 +1156,6 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]" />
                   <span>Guests</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 bg-purple-400/60" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 2px, currentColor 2px, currentColor 4px)' }} />
-                  <span>Same IP</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
