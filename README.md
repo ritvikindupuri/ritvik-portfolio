@@ -216,17 +216,21 @@ See **[TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md)**
 
 ### Security Architecture Report
 
-For an in-depth analysis of the portfolio's security architecture, threat mitigation strategies, and MITRE ATT&CK mappings, see the comprehensive security report:
+For an in-depth analysis of the portfolio's security architecture and threat mitigation strategies, see the comprehensive security report:
 
 📄 **[Portfolio Security Architecture and Threat Mitigation Report (PDF)](./Portfolio%20Security%20Architecture%20and%20Threat%20Mitigation%20Report%20(1).pdf)**
 
-This document covers:
-- Honeypot detection system design
-- Automatic IP blocking mechanisms
-- Authentication threat detection (brute force, password spraying, credential stuffing)
-- Geographic blocking rules
-- AI-powered risk scoring methodology
-- Email notification workflows
+This document covers 10 identified threats and mitigations including:
+- Unauthorized owner access prevention (JWT-based RBAC)
+- Cross-Site Scripting (XSS) protection via DOMPurify sanitization
+- Password policy enforcement with leaked password protection
+- Rate limiting and abuse prevention (30/hr chatbot, 5/hr contact)
+- Prompt injection detection and chatbot data isolation
+- Security headers (CSP, X-Frame-Options, CORS)
+- Session handling and race condition fixes
+- Input validation with Zod schema enforcement
+- Chatbot data exposure prevention via RLS
+- Development server hardening
 
 ---
 
