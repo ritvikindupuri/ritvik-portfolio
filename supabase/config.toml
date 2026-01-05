@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.send-recruiter-alert]
 verify_jwt = false
+
+[functions.cleanup-expired-blocks]
+verify_jwt = false
