@@ -19,32 +19,45 @@ This documentation covers the complete system architecture, data flows, implemen
 
 ## Table of Contents
 
+### Overview
 - [Executive Summary](#executive-summary)
 - [System Architecture](#system-architecture)
+- [Key Features](#key-features)
+- [Screenshots and Visual Reference](#screenshots-and-visual-reference)
+
+### Data Flows
 - [Visitor Action to Email Alert Flow](#visitor-action-to-email-alert-flow)
 - [Threat Detection to Alert Flow](#threat-detection-to-alert-flow)
 - [Weekly Digest Flow](#weekly-digest-flow)
-- [Key Features](#key-features)
-- [Screenshots and Visual Reference](#screenshots-and-visual-reference)
-- [AI Security Risk Analysis](#ai-security-risk-analysis)
-- [Risk Score History Chart](#risk-score-history-chart)
+
+### Visitor Analytics
 - [Portfolio Analytics System](#portfolio-analytics-system)
 - [Visitor Tracking System](#visitor-tracking-system)
 - [Visitor Analytics Aggregation](#visitor-analytics-aggregation)
 - [Visitor Journey Flow Analysis](#visitor-journey-flow-analysis)
 - [Visitor Flow Sankey Diagram & Drop-off Analysis](#visitor-flow-sankey-diagram--drop-off-analysis)
 - [Visitor Classification](#visitor-classification)
+
+### Security Systems
 - [Security Monitoring](#security-monitoring)
+- [MITRE ATT&CK Threat Detection](#mitre-attck-threat-detection)
+- [AI Security Risk Analysis](#ai-security-risk-analysis)
 - [Known Login Locations System](#known-login-locations-system)
 - [Security & Visitors Map](#security--visitors-map)
-- [MITRE ATT&CK Threat Detection](#mitre-attck-threat-detection)
 - [Honeypot Account System](#honeypot-account-system)
+- [IP Block List System](#ip-block-list-system)
 - [Geographic Blocking Rules System](#geographic-blocking-rules-system)
+
+### Notifications & Communication
 - [Automated Email System](#automated-email-system)
+
+### AI & Chatbot
+- [RAG Chatbot Architecture](#rag-chatbot-architecture)
+
+### Technical Reference
 - [Database Architecture](#database-architecture)
 - [Edge Functions](#edge-functions)
 - [Security Controls](#security-controls)
-- [RAG Chatbot Architecture](#rag-chatbot-architecture)
 - [Conclusion](#conclusion)
 
 ---
@@ -186,6 +199,8 @@ The arrows in the diagram represent data flow between components:
 - The pg_cron scheduler triggers the weekly-digest function via HTTP POST using pg_net
 - The `get-mapbox-token` function provides the access token to the SecurityChoroplethMap component
 
+The following sections detail the three primary data flows in the system: visitor tracking to email alerts, threat detection to security alerts, and automated weekly digest generation.
+
 ---
 
 ## Visitor Action to Email Alert Flow
@@ -268,6 +283,8 @@ This sequence diagram traces the complete lifecycle of a visitor interaction fro
 10. **Email Delivery**: The sanitized HTML email is sent via POST request to the Resend API, which handles the actual delivery to the owner's configured email address.
 
 11. **Owner Notification**: The portfolio owner receives the visitor alert email in their inbox, providing real-time insight into who is visiting and what they're interested in.
+
+While visitor alerts notify the owner of engagement, the threat detection system monitors for malicious authentication attempts and sends security alerts.
 
 ---
 
@@ -371,6 +388,8 @@ This sequence diagram illustrates how the security monitoring system detects and
 
 14. **Owner Notification**: The portfolio owner receives an actionable security alert with all information needed to assess and respond to the threat.
 
+In addition to real-time alerts, the system generates a weekly summary email that aggregates visitor and security data into a comprehensive digest.
+
 ---
 
 ## Weekly Digest Flow
@@ -454,6 +473,8 @@ The weekly digest email includes five main sections:
 6. The complete email is sent to the Resend API
 7. Resend delivers the digest to the owner's inbox
 
+With the core data flows established, the following section summarizes the key features that make up the portfolio application.
+
 ---
 
 ## Key Features
@@ -468,6 +489,8 @@ The weekly digest email includes five main sections:
 - **Interactive Security Globe**: 3D Mapbox visualization of login attempts worldwide.
 - **Automated Email Alerts**: Real-time and weekly digest notifications.
 - **Password Security Management**: Built-in password change with strength validation and 90-day reminders.
+
+The following screenshots provide a visual tour of the portfolio's main interfaces and features.
 
 ---
 
@@ -678,9 +701,11 @@ This weekly email provides a high-level overview of portfolio performance, AI-po
 - **Query Tracking**: All questions are logged for analytics
 - **Prompt Injection Detection**: Security layer prevents malicious prompts
 
+The screenshots above provide a visual overview of the portfolio's key features. The following sections dive deeper into the technical implementation of each system, starting with the AI-powered security analysis.
+
 ---
 
-### AI Security Risk Analysis
+## AI Security Risk Analysis
 
 <p align="center">
   <img src="https://imgur.com/l3WZhnf.png" alt="AI Security Risk Score" width="800"/>
@@ -759,6 +784,8 @@ The Risk Score History component (`RiskScoreHistory.tsx`) displays historical ri
 | `threats_count` | INTEGER | Active threat count |
 | `threats_high_severity` | INTEGER | High severity threat count |
 | `created_at` | TIMESTAMPTZ | When analysis was performed |
+
+With the AI-powered risk analysis providing real-time security insights, the portfolio also includes comprehensive analytics for tracking visitor behavior and engagement.
 
 ---
 
@@ -1164,6 +1191,8 @@ const durationText = sessionDuration < 1
 3. **Convert to Minutes**: Divide by 1000 (→ seconds) then by 60 (→ minutes), round to nearest integer
 4. **Human-Readable Label**: Categorizes duration into "Quick visit" (<1 min), "Xm session" (1-4 min), or "Xm engaged" (5+ min)
 
+Beyond individual session metrics, the portfolio also tracks how visitors navigate between sections, revealing common paths and engagement patterns.
+
 ---
 
 ## Visitor Journey Flow Analysis
@@ -1347,6 +1376,10 @@ const journeySteps: JourneyStep[] = Object.entries(transitions)
 3. **Calculate Percentage**: `(count / totalTransitions) * 100` gives the percentage of all transitions this path represents
 4. **Sort by Popularity**: Most common transitions appear first
 5. **Limit to Top 10**: Returns only the 10 most common paths to keep the UI clean
+
+Building on the journey flow analysis, the Sankey diagram provides a more detailed visualization of visitor navigation patterns, along with drop-off analysis to identify areas for content improvement.
+
+---
 
 ## Visitor Flow Sankey Diagram & Drop-off Analysis
 
@@ -1604,6 +1637,8 @@ const getDropoffStatus = (rate: number) => {
 - **Moderate (40-69%)**: Room for improvement - consider adding engaging elements or clearer navigation
 - **Good Retention (<40%)**: Content is performing well at keeping visitors engaged
 
+Using the behavioral data collected through tracking and flow analysis, visitors are automatically classified to help identify high-value interactions like potential recruiters.
+
 ---
 
 ## Visitor Classification
@@ -1742,6 +1777,8 @@ const funnelData = useMemo(() => {
 
 **Code Location**: `src/components/RecruiterFunnel.tsx`
 
+While visitor analytics focuses on guest engagement, the security monitoring system tracks authentication attempts and detects potential threats in real-time.
+
 ---
 
 ## Security Monitoring
@@ -1770,6 +1807,8 @@ The Security Monitoring tab features an **interactive 3D globe** (`SecurityChoro
 5. **Auto-Rotation** - The globe slowly rotates to show global coverage
 6. **Keyboard Navigation** - Use arrow keys to cycle through locations
 7. **Location Panel** - Click any marker to see detailed breakdown of failed logins vs guest visits
+
+The security globe provides a visual overview of geographic threats. For deeper threat analysis, the system employs MITRE ATT&CK framework detection to identify and classify attack patterns.
 
 ---
 
@@ -1959,6 +1998,8 @@ The confidence explanation is displayed in:
 - **UI tooltips** - Hover over the confidence percentage to see the calculation
 - **Threat alert emails** - Each threat includes the confidence breakdown
 
+Complementing the MITRE ATT&CK detection, the Honeypot Account System provides proactive defense by creating decoy accounts that detect and track attackers.
+
 ---
 
 ## Honeypot Account System
@@ -2125,6 +2166,8 @@ The `HoneypotManager.tsx` component provides:
 
 **Code Location**: `src/components/HoneypotManager.tsx`
 
+When attackers repeatedly trigger honeypots, the IP Block List system automatically blocks their access. This creates a layered defense strategy.
+
 ---
 
 ## IP Block List System
@@ -2193,6 +2236,8 @@ Manual blocks do not expire unless an expiration is set.
 - **Real-time Updates**: Changes are reflected immediately via Supabase Realtime
 
 **Code Location**: `src/components/BlockedIPsManager.tsx`
+
+Beyond individual IP blocking, the Geographic Blocking system enables country-wide access controls for comprehensive protection against region-based threats.
 
 ---
 
@@ -2278,9 +2323,9 @@ The `GeographicBlockingManager.tsx` component provides:
 - **Rule Management Table**: Displays all configured rules with toggle switches for activation and notification settings
 - **Delete Functionality**: Remove rules that are no longer needed
 
----
+## Automated Email System
 
-Three types of automated emails are sent via **Resend** (edge functions):
+The portfolio includes a comprehensive automated email notification system that keeps the owner informed about visitor engagement, security threats, and weekly analytics. All emails are sent via **Resend** through dedicated edge functions.
 
 ### 1. Visitor Alert Email (`send-visitor-alert`)
 
@@ -2434,6 +2479,8 @@ Three types of automated emails are sent via **Resend** (edge functions):
 - **Known Location Tracking**: Maintains a database of trusted login locations with auto-trust capabilities
 - **Auto-Trust System**: Automatically trusts locations after 5+ successful logins from the same IP
 
+The following section provides detailed documentation of the Known Login Locations System's architecture and implementation.
+
 ---
 
 ## Known Login Locations System
@@ -2581,6 +2628,8 @@ CREATE TABLE known_login_locations (
 );
 ```
 
+The geographic location data collected by the Known Login Locations system is visualized through an interactive 3D globe that displays both security events and visitor activity.
+
 ---
 
 ## Security & Visitors Map
@@ -2632,6 +2681,8 @@ visitorActivity.forEach(visit => {
   guestVisitsByLocation[locationKey] = { count: ..., color: 'cyan' };
 });
 ```
+
+Beyond security monitoring and visualization, the portfolio includes an AI-powered chatbot that allows visitors to ask natural language questions about the portfolio owner's background and work.
 
 ---
 
@@ -2779,6 +2830,8 @@ BEGIN
 END;
 $$;
 ```
+
+This concludes the technical documentation of the portfolio's features. The following section summarizes the key achievements and capabilities demonstrated by this implementation.
 
 ---
 
