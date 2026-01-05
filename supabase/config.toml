@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.send-password-reminder]
 verify_jwt = false
+
+[functions.send-geo-block-alert]
+verify_jwt = false
+
+[functions.send-recruiter-alert]
+verify_jwt = false

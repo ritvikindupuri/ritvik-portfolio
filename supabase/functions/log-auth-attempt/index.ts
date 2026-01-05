@@ -26,6 +26,76 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const HONEYPOT_BLOCK_THRESHOLD = 3; // Block IP after 3 honeypot triggers
 const DEFAULT_BLOCK_DURATION_HOURS = 24; // 24-hour block by default
 
+// Geographic blocking check
+async function checkGeographicBlocking(
+  supabase: any,
+  countryCode: string | null
+): Promise<{ action: 'block' | 'flag' | null; rule: any }> {
+  if (!countryCode) return { action: null, rule: null };
+
+  try {
+    const { data: rule, error } = await supabase
+      .from('geographic_blocking_rules')
+      .select('*')
+      .eq('country_code', countryCode.toUpperCase())
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error || !rule) {
+      return { action: null, rule: null };
+    }
+
+    // Update trigger count
+    await supabase
+      .from('geographic_blocking_rules')
+      .update({ 
+        trigger_count: rule.trigger_count + 1,
+        last_triggered_at: new Date().toISOString()
+      })
+      .eq('id', rule.id);
+
+    console.log(`Geographic rule triggered for ${countryCode}: ${rule.action}`);
+    return { action: rule.action, rule };
+  } catch (err) {
+    console.error("Error checking geographic blocking:", err);
+    return { action: null, rule: null };
+  }
+}
+
+// Send geographic block alert
+async function sendGeoBlockAlert(
+  email: string,
+  ipAddress: string,
+  countryCode: string,
+  countryName: string,
+  city: string | null,
+  action: 'block' | 'flag',
+  userAgent: string
+): Promise<void> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    await fetch(`${supabaseUrl}/functions/v1/send-geo-block-alert`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`
+      },
+      body: JSON.stringify({
+        email,
+        ipAddress,
+        countryCode,
+        countryName,
+        city,
+        action,
+        userAgent
+      })
+    });
+    console.log(`Geographic ${action} alert sent for ${countryName}`);
+  } catch (error) {
+    console.error("Error sending geo block alert:", error);
+  }
+}
+
 async function getLocationFromIP(ip: string): Promise<{ city: string; country: string; countryCode: string } | null> {
   try {
     if (!ip || ip === 'unknown') return null;
@@ -798,6 +868,83 @@ const handler = async (req: Request): Promise<Response> => {
     let isTrustedLocation: boolean = false;
     let location: { city: string; country: string; countryCode: string; lat?: number; lon?: number } | null = null;
     
+    // Get geolocation early for geographic blocking check
+    if (ipAddress !== 'unknown') {
+      try {
+        const geoResponse = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,country,countryCode,lat,lon,status`);
+        const geoData = await geoResponse.json();
+        if (geoData.status === 'success') {
+          location = { 
+            city: geoData.city, 
+            country: geoData.country, 
+            countryCode: geoData.countryCode,
+            lat: geoData.lat,
+            lon: geoData.lon
+          };
+        }
+      } catch (geoError) {
+        console.error("Error getting geolocation:", geoError);
+      }
+    }
+
+    // Check geographic blocking rules
+    const geoBlockResult = await checkGeographicBlocking(supabase, location?.countryCode || null);
+    
+    if (geoBlockResult.action === 'block') {
+      // Log the blocked attempt
+      await supabase
+        .from('login_attempts')
+        .insert({
+          email,
+          ip_address: ipAddress,
+          user_agent: userAgent || null,
+          success: false,
+          failure_reason: `Geographic block: ${location?.country || location?.countryCode}`,
+        });
+
+      // Send alert if notifications enabled
+      if (geoBlockResult.rule?.notify_on_trigger && location) {
+        await sendGeoBlockAlert(
+          email,
+          ipAddress,
+          location.countryCode,
+          location.country,
+          location.city,
+          'block',
+          userAgent || 'Unknown'
+        );
+      }
+
+      console.log(`Geographic BLOCK: Login from ${location?.country} (${location?.countryCode})`);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: "Access denied from your location",
+          blocked: true,
+          geoBlocked: true,
+          country: location?.country
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // If flagged, send alert but continue with login
+    if (geoBlockResult.action === 'flag' && geoBlockResult.rule?.notify_on_trigger && location) {
+      console.log(`Geographic FLAG: Login from ${location?.country} (${location?.countryCode})`);
+      await sendGeoBlockAlert(
+        email,
+        ipAddress,
+        location.countryCode,
+        location.country,
+        location.city,
+        'flag',
+        userAgent || 'Unknown'
+      );
+    }
+    
     if (success && ipAddress !== 'unknown') {
       // Check known_login_locations table first
       const { data: knownLocation } = await supabase
@@ -832,25 +979,8 @@ const handler = async (req: Request): Promise<Response> => {
         
         console.log(`Known location login from ${ipAddress} (trusted: ${isTrustedLocation}, times_seen: ${newTimesSeen})`);
       } else {
-        // New location - get geolocation and add to table
+        // New location - add to table (geolocation already fetched earlier)
         isNewLocation = true;
-        
-        // Get geolocation data
-        try {
-          const geoResponse = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,country,countryCode,lat,lon,status`);
-          const geoData = await geoResponse.json();
-          if (geoData.status === 'success') {
-            location = { 
-              city: geoData.city, 
-              country: geoData.country, 
-              countryCode: geoData.countryCode,
-              lat: geoData.lat,
-              lon: geoData.lon
-            };
-          }
-        } catch (geoError) {
-          console.error("Error getting geolocation:", geoError);
-        }
         
         // Insert new location into known_login_locations (not trusted by default)
         const { error: locationInsertError } = await supabase

@@ -173,6 +173,48 @@ export type Database = {
         }
         Relationships: []
       }
+      geographic_blocking_rules: {
+        Row: {
+          action: string
+          country_code: string
+          country_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          notify_on_trigger: boolean
+          reason: string | null
+          trigger_count: number
+          updated_at: string
+        }
+        Insert: {
+          action?: string
+          country_code: string
+          country_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          notify_on_trigger?: boolean
+          reason?: string | null
+          trigger_count?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          notify_on_trigger?: boolean
+          reason?: string | null
+          trigger_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       github_content: {
         Row: {
           content_text: string | null

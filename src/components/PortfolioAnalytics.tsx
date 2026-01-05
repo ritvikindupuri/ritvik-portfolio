@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Shield, Users, MapPin, Settings, Bug } from "lucide-react";
+import { BarChart3, Shield, Users, MapPin, Settings, Bug, Globe } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResumeAnalytics } from "@/components/ResumeAnalytics";
 import { SecurityChoroplethMap } from "@/components/SecurityChoroplethMap";
@@ -12,6 +12,8 @@ import { RiskScoreHistory } from "@/components/RiskScoreHistory";
 import { ThreatDetectionSettings } from "@/components/ThreatDetectionSettings";
 import { HoneypotManager } from "@/components/HoneypotManager";
 import { BlockedIPsManager } from "@/components/BlockedIPsManager";
+import { GeographicBlockingManager } from "@/components/GeographicBlockingManager";
+import { GeoBlockingStats } from "@/components/GeoBlockingStats";
 
 interface LoginAttempt {
   id: string;
@@ -94,7 +96,7 @@ export const PortfolioAnalytics = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-6">
+        <TabsList className="grid w-full grid-cols-6 mb-6">
           <TabsTrigger value="visitors" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Visitors
@@ -106,6 +108,10 @@ export const PortfolioAnalytics = () => {
           <TabsTrigger value="honeypots" className="flex items-center gap-2">
             <Bug className="w-4 h-4" />
             Honeypots
+          </TabsTrigger>
+          <TabsTrigger value="geo-blocking" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            Geo-Block
           </TabsTrigger>
           <TabsTrigger value="locations" className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
@@ -125,6 +131,9 @@ export const PortfolioAnalytics = () => {
         <TabsContent value="security" className="space-y-6">
           {/* AI Risk Score */}
           <AIRiskScore loginAttempts={loginAttempts} detectedThreats={detectedThreats} />
+          
+          {/* Geo Blocking Stats - Quick Overview */}
+          <GeoBlockingStats />
           
           {/* Risk Score History Chart */}
           <RiskScoreHistory />
@@ -146,6 +155,18 @@ export const PortfolioAnalytics = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <HoneypotManager />
             <BlockedIPsManager />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="geo-blocking" className="space-y-6">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold">Geographic Blocking Rules</h3>
+            <p className="text-sm text-muted-foreground">
+              Block or flag login attempts from specific countries or regions
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <GeographicBlockingManager />
           </div>
         </TabsContent>
 
