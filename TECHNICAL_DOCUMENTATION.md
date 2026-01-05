@@ -39,6 +39,7 @@ This documentation covers the complete system architecture, data flows, implemen
 - [Security & Visitors Map](#security--visitors-map)
 - [MITRE ATT&CK Threat Detection](#mitre-attck-threat-detection)
 - [Honeypot Account System](#honeypot-account-system)
+- [Geographic Blocking Rules System](#geographic-blocking-rules-system)
 - [Automated Email System](#automated-email-system)
 - [Database Architecture](#database-architecture)
 - [Edge Functions](#edge-functions)
@@ -685,7 +686,7 @@ This weekly email provides a high-level overview of portfolio performance, AI-po
   <img src="https://imgur.com/l3WZhnf.png" alt="AI Security Risk Score" width="800"/>
 </p>
 
-**Figure 14: AI Security Risk Analysis** - LLM-powered security assessment providing real-time risk scoring and posture analysis:
+**Figure 12: AI Security Risk Analysis** - LLM-powered security assessment providing real-time risk scoring and posture analysis:
 
 - **AI Model**: Google Gemini 2.5 Pro via Lovable AI Gateway
 - **Risk Score Gauge**: Visual 0-100 circular indicator with color-coded severity (green=low, yellow=medium, orange=high, red=critical)
@@ -1175,13 +1176,13 @@ The Visitor Journey Flow component (`VisitorJourneyFlow.tsx`) analyzes how visit
   <img src="https://imgur.com/TtoXN9M.png" alt="Visitor Journey Flow - Top Paths and Section Order" width="800"/>
 </p>
 
-**Figure 15: Visitor Journey Flow - Top Paths and Section Order** - The left panel displays the most common section-to-section transitions (e.g., "Who I Am → Technical Arsenal" at 23%), while the right panel shows the typical order visitors view sections with average position numbers. Entry/exit counts indicate where visitors start and end their journeys.
+**Figure 1: Visitor Journey Flow - Top Paths and Section Order** - The left panel displays the most common section-to-section transitions (e.g., "Who I Am → Technical Arsenal" at 23%), while the right panel shows the typical order visitors view sections with average position numbers. Entry/exit counts indicate where visitors start and end their journeys.
 
 <p align="center">
   <img src="https://imgur.com/ubp3WlU.png" alt="Visitor Journey Flow - Entry and Exit Points" width="800"/>
 </p>
 
-**Figure 16: Visitor Journey Entry and Exit Points** - Entry Points show where visitors typically begin their journey (ranked with medals), while Exit Points reveal where they leave. This data helps identify which sections are effective landing spots and which may be causing visitors to leave.
+**Figure 2: Visitor Journey Entry and Exit Points** - Entry Points show where visitors typically begin their journey (ranked with medals), while Exit Points reveal where they leave. This data helps identify which sections are effective landing spots and which may be causing visitors to leave.
 
 ### Journey Data Structure
 
@@ -2269,7 +2270,7 @@ The `GeographicBlockingManager.tsx` component provides:
   <img src="public/images/geographic-blocking-manager.png" alt="Geographic Blocking Manager Interface" width="700"/>
 </p>
 
-**Figure 15: Geographic Blocking Manager Interface** - The Geo-Block tab in the Analytics & Security Center allows the portfolio owner to configure geographic blocking rules. Features include:
+**Figure 1: Geographic Blocking Manager Interface** - The Geo-Block tab in the Analytics & Security Center allows the portfolio owner to configure geographic blocking rules. Features include:
 - **Statistics Dashboard**: Real-time counters showing active blocks (red), flags (yellow), and total triggers (purple)
 - **Country Selection Dropdown**: Quick access to common high-risk countries (China, Russia, North Korea, etc.)
 - **Custom Country Entry**: Option to add any country by entering the ISO country code and name
@@ -2592,7 +2593,7 @@ The Security Map (`SecurityChoroplethMap.tsx`) displays two distinct types of ma
   <img src="https://imgur.com/cZFeE2W.png" alt="Security & Visitors Map with Dual Markers" width="800"/>
 </p>
 
-**Figure 12: Security & Visitors Map** - The interactive 3D globe visualization displays geographic data for both security events and visitor activity:
+**Figure 1: Security & Visitors Map** - The interactive 3D globe visualization displays geographic data for both security events and visitor activity:
 - **Red Markers (Failed Logins)**: Indicate locations with failed authentication attempts, sized by the number of failures
 - **Blue Markers (Guest Visits)**: Show locations of guest visitors who browsed the portfolio without logging in
 - **Summary Badges**: Header displays total counts for "Failed Logins" and "Guest Visits"
@@ -2605,7 +2606,7 @@ The Security Map (`SecurityChoroplethMap.tsx`) displays two distinct types of ma
   <img src="https://imgur.com/79nLhLd.png" alt="Security & Visitor Log Panel" width="800"/>
 </p>
 
-**Figure 13: Security & Visitor Log** - A filterable chronological log displaying all authentication and visitor events:
+**Figure 2: Security & Visitor Log** - A filterable chronological log displaying all authentication and visitor events:
 - **Filter Tabs**: Toggle between "All", "Failed", and "Guests" to focus on specific event types
 - **Guest Sessions**: Shown with a cyan "Guest Visit" badge, displaying session location and timestamp
 - **Failed Logins**: Highlighted with red "Failed Login" badge, showing email attempted, location, browser, and failure reason
