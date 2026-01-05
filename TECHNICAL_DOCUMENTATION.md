@@ -2265,6 +2265,18 @@ The `GeographicBlockingManager.tsx` component provides:
 
 **Code Location**: `src/components/GeographicBlockingManager.tsx`
 
+<p align="center">
+  <img src="public/images/geographic-blocking-manager.png" alt="Geographic Blocking Manager Interface" width="700"/>
+</p>
+
+**Figure 15: Geographic Blocking Manager Interface** - The Geo-Block tab in the Analytics & Security Center allows the portfolio owner to configure geographic blocking rules. Features include:
+- **Statistics Dashboard**: Real-time counters showing active blocks (red), flags (yellow), and total triggers (purple)
+- **Country Selection Dropdown**: Quick access to common high-risk countries (China, Russia, North Korea, etc.)
+- **Custom Country Entry**: Option to add any country by entering the ISO country code and name
+- **Action Selection**: Choose between "Block" (immediate rejection) or "Flag" (allow but alert)
+- **Rule Management Table**: Displays all configured rules with toggle switches for activation and notification settings
+- **Delete Functionality**: Remove rules that are no longer needed
+
 ---
 
 Three types of automated emails are sent via **Resend** (edge functions):
