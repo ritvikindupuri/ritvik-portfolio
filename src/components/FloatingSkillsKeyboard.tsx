@@ -60,15 +60,10 @@ interface KeycapProps {
   skill: Skill;
   index: number;
   onClick: () => void;
-  totalCols: number;
-  colIndex: number;
 }
 
-const Keycap = ({ skill, index, onClick, totalCols, colIndex }: KeycapProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
+const Keycap = ({ skill, index, onClick }: KeycapProps) => {
   const handleHover = useCallback(() => {
-    setIsHovered(true);
     try {
       getKeycapSound().playHover();
     } catch (e) {
@@ -85,19 +80,15 @@ const Keycap = ({ skill, index, onClick, totalCols, colIndex }: KeycapProps) => 
     onClick();
   }, [onClick]);
 
-  // Determine tooltip position based on column to prevent overflow
-  const isLeftEdge = colIndex === 0;
-  const isRightEdge = colIndex === totalCols - 1;
-  
-  let tooltipPosition = "left-1/2 -translate-x-1/2";
-  if (isLeftEdge) tooltipPosition = "left-0";
-  if (isRightEdge) tooltipPosition = "right-0";
+  // Truncate long names for display on keycap
+  const displayName = skill.name.length > 12 
+    ? skill.name.slice(0, 11) + "…" 
+    : skill.name;
   
   return (
     <motion.button
       onClick={handleClick}
       onMouseEnter={handleHover}
-      onMouseLeave={() => setIsHovered(false)}
       className="relative focus:outline-none group"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -105,34 +96,36 @@ const Keycap = ({ skill, index, onClick, totalCols, colIndex }: KeycapProps) => 
       whileHover={{ y: -3, transition: { duration: 0.08 } }}
       whileTap={{ y: 1 }}
     >
-      {/* 3D Keycap with mechanical keyboard styling */}
+      {/* 3D Keycap with mechanical keyboard styling - showing icon + label */}
       <div className="relative">
         {/* Deep shadow for 3D depth */}
-        <div className="absolute inset-0 bg-slate-950 rounded-[6px] translate-y-[4px]" />
+        <div className="absolute inset-0 bg-slate-950 rounded-lg translate-y-[5px]" />
         
         {/* Keycap side walls */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 rounded-[6px] translate-y-[2px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 rounded-lg translate-y-[3px]" />
         
-        {/* Main keycap top surface */}
+        {/* Main keycap top surface - larger to fit icon + text */}
         <div className="
           relative
-          w-12 h-12 sm:w-14 sm:h-14
-          bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800
-          rounded-[6px]
-          flex items-center justify-center
-          border border-slate-500/30
+          w-20 h-16 sm:w-24 sm:h-20
+          bg-gradient-to-b from-slate-600 via-slate-700 to-slate-750
+          rounded-lg
+          flex flex-col items-center justify-center gap-1 sm:gap-1.5
+          p-1.5 sm:p-2
+          border border-slate-500/40
           group-hover:from-slate-500 group-hover:via-slate-600 group-hover:to-slate-700
           transition-all duration-100
-          shadow-[inset_0_-2px_4px_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.1)]
+          shadow-[inset_0_-3px_6px_rgba(0,0,0,0.4),inset_0_2px_4px_rgba(255,255,255,0.1)]
         ">
           {/* Concave top surface effect */}
-          <div className="absolute inset-[3px] rounded-[4px] bg-gradient-to-br from-slate-500/20 via-transparent to-slate-900/20 pointer-events-none" />
+          <div className="absolute inset-[4px] rounded-md bg-gradient-to-br from-slate-500/15 via-transparent to-slate-900/25 pointer-events-none" />
           
+          {/* Icon */}
           {skill.icon ? (
             <img 
               src={skill.icon} 
               alt={skill.name}
-              className="w-7 h-7 sm:w-8 sm:h-8 object-contain relative z-10 drop-shadow-sm"
+              className="w-7 h-7 sm:w-9 sm:h-9 object-contain relative z-10 drop-shadow-sm flex-shrink-0"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 const fallback = e.currentTarget.nextElementSibling;
@@ -140,29 +133,14 @@ const Keycap = ({ skill, index, onClick, totalCols, colIndex }: KeycapProps) => 
               }}
             />
           ) : null}
-          <span className={`text-slate-200 font-bold text-sm relative z-10 ${skill.icon ? 'hidden' : ''}`}>
+          <span className={`text-slate-300 font-bold text-base sm:text-lg relative z-10 ${skill.icon ? 'hidden' : ''}`}>
             {skill.name.slice(0, 2).toUpperCase()}
           </span>
-        </div>
-      </div>
-      
-      {/* Tooltip - positioned above keyboard with smart positioning */}
-      <div 
-        className={`
-          absolute -top-12 ${tooltipPosition}
-          opacity-0 group-hover:opacity-100
-          transition-all duration-150
-          whitespace-nowrap
-          bg-slate-950 text-white text-xs font-medium
-          px-3 py-2 rounded-lg
-          shadow-xl border border-slate-700
-          z-[200] pointer-events-none
-        `}
-      >
-        {skill.name}
-        {/* Tooltip arrow */}
-        <div className={`absolute top-full ${isLeftEdge ? 'left-4' : isRightEdge ? 'right-4' : 'left-1/2 -translate-x-1/2'}`}>
-          <div className="border-[6px] border-transparent border-t-slate-950" />
+          
+          {/* Skill name label on keycap */}
+          <span className="text-slate-300 text-[9px] sm:text-[10px] font-medium leading-tight text-center relative z-10 max-w-full truncate">
+            {displayName}
+          </span>
         </div>
       </div>
     </motion.button>
@@ -291,8 +269,6 @@ export const FloatingSkillsKeyboard = () => {
                   skill={skill}
                   index={index}
                   onClick={() => handleKeycapClick(skill.id)}
-                  totalCols={cols}
-                  colIndex={index % cols}
                 />
               ))}
             </div>
