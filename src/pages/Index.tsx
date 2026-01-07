@@ -21,6 +21,7 @@ import { VisitorTrackerProvider } from "@/components/VisitorTrackerProvider";
 import { OwnerHeader } from "@/components/OwnerHeader";
 import { ResumeSection } from "@/components/ResumeSection";
 import { InteractiveSecurityArchitecture } from "@/components/InteractiveSecurityArchitecture";
+import { ScrollProgressIndicator } from "@/components/ScrollProgressIndicator";
 
 const Index = () => {
   
@@ -128,6 +129,9 @@ const Index = () => {
         
         {/* Owner controls - visible immediately after login */}
         <OwnerHeader isOwner={isOwner} />
+        
+        {/* Scroll Progress Indicator */}
+        <ScrollProgressIndicator />
         
         <div className="relative">
           
