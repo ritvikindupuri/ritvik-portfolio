@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -64,12 +64,21 @@ interface KeycapProps {
 }
 
 const Keycap = ({ skill, index, onClick }: KeycapProps) => {
-  const handleHover = useCallback(() => {
-    try {
-      getKeycapSound().playHover();
-    } catch (e) {
-      // Audio context may not be available
+  const hasPlayedHoverSound = useRef(false);
+  
+  const handleMouseEnter = useCallback(() => {
+    if (!hasPlayedHoverSound.current) {
+      hasPlayedHoverSound.current = true;
+      try {
+        getKeycapSound().playHover();
+      } catch (e) {
+        // Audio context may not be available
+      }
     }
+  }, []);
+  
+  const handleMouseLeave = useCallback(() => {
+    hasPlayedHoverSound.current = false;
   }, []);
   
   const handleClick = useCallback(() => {
@@ -87,7 +96,8 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
         <TooltipTrigger asChild>
           <motion.button
             onClick={handleClick}
-            onMouseEnter={handleHover}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             className="relative focus:outline-none group"
             style={{ transformStyle: "preserve-3d" }}
             initial={{ opacity: 0, scale: 0.9, y: 0 }}
@@ -225,8 +235,9 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
         </motion.button>
       </TooltipTrigger>
       <TooltipContent 
-        side="bottom" 
-        className="bg-card/95 backdrop-blur-sm border-accent/30 text-foreground font-medium px-3 py-1.5"
+        side="top" 
+        sideOffset={8}
+        className="bg-card/95 backdrop-blur-sm border-accent/30 text-foreground font-medium px-3 py-1.5 z-[100]"
       >
         {skill.name}
       </TooltipContent>
