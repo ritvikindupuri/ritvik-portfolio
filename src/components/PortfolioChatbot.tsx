@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
+import { useChatbot } from "@/contexts/ChatbotContext";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,6 +22,7 @@ interface PortfolioChatbotProps {
 
 export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
   const { trackChatbotQuery } = useVisitorTracker();
+  const { isChatOpen, setIsChatOpen } = useChatbot();
   
   // Don't show chatbot to owner - check BEFORE any hooks
   if (isOwner) {
@@ -33,7 +35,6 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
     timestamp: new Date()
   };
 
-  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -117,7 +118,7 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
     <>
       {/* Chatbot Button */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isChatOpen && (
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -125,7 +126,7 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
             className="fixed bottom-6 right-6 z-50"
           >
             <Button
-              onClick={() => setIsOpen(true)}
+              onClick={() => setIsChatOpen(true)}
               size="lg"
               className="h-14 w-14 rounded-full shadow-elegant bg-primary hover:bg-primary/90 text-primary-foreground"
             >
@@ -137,7 +138,7 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
 
       {/* Chat Panel */}
       <AnimatePresence>
-        {isOpen && (
+        {isChatOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -167,7 +168,7 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                   <Trash2 className="h-4 w-4" />
                 </Button>
                 <Button
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => setIsChatOpen(false)}
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0"

@@ -23,6 +23,7 @@ import { ResumeSection } from "@/components/ResumeSection";
 import { InteractiveSecurityArchitecture } from "@/components/InteractiveSecurityArchitecture";
 import { ScrollProgressIndicator } from "@/components/ScrollProgressIndicator";
 import { SectionReveal } from "@/components/SectionReveal";
+import { ChatbotProvider } from "@/contexts/ChatbotContext";
 
 const Index = () => {
   
@@ -124,6 +125,7 @@ const Index = () => {
   };
 
   return (
+    <ChatbotProvider>
     <VisitorTrackerProvider isOwner={isOwner}>
       <div className="min-h-screen bg-background">
         <AccessDialog open={showAccessDialog} onAccessGranted={handleAccessGranted} isAuthenticated={!!user} />
@@ -306,6 +308,7 @@ const Index = () => {
         </div>
       </div>
     </VisitorTrackerProvider>
+    </ChatbotProvider>
   );
 };
 
