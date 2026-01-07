@@ -139,7 +139,7 @@ flowchart TB
     GMT -->|Token| SCM
 ```
 
-**Figure 1: System Architecture Diagram** - Complete technical stack showing the React frontend components, Supabase backend with PostgreSQL database, Edge Functions, and external service integrations for email, mapping, and AI.
+**Figure SA-1: System Architecture Diagram** - Complete technical stack showing the React frontend components, Supabase backend with PostgreSQL database, Edge Functions, and external service integrations for email, mapping, and AI.
 
 ### System Architecture Diagram Explanation
 
@@ -250,7 +250,7 @@ sequenceDiagram
     Note over O: Email contains:<br/>- Session ID<br/>- Activity log<br/>- Chatbot queries<br/>- Timestamps
 ```
 
-**Figure 1: Visitor Action to Email Alert Flow** - Sequence diagram showing how visitor interactions are tracked, aggregated, and trigger automated email alerts when engagement thresholds are reached.
+**Figure DF-1: Visitor Action to Email Alert Flow** - Sequence diagram showing how visitor interactions are tracked, aggregated, and trigger automated email alerts when engagement thresholds are reached.
 
 ### Visitor Action to Email Alert Flow Explanation
 
@@ -348,7 +348,7 @@ sequenceDiagram
     Note over O: Email contains:<br/>- Attacker IP & email<br/>- Login attempt log<br/>- MITRE technique details<br/>- Remediation steps
 ```
 
-**Figure 1: Threat Detection to Alert Flow** - Sequence diagram illustrating how the security system detects authentication attacks in real-time through pattern analysis and MITRE ATT&CK mapping.
+**Figure DF-2: Threat Detection to Alert Flow** - Sequence diagram illustrating how the security system detects authentication attacks in real-time through pattern analysis and MITRE ATT&CK mapping.
 
 ### Threat Detection to Alert Flow Explanation
 
@@ -441,7 +441,7 @@ flowchart LR
     RS --> OWNER[Owner Inbox]
 ```
 
-**Figure 1: Weekly Digest Flow** - Flowchart showing how the automated weekly summary email is generated via pg_cron scheduler, aggregating visitor and security data into a comprehensive digest.
+**Figure DF-3: Weekly Digest Flow** - Flowchart showing how the automated weekly summary email is generated via pg_cron scheduler, aggregating visitor and security data into a comprehensive digest.
 
 ### Weekly Digest Flow Explanation
 
@@ -508,7 +508,7 @@ The following screenshots provide a visual tour of the portfolio's main interfac
   <img src="https://imgur.com/gVaJan3.png" alt="Portfolio Hero Section" width="800"/>
 </p>
 
-**Figure 1: Portfolio Hero Section** - The landing page features a professional profile photo, animated name introduction with gradient text, and quick access buttons for GitHub/LinkedIn profiles and resume downloads. The cosmic particle background creates an engaging visual experience.
+**Figure UI-1: Portfolio Hero Section** - The landing page features a professional profile photo, animated name introduction with gradient text, and quick access buttons for GitHub/LinkedIn profiles and resume downloads. The cosmic particle background creates an engaging visual experience.
 
 ---
 
@@ -1211,7 +1211,7 @@ The Visitor Journey Flow component (`VisitorJourneyFlow.tsx`) analyzes how visit
   <img src="https://imgur.com/TtoXN9M.png" alt="Visitor Journey Flow - Top Paths and Section Order" width="800"/>
 </p>
 
-**Figure 1: Visitor Journey Flow - Top Paths and Section Order** - The left panel displays the most common section-to-section transitions (e.g., "Who I Am → Technical Arsenal" at 23%), while the right panel shows the typical order visitors view sections with average position numbers. Entry/exit counts indicate where visitors start and end their journeys.
+**Figure VJ-1: Visitor Journey Flow - Top Paths and Section Order** - The left panel displays the most common section-to-section transitions (e.g., "Who I Am → Technical Arsenal" at 23%), while the right panel shows the typical order visitors view sections with average position numbers. Entry/exit counts indicate where visitors start and end their journeys.
 
 <p align="center">
   <img src="https://imgur.com/ubp3WlU.png" alt="Visitor Journey Flow - Entry and Exit Points" width="800"/>
@@ -1395,7 +1395,7 @@ The portfolio includes an advanced visual Sankey diagram that shows visitor flow
   <img src="https://imgur.com/VmJFqhs.png" alt="Visitor Flow Diagram Overview" width="800"/>
 </p>
 
-**Figure 1: Visitor Flow Diagram Overview** - The complete Sankey-style flow visualization showing all tracked visitor navigation paths:
+**Figure VF-1: Visitor Flow Diagram Overview** - The complete Sankey-style flow visualization showing all tracked visitor navigation paths:
 - **Session Count Badge**: Displays total number of analyzed visitor sessions
 - **Flow Rows**: Each row represents a unique section-to-section transition with source and target nodes
 - **Interactive Tooltips**: Hover over any value or percentage for detailed context
@@ -1878,7 +1878,7 @@ Attackers commonly try default usernames to find:
   <img src="https://imgur.com/PEpdqjQ.png" alt="Threat Detection Thresholds Configuration" width="700"/>
 </p>
 
-**Figure 1: Threat Detection Thresholds Configuration** - The Settings tab in the Security section provides owner-configurable thresholds for each MITRE ATT&CK technique:
+**Figure TD-1: Threat Detection Thresholds Configuration** - The Settings tab in the Security section provides owner-configurable thresholds for each MITRE ATT&CK technique:
 - **Brute Force (T1110)**: Configure time window (minutes) and minimum failures required
 - **Password Guessing (T1110.001)**: Set minimum total failures across multiple timeframes
 - **Password Spraying (T1110.003)**: Adjust window, distinct account count, total failures, and max per account
@@ -2157,7 +2157,7 @@ if (honeypot) {
 ### Management UI
 
 <p align="center">
-  <img src="/images/honeypot-accounts-map.png" alt="Honeypot Accounts with Recent Trigger Locations Map" width="800"/>
+  <img src="https://imgur.com/lPga2Y8.png" alt="Honeypot Accounts with Recent Trigger Locations Map" width="800"/>
 </p>
 
 **Figure HP-1: Honeypot Accounts Dashboard with Real-Time Trigger Location Mapping** - The comprehensive honeypot management interface featuring:
@@ -2170,21 +2170,43 @@ if (honeypot) {
 **Recent Trigger Locations Mini Map:**
 The `HoneypotMiniMap.tsx` component provides real-time geographic visualization of honeypot triggers:
 
-- **Interactive Globe View**: A dark-themed Mapbox globe displaying trigger locations with navigation controls
-- **Location Markers**: Each unique IP address that triggered a honeypot is geolocated and displayed as a marker on the map
+- **Interactive Globe View**: A dark-themed Mapbox globe displaying trigger locations with navigation controls (+/- zoom, compass)
+- **Location Markers**: Each unique IP address that triggered a honeypot is geolocated and displayed as a red marker on the map
 - **Recent Trigger Badges**: Below the map, badges show recent trigger details including:
-  - **City Name**: Geographic location of the attacker (e.g., "Groningen")
-  - **Timestamp**: When the trigger occurred (e.g., "Dec 29, 4:28 PM")
+  - **City Name**: Geographic location of the attacker (e.g., "Groningen") - obtained via IP geolocation
+  - **Timestamp**: When the trigger occurred (e.g., "Dec 29, 4:28 PM") - stored in `honeypot_triggers.created_at`
 - **IP Geolocation**: Uses the `geolocate-ip` edge function to convert IP addresses to coordinates
-- **Automatic Bounds Fitting**: Map automatically adjusts to show all trigger locations
+- **Automatic Bounds Fitting**: Map automatically adjusts viewport to show all trigger locations
 
-**How the Mini Map Works:**
+**How the Mini Map Obtains Location and Timestamp Data:**
 
-1. **Data Collection**: When a honeypot is triggered, the attacker's IP address is logged in the `honeypot_triggers` table
-2. **IP Geolocation**: The `HoneypotMiniMap` component fetches trigger data and calls the `geolocate-ip` edge function to convert IPs to latitude/longitude coordinates
-3. **Map Rendering**: Using Mapbox GL JS, markers are placed on a globe projection showing exact trigger locations
-4. **Location Badges**: The most recent triggers are displayed as badges beneath the map, showing city and timestamp for quick reference
-5. **Real-time Updates**: As new triggers occur, the map updates via Supabase Realtime subscription
+1. **Trigger Logging**: When a honeypot is triggered, the `log-auth-attempt` edge function records:
+   - `ip_address`: The attacker's IP from the request headers
+   - `created_at`: Automatic PostgreSQL timestamp (UTC) when the record is inserted
+   - `honeypot_id`: Reference to which decoy account was triggered
+
+2. **IP to Location Conversion**: The `geolocate-ip` edge function:
+   ```typescript
+   // Calls external geolocation API with the attacker's IP
+   const response = await fetch(`https://ipapi.co/${ip}/json/`);
+   const data = await response.json();
+   // Returns: { city, country, latitude, longitude }
+   ```
+
+3. **Timestamp Formatting**: The component formats the UTC timestamp to local time:
+   ```typescript
+   // Format: "Dec 29, 4:28 PM"
+   format(new Date(trigger.created_at), 'MMM d, h:mm a')
+   ```
+
+4. **Map Marker Placement**: Using Mapbox GL JS:
+   ```typescript
+   new mapboxgl.Marker({ color: '#ef4444' })
+     .setLngLat([longitude, latitude])
+     .addTo(map);
+   ```
+
+5. **Real-time Updates**: Supabase Realtime subscription listens for new `honeypot_triggers` inserts and automatically updates the map
 
 **Honeypot Account Management:**
 
@@ -2192,14 +2214,15 @@ The `HoneypotManager.tsx` component provides:
 
 - **Add New Honeypot**: Create custom honeypot emails with optional descriptions
 - **Toggle Activation**: Enable/disable individual honeypots with toggle switches
-- **Trigger Counts**: View how many times each honeypot has been triggered
-- **Last Triggered Time**: See when each honeypot was last accessed
-- **Delete Honeypots**: Remove honeypots that are no longer needed
+- **Trigger Counts**: View how many times each honeypot has been triggered with a badge (e.g., "1 trigger")
+- **Last Triggered Time**: See when each honeypot was last accessed (formatted timestamp)
+- **Delete Honeypots**: Remove honeypots that are no longer needed (trash icon)
 - **MITRE ATT&CK Info**: Educational panel explaining T1078.001 (Default Accounts)
 
 **Code Locations**: 
 - `src/components/HoneypotManager.tsx` - Main management interface
 - `src/components/HoneypotMiniMap.tsx` - Geographic visualization component
+- `supabase/functions/geolocate-ip/index.ts` - IP to coordinates conversion
 
 When attackers repeatedly trigger honeypots, the IP Block List system automatically blocks their access. This creates a layered defense strategy.
 
@@ -2413,7 +2436,7 @@ The `GeographicBlockingManager.tsx` component provides:
   <img src="/images/geographic-blocking-manager.png" alt="Geographic Blocking Manager Interface" width="700"/>
 </p>
 
-**Figure 1: Geographic Blocking Manager Interface** - The Geo-Block tab in the Analytics & Security Center allows the portfolio owner to configure geographic blocking rules. Features include:
+**Figure GB-1: Geographic Blocking Manager Interface** - The Geo-Block tab in the Analytics & Security Center allows the portfolio owner to configure geographic blocking rules. Features include:
 - **Statistics Dashboard**: Real-time counters showing active blocks (red), flags (yellow), and total triggers (purple)
 - **Country Selection Dropdown**: Quick access to common high-risk countries (China, Russia, North Korea, etc.)
 - **Custom Country Entry**: Option to add any country by entering the ISO country code and name
@@ -3070,7 +3093,7 @@ flowchart TD
     CREATE --> ALERT
 ```
 
-**Figure 1: Auto-Trust Decision Flow** - Flowchart showing the complete decision logic for handling login locations, from IP lookup through auto-trust evaluation and alert triggering.
+**Figure KL-1: Auto-Trust Decision Flow** - Flowchart showing the complete decision logic for handling login locations, from IP lookup through auto-trust evaluation and alert triggering.
 
 ### Auto-Trust Decision Flow Explanation
 
@@ -3174,7 +3197,7 @@ The Security Map (`SecurityChoroplethMap.tsx`) displays two distinct types of ma
   <img src="https://imgur.com/cZFeE2W.png" alt="Security & Visitors Map with Dual Markers" width="800"/>
 </p>
 
-**Figure 1: Security & Visitors Map** - The interactive 3D globe visualization displays geographic data for both security events and visitor activity:
+**Figure SM-1: Security & Visitors Map** - The interactive 3D globe visualization displays geographic data for both security events and visitor activity:
 - **Red Markers (Failed Logins)**: Indicate locations with failed authentication attempts, sized by the number of failures
 - **Blue Markers (Guest Visits)**: Show locations of guest visitors who browsed the portfolio without logging in
 - **Summary Badges**: Header displays total counts for "Failed Logins" and "Guest Visits"
@@ -3257,7 +3280,7 @@ flowchart LR
     GPT --> RESP
 ```
 
-**Figure 1: RAG Pipeline Flow** - Flowchart showing the Retrieval Augmented Generation process from user query through embedding, vector search, context assembly, and response generation.
+**Figure RAG-1: RAG Pipeline Flow** - Flowchart showing the Retrieval Augmented Generation process from user query through embedding, vector search, context assembly, and response generation.
 
 ### RAG Pipeline Explanation
 
