@@ -232,29 +232,28 @@ export const HoneypotManager = () => {
                   : 'bg-secondary/30 border-border/50'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={account.is_active}
-                    onCheckedChange={() => toggleActive(account.id, account.is_active)}
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm">{account.email}</span>
-                      {account.times_triggered > 0 && (
-                        <Badge variant="destructive" className="text-xs">
-                          {account.times_triggered} triggers
-                        </Badge>
-                      )}
-                    </div>
-                    {account.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{account.description}</p>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={account.is_active}
+                  onCheckedChange={() => toggleActive(account.id, account.is_active)}
+                  className="shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-sm truncate">{account.email}</span>
+                    {account.times_triggered > 0 && (
+                      <Badge variant="destructive" className="text-xs shrink-0">
+                        {account.times_triggered} {account.times_triggered === 1 ? 'trigger' : 'triggers'}
+                      </Badge>
                     )}
                   </div>
+                  {account.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{account.description}</p>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {account.last_triggered_at && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1 whitespace-nowrap">
                       <Clock className="w-3 h-3" />
                       {format(new Date(account.last_triggered_at), 'MMM d, h:mm a')}
                     </span>
