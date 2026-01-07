@@ -608,15 +608,25 @@ export const InteractiveSecurityArchitecture = () => {
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
+                            transition={{ 
+                              height: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                              opacity: { duration: 0.25, ease: "easeOut" }
+                            }}
                             className="overflow-hidden"
                           >
-                            <div className="pt-3 space-y-3">
+                            <motion.div 
+                              className="pt-3 space-y-3"
+                              initial={{ opacity: 0, y: -8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -8 }}
+                              transition={{ duration: 0.25, delay: 0.1, ease: "easeOut" }}
+                            >
                               {/* Simulation Explanation */}
                               {selectedSimulation && (status === "passed" || status === "blocked") && (
                                 <motion.div
-                                  initial={{ opacity: 0, scale: 0.95 }}
-                                  animate={{ opacity: 1, scale: 1 }}
+                                  initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  transition={{ duration: 0.3, delay: 0.15, ease: [0.4, 0, 0.2, 1] }}
                                   className={`p-2.5 rounded-lg border ${
                                     status === "blocked" 
                                       ? "bg-red-500/10 border-red-500/30" 
@@ -711,7 +721,7 @@ export const InteractiveSecurityArchitecture = () => {
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            </motion.div>
                           </motion.div>
                         )}
                       </AnimatePresence>
