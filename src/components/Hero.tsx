@@ -391,7 +391,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="flex flex-col items-center text-center space-y-4"
+              className="flex flex-col items-center text-center space-y-3"
             >
               {/* Intro text */}
               <span className="text-muted-foreground text-base tracking-wide">
