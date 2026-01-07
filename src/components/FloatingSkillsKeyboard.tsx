@@ -85,41 +85,60 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
       onClick={handleClick}
       onMouseEnter={handleHover}
       className="relative focus:outline-none group"
+      style={{ transformStyle: "preserve-3d" }}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, delay: index * 0.03 }}
-      whileHover={{ y: -3, transition: { duration: 0.08 } }}
-      whileTap={{ y: 1 }}
+      whileHover={{ y: -4, transition: { duration: 0.08 } }}
+      whileTap={{ y: 2 }}
       title={skill.name}
     >
-      {/* 3D Keycap - icon only */}
-      <div className="relative">
-        {/* Deep shadow for 3D depth */}
-        <div className="absolute inset-0 bg-slate-950 rounded-lg translate-y-[4px]" />
+      {/* 3D Keycap with visible depth */}
+      <div className="relative" style={{ transformStyle: "preserve-3d" }}>
+        {/* Bottom face - visible from angle */}
+        <div 
+          className="absolute inset-0 bg-slate-900 rounded-lg"
+          style={{ 
+            transform: "translateZ(-12px)",
+          }} 
+        />
         
-        {/* Keycap side walls */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 rounded-lg translate-y-[2px]" />
+        {/* Front face - visible when tilted */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-b from-slate-700 to-slate-900 origin-bottom rounded-b-lg"
+          style={{ 
+            transform: "rotateX(-90deg) translateZ(0px)",
+          }} 
+        />
+        
+        {/* Left side face */}
+        <div 
+          className="absolute top-0 bottom-0 left-0 w-3 bg-gradient-to-r from-slate-800 to-slate-700 origin-left rounded-l-lg"
+          style={{ 
+            transform: "rotateY(90deg) translateZ(0px)",
+          }} 
+        />
         
         {/* Main keycap top surface */}
         <div className="
           relative
-          w-12 h-12 sm:w-14 sm:h-14
-          bg-gradient-to-b from-slate-600 via-slate-700 to-slate-750
+          w-14 h-14 sm:w-16 sm:h-16
+          bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700
           rounded-lg
           flex items-center justify-center
-          border border-slate-500/40
-          group-hover:from-slate-500 group-hover:via-slate-600 group-hover:to-slate-700
+          border border-slate-400/30
+          group-hover:from-slate-400 group-hover:via-slate-500 group-hover:to-slate-600
           transition-all duration-100
-          shadow-[inset_0_-2px_4px_rgba(0,0,0,0.4),inset_0_2px_3px_rgba(255,255,255,0.1)]
+          shadow-[inset_0_-3px_6px_rgba(0,0,0,0.3),inset_0_3px_6px_rgba(255,255,255,0.15)]
         ">
-          {/* Concave top surface effect */}
-          <div className="absolute inset-[3px] rounded-md bg-gradient-to-br from-slate-500/15 via-transparent to-slate-900/25 pointer-events-none" />
+          {/* Concave/dished top surface */}
+          <div className="absolute inset-[4px] rounded-md bg-gradient-to-br from-white/10 via-transparent to-black/20 pointer-events-none" />
           
           {skill.icon ? (
             <img 
               src={skill.icon} 
               alt={skill.name}
-              className="w-7 h-7 sm:w-8 sm:h-8 object-contain relative z-10 drop-shadow-sm"
+              className="w-8 h-8 sm:w-9 sm:h-9 object-contain relative z-10 drop-shadow-md"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 const fallback = e.currentTarget.nextElementSibling;
@@ -127,7 +146,7 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
               }}
             />
           ) : null}
-          <span className={`text-slate-300 font-bold text-sm relative z-10 ${skill.icon ? 'hidden' : ''}`}>
+          <span className={`text-slate-200 font-bold text-base relative z-10 ${skill.icon ? 'hidden' : ''}`}>
             {skill.name.slice(0, 2).toUpperCase()}
           </span>
         </div>
@@ -222,16 +241,17 @@ export const FloatingSkillsKeyboard = () => {
   const cols = 4;
 
   return (
-    <div ref={containerRef} className="relative pt-8" style={{ perspective: "800px" }}>
+    <div ref={containerRef} className="relative pt-4" style={{ perspective: "1200px" }}>
       <motion.div
         className="relative"
         style={{ 
-          rotateX: hasAnimated ? rotateX : 0, 
-          rotateY: hasAnimated ? rotateY : 0, 
-          transformStyle: "preserve-3d" 
+          transformStyle: "preserve-3d",
+          rotateX: 25, // Fixed tilt - looking down at keyboard
+          rotateY: -15, // Slight angle to the left
+          rotateZ: 2, // Slight rotation for natural look
         }}
-        initial={{ opacity: 0, x: 100, rotateY: -15 }}
-        animate={{ opacity: 1, x: 0, rotateY: 0 }}
+        initial={{ opacity: 0, x: 100, rotateY: -30 }}
+        animate={{ opacity: 1, x: 0, rotateY: -15 }}
         transition={{ 
           duration: 0.8, 
           ease: [0.25, 0.46, 0.45, 0.94],
@@ -239,18 +259,33 @@ export const FloatingSkillsKeyboard = () => {
         }}
       >
         {/* Keyboard base with depth */}
-        <div className="relative">
-          {/* Keyboard shadow */}
-          <div className="absolute inset-0 bg-slate-950 rounded-xl translate-y-3 blur-md opacity-60" />
+        <div className="relative" style={{ transformStyle: "preserve-3d" }}>
+          {/* Keyboard shadow on surface */}
+          <div 
+            className="absolute inset-0 bg-black/40 rounded-xl blur-xl"
+            style={{ transform: "translateZ(-20px) translateY(15px)" }}
+          />
+          
+          {/* Keyboard case bottom */}
+          <div 
+            className="absolute inset-0 bg-slate-900 rounded-xl"
+            style={{ transform: "translateZ(-8px)" }}
+          />
           
           {/* Keyboard case */}
-          <div className="relative p-4 sm:p-5 rounded-xl bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 border border-slate-600/30 shadow-2xl">
+          <div 
+            className="relative p-4 sm:p-5 rounded-xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border border-slate-500/30 shadow-2xl"
+            style={{ transformStyle: "preserve-3d" }}
+          >
             {/* Inner bezel */}
-            <div className="absolute inset-2 rounded-lg border border-slate-700/50 pointer-events-none" />
+            <div className="absolute inset-2 rounded-lg border border-slate-600/40 pointer-events-none" />
             
             <div 
-              className="grid gap-2 sm:gap-3"
-              style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+              className="grid gap-2.5 sm:gap-3"
+              style={{ 
+                gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                transformStyle: "preserve-3d"
+              }}
             >
               {skills.map((skill, index) => (
                 <Keycap
