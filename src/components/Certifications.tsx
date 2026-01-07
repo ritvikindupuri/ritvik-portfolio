@@ -33,6 +33,7 @@ interface Certification {
   name: string;
   logo: string;
   credentialId: string;
+  credentialUrl: string;
   issueDate: string;
   expirationDate: string;
   display_order?: number;
@@ -182,10 +183,25 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
             </div>
 
             <div className="space-y-2.5 w-full">
-              {cert.credentialId && (
+              {(cert.credentialId || cert.credentialUrl) && (
                 <div className="bg-accent/10 backdrop-blur-sm rounded-xl p-3 border border-accent/20">
-                  <p className="text-xs text-accent/80 font-semibold mb-1">CREDENTIAL ID</p>
-                  <p className="font-mono text-xs text-foreground/90 break-all">{cert.credentialId}</p>
+                  {cert.credentialId && (
+                    <>
+                      <p className="text-xs text-accent/80 font-semibold mb-1">CREDENTIAL ID</p>
+                      <p className="font-mono text-xs text-foreground/90 break-all">{cert.credentialId}</p>
+                    </>
+                  )}
+                  {cert.credentialUrl && (
+                    <a 
+                      href={cert.credentialUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-2 text-xs text-accent hover:text-accent/80 transition-colors font-medium"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      Verify Credential
+                    </a>
+                  )}
                 </div>
               )}
               
@@ -228,6 +244,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
     name: "",
     logo: "",
     credentialId: "",
+    credentialUrl: "",
     issueDate: "",
     expirationDate: "",
   });
@@ -260,7 +277,8 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
         id: cert.id,
         name: cert.name,
         logo: cert.image_url || "🏆",
-        credentialId: cert.credential_url || "",
+        credentialId: cert.credential_url?.startsWith('http') ? '' : (cert.credential_url || ""),
+        credentialUrl: cert.credential_url?.startsWith('http') ? cert.credential_url : "",
         issueDate: cert.date ? new Date(cert.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
         expirationDate: cert.expiration_date ? new Date(cert.expiration_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
         display_order: cert.display_order
@@ -353,6 +371,9 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
       }
     }
 
+    // Build credential_url - prioritize URL, fallback to ID
+    const credentialUrlValue = newCert.credentialUrl || newCert.credentialId || null;
+
     if (editingCert) {
       // Update existing certification
       const { error } = await supabase
@@ -360,7 +381,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
         .update({
           name: newCert.name,
           image_url: newCert.logo,
-          credential_url: newCert.credentialId,
+          credential_url: credentialUrlValue,
           date: dateValue,
           expiration_date: expirationDateValue,
           issuer: "Certification Issuer"
@@ -387,7 +408,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           date: dateValue,
           expiration_date: expirationDateValue,
           image_url: newCert.logo,
-          credential_url: newCert.credentialId
+          credential_url: credentialUrlValue
         });
 
       if (error) {
@@ -400,7 +421,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
       toast.success("Certification added successfully");
     }
     
-    setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
+    setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "" });
     setUploadedLogo("");
     setEditingCert(null);
     setIsAddDialogOpen(false);
@@ -473,6 +494,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                           name: cert.name,
                           logo: cert.logo,
                           credentialId: cert.credentialId,
+                          credentialUrl: cert.credentialUrl,
                           issueDate: cert.issueDate,
                           expirationDate: cert.expirationDate
                         });
@@ -491,7 +513,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                   setIsAddDialogOpen(open);
                   if (!open) {
                     setEditingCert(null);
-                    setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
+                    setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "" });
                     setUploadedLogo("");
                   }
                 }}>
@@ -503,7 +525,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                       viewport={{ once: true }}
                       onClick={() => {
                         setEditingCert(null);
-                        setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
+                        setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "" });
                         setUploadedLogo("");
                         setIsAddDialogOpen(true);
                       }}
@@ -568,6 +590,16 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                       </div>
                       
                       <div className="space-y-2">
+                        <label className="text-sm font-medium">Credential URL (optional)</label>
+                        <Input
+                          placeholder="https://verify.certification.org/..."
+                          value={newCert.credentialUrl}
+                          onChange={(e) => setNewCert({ ...newCert, credentialUrl: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground">Link to verify the certification</p>
+                      </div>
+                      
+                      <div className="space-y-2">
                         <label className="text-sm font-medium">Issue Date *</label>
                         <Input
                           type="date"
@@ -590,7 +622,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                       <Button variant="outline" onClick={() => {
                         setIsAddDialogOpen(false);
                         setEditingCert(null);
-                        setNewCert({ name: "", logo: "", credentialId: "", issueDate: "", expirationDate: "" });
+                        setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "" });
                         setUploadedLogo("");
                       }}>
                         Cancel
