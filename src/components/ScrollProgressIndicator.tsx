@@ -82,7 +82,7 @@ export const ScrollProgressIndicator = () => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
-          className="fixed right-4 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-1"
+          className="fixed right-24 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-1"
         >
           {/* Back to top button */}
           <TooltipProvider delayDuration={100}>
