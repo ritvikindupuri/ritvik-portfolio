@@ -386,26 +386,36 @@ export const Hero = ({ isOwner }: HeroProps) => {
         >
           {/* Main Hero Layout - Side by Side */}
           <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 min-h-[60vh]">
-            {/* Left Column - Name & Info (Centered) */}
+            {/* Left Column - Name & Info (Centered) with keyboard reflection overlay */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="flex flex-col items-center text-center space-y-3"
+              className="relative flex flex-col items-center text-center space-y-3"
             >
+              {/* Subtle keyboard reflection overlay */}
+              <div 
+                className="absolute -right-20 top-1/2 -translate-y-1/2 w-64 h-64 pointer-events-none opacity-[0.04] blur-sm hidden lg:block"
+                style={{
+                  background: "linear-gradient(135deg, hsl(185 100% 50%) 0%, hsl(280 85% 60%) 50%, transparent 100%)",
+                  borderRadius: "20px",
+                  transform: "translateY(-50%) perspective(500px) rotateY(-15deg) rotateX(10deg)"
+                }}
+              />
+              
               {/* Intro text */}
               <span className="text-muted-foreground text-base tracking-wide">
                 Hi, I am
               </span>
               
-              {/* Large Name - Single Line */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1]">
+              {/* Large Name - Single Line with nowrap */}
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] whitespace-nowrap">
                 <span className="text-foreground">Ritvik </span>
                 <span className="text-gradient-cyber">Indupuri</span>
               </h1>
               
               {/* Title */}
-              <p className="text-muted-foreground text-base font-medium tracking-wide">
+              <p className="text-muted-foreground text-base font-medium tracking-wide italic">
                 A Cybersecurity Major
               </p>
               
