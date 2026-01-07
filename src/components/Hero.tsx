@@ -505,10 +505,10 @@ export const Hero = ({ isOwner }: HeroProps) => {
 
           {/* Floating Skills Keyboard - Cyber Tools */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8, duration: 0.8 }}
-            className="w-full max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.75, duration: 0.8 }}
+            className="w-full max-w-xl mx-auto mt-4"
           >
             <FloatingSkillsKeyboard />
           </motion.div>
