@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useChatbot } from "@/contexts/ChatbotContext";
 
 const sections = [
   { id: "about-section", label: "About", icon: User, color: "bg-blue-500" },
@@ -25,6 +26,7 @@ const sections = [
 ];
 
 export const ScrollProgressIndicator = () => {
+  const { isChatOpen } = useChatbot();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -75,14 +77,17 @@ export const ScrollProgressIndicator = () => {
 
   const activeIndex = sections.findIndex(s => s.id === activeSection);
 
+  // Hide when chat is open
+  if (isChatOpen) return null;
+
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          className="fixed right-24 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-1"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed right-6 bottom-24 z-40 hidden lg:flex flex-col items-center gap-1"
         >
           {/* Back to top button */}
           <TooltipProvider delayDuration={100}>
