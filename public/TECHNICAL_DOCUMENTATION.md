@@ -247,7 +247,7 @@ sequenceDiagram
     EF->>RS: POST /emails
     RS->>O: Visitor Alert Email
     
-    Note over O: Email contains:<br/>- Session ID<br/>- Activity log<br/>- Chatbot queries<br/>- Timestamps
+    Note over O: Email contains: session ID, activity log, chatbot queries, timestamps
 ```
 
 **Figure DF-1: Visitor Action to Email Alert Flow** - Sequence diagram showing how visitor interactions are tracked, aggregated, and trigger automated email alerts when engagement thresholds are reached.
@@ -324,7 +324,7 @@ sequenceDiagram
     TD->>TD: Group by IP address
     
     TD->>TD: Analyze patterns
-    Note over TD: 3+ failed from same IP<br/>= T1110.001 Password Guessing<br/>Confidence: 60%
+    Note over TD: 3+ failed from same IP = T1110.001 Password Guessing (Confidence: 60%)
     
     A->>AUTH: Login attempt #4 (fail)
     AUTH->>DB: INSERT {ip, email, success: false}
@@ -334,7 +334,7 @@ sequenceDiagram
     
     DB-->>TD: postgres_changes event
     TD->>TD: Re-analyze
-    Note over TD: 5+ failed in 1 hour<br/>= T1110 Brute Force<br/>Confidence: 95%
+    Note over TD: 5+ failed in 1 hour = T1110 Brute Force (Confidence: 95%)
     
     TD->>TD: Severity = HIGH
     TD->>TD: Confidence >= 60%
@@ -345,7 +345,7 @@ sequenceDiagram
     EF->>RS: POST /emails
     RS->>O: THREAT ALERT Email
     
-    Note over O: Email contains:<br/>- Attacker IP & email<br/>- Login attempt log<br/>- MITRE technique details<br/>- Remediation steps
+    Note over O: Email contains attacker IP, email, login attempt log, MITRE technique details, remediation steps
 ```
 
 **Figure DF-2: Threat Detection to Alert Flow** - Sequence diagram illustrating how the security system detects authentication attacks in real-time through pattern analysis and MITRE ATT&CK mapping.
@@ -2260,28 +2260,21 @@ The following diagram illustrates the complete flow from honeypot trigger to aut
 
 ```mermaid
 flowchart TD
-    A[Login Attempt] --> B{Is IP Already Blocked?}
-    B -->|Yes| C[❌ Reject: Access Denied]
-    B -->|No| D{Is Email a Honeypot?}
-    D -->|No| E[Continue Normal Auth Flow]
-    D -->|Yes| F[Log Trigger to honeypot_triggers]
-    F --> G[Increment honeypot.times_triggered]
-    G --> H[Geolocate IP Address]
-    H --> I[Update HoneypotMiniMap]
-    I --> J{Count Triggers from this IP}
-    J -->|< 3 triggers| K[📧 Send Honeypot Alert Email]
-    K --> L[Return Generic Error]
-    J -->|≥ 3 triggers| M[🚫 Auto-Block IP for 24 Hours]
-    M --> N[Insert into blocked_ips table]
-    N --> O[📧 Send IP Blocked Alert Email]
+    A[Login Attempt] --> B{IP blocked?}
+    B -->|Yes| C[Reject request]
+    B -->|No| D{Honeypot email?}
+    D -->|No| E[Continue normal auth flow]
+    D -->|Yes| F[Insert honeypot_triggers row]
+    F --> G[Increment times_triggered]
+    G --> H[Geolocate IP]
+    H --> I[Update Honeypot Mini-Map]
+    I --> J{Triggers from this IP}
+    J -->|< 3| K[Send honeypot alert email]
+    K --> L[Return generic auth error]
+    J -->|>= 3| M[Auto-block IP (24h)]
+    M --> N[Insert blocked_ips row]
+    N --> O[Send IP-blocked alert email]
     O --> L
-
-    style A fill:#1a1a2e,stroke:#00d4ff,color:#fff
-    style C fill:#ff4757,stroke:#ff4757,color:#fff
-    style M fill:#ff4757,stroke:#ff4757,color:#fff
-    style K fill:#ffa502,stroke:#ffa502,color:#000
-    style O fill:#ffa502,stroke:#ffa502,color:#000
-    style I fill:#2ed573,stroke:#2ed573,color:#000
 ```
 
 **Workflow Steps:**
@@ -2451,29 +2444,24 @@ The Geographic Blocking system works in concert with the Honeypot and IP Block s
 ```mermaid
 flowchart LR
     subgraph Layer1["Layer 1: Geographic Filtering"]
-        A[Login Attempt] --> B{Country Blocked?}
-        B -->|Yes| C[❌ Reject by Country]
-        B -->|No/Flagged| D[Continue to Layer 2]
-    end
-    
-    subgraph Layer2["Layer 2: IP Blocking"]
-        D --> E{IP Blocked?}
-        E -->|Yes| F[❌ Reject by IP]
-        E -->|No| G[Continue to Layer 3]
-    end
-    
-    subgraph Layer3["Layer 3: Honeypot Detection"]
-        G --> H{Honeypot Email?}
-        H -->|Yes| I[Log & Alert]
-        I --> J{3+ Triggers?}
-        J -->|Yes| K[Auto-Block IP]
-        H -->|No| L[✅ Normal Auth]
+        A[Login Attempt] --> B{Country blocked?}
+        B -->|Yes| C[Reject by country]
+        B -->|No or flagged| D[Continue to layer 2]
     end
 
-    style C fill:#ff4757,color:#fff
-    style F fill:#ff4757,color:#fff
-    style K fill:#ffa502,color:#000
-    style L fill:#2ed573,color:#000
+    subgraph Layer2["Layer 2: IP Blocking"]
+        D --> E{IP blocked?}
+        E -->|Yes| F[Reject by IP]
+        E -->|No| G[Continue to layer 3]
+    end
+
+    subgraph Layer3["Layer 3: Honeypot Detection"]
+        G --> H{Honeypot email?}
+        H -->|Yes| I[Log trigger and alert]
+        I --> J{3+ triggers?}
+        J -->|Yes| K[Auto-block IP]
+        H -->|No| L[Normal auth]
+    end
 ```
 
 **How the Layers Work Together:**
@@ -2538,44 +2526,38 @@ flowchart TB
         CB[Chatbot Component]
         IV[Input Validation]
         PID[Prompt Injection Detection]
-        RL[Rate Limiting - 30/hr]
+        RL[Rate Limiting (30/hr)]
     end
-    
+
     subgraph SanitizationLayer["Sanitization Layer"]
         DP[DOMPurify Sanitization]
         SMR[Safe Message Rendering]
     end
-    
+
     subgraph AccessControlLayer["Access Control Layer"]
         RBAC[Role-Based Access Control]
-        VM[Viewer Mode - Read Only]
-        OM[Owner Mode - Verified Email Only]
+        VM[Viewer Mode (Read Only)]
+        OM[Owner Mode (Verified Email Only)]
     end
-    
+
     subgraph AuthLayer["Authentication Layer"]
-        SA[Supabase Auth Service]
+        SA[Auth Service]
         EP[Encrypted Authentication]
         PP[Password Policies]
-        PSH[Password Protection + Session Handling]
+        PSH[Session Handling]
     end
-    
+
     subgraph DatabaseLayer["Database Layer"]
         RLS[Row-Level Security]
         AL[Audit Logging]
-        CORS[CORS & Security Headers]
+        CORS[CORS and Security Headers]
         XFO[X-Frame-Options]
     end
-    
+
     UserLayer --> SanitizationLayer
     SanitizationLayer --> AccessControlLayer
     AccessControlLayer --> AuthLayer
     AuthLayer --> DatabaseLayer
-
-    style UserLayer fill:#1a1a2e,stroke:#00d4ff
-    style SanitizationLayer fill:#1a1a2e,stroke:#ffa502
-    style AccessControlLayer fill:#1a1a2e,stroke:#2ed573
-    style AuthLayer fill:#1a1a2e,stroke:#ff4757
-    style DatabaseLayer fill:#1a1a2e,stroke:#a855f7
 ```
 
 **Figure SA-1: Portfolio Security Architecture Diagram** - This diagram illustrates the layered security design across the portfolio's architecture. It shows the progression from user interaction to authentication and database access, highlighting how security policies, validation layers, and sanitization steps prevent unauthorized access and data leaks.
@@ -2811,23 +2793,23 @@ flowchart LR
         T4[Owner Access Exploit]
         T5[Cross-Site Scripting]
     end
-    
+
     subgraph Vulnerabilities["Vulnerability Details"]
         V1[Minimal password rules]
         V2[Unlimited API calls]
         V3[Chatbot manipulation]
-        V4[localStorage vulnerability]
+        V4[Client-side role flag]
         V5[Unsanitized HTML]
     end
-    
+
     subgraph Fixes["Implemented Fixes"]
-        F1[8+ char complexity + Leaked Password Protection]
-        F2[IP-based Rate Limiting]
+        F1[Password complexity + leaked password checks]
+        F2[IP-based rate limiting]
         F3[Input validation + CORS restriction]
         F4[Server-side JWT + RLS]
         F5[DOMPurify sanitization]
     end
-    
+
     subgraph Outcomes["Security Outcomes"]
         O1[Secure authentication baseline]
         O2[Abuse prevention]
@@ -2835,23 +2817,12 @@ flowchart LR
         O4[Owner-only access enforced]
         O5[No script execution possible]
     end
-    
+
     T1 --> V1 --> F1 --> O1
     T2 --> V2 --> F2 --> O2
     T3 --> V3 --> F3 --> O3
     T4 --> V4 --> F4 --> O4
     T5 --> V5 --> F5 --> O5
-
-    style T1 fill:#ff4757,color:#fff
-    style T2 fill:#ff4757,color:#fff
-    style T3 fill:#ff4757,color:#fff
-    style T4 fill:#ff4757,color:#fff
-    style T5 fill:#ff4757,color:#fff
-    style F1 fill:#2ed573,color:#000
-    style F2 fill:#2ed573,color:#000
-    style F3 fill:#2ed573,color:#000
-    style F4 fill:#2ed573,color:#000
-    style F5 fill:#2ed573,color:#000
 ```
 
 **Figure SA-2: Threat Model and Mitigations Diagram** - Each node illustrates the potential exploit, the fix implemented, and the outcome. This demonstrates the comprehensive security hardening applied to the portfolio.
@@ -3080,8 +3051,8 @@ flowchart TD
     CHECK -->|Yes| UPDATE
     UPDATE --> UPDATETS
     UPDATETS --> THRESHOLD
-    THRESHOLD -->|Yes & not trusted| AUTOTRUST
-    THRESHOLD -->|No or already trusted| TRUSTED
+    THRESHOLD -->|Yes, not trusted| AUTOTRUST
+    THRESHOLD -->|No (or already trusted)| TRUSTED
     AUTOTRUST --> TRUSTED
     
     TRUSTED -->|Yes| SILENT
