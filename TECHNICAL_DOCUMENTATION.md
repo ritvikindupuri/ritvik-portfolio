@@ -2160,7 +2160,7 @@ if (honeypot) {
   <img src="./images/honeypot-accounts-map.png" alt="Honeypot Accounts with Recent Trigger Locations Map" width="800"/>
 </p>
 
-**Figure: Honeypot Accounts Dashboard with Real-Time Trigger Location Mapping** - The comprehensive honeypot management interface featuring:
+**Figure HP-1: Honeypot Accounts Dashboard with Real-Time Trigger Location Mapping** - The comprehensive honeypot management interface featuring:
 
 **Statistics Dashboard:**
 - **Total Honeypots**: Count of all configured decoy accounts
@@ -2213,7 +2213,7 @@ The IP Block List system works alongside the Honeypot Account System to automati
   <img src="./public/images/honeypot-ip-blocking.png" alt="Honeypot & IP Block Management Interface" width="800"/>
 </p>
 
-**Figure 1: Honeypot & IP Block Management Interface** - The combined security management interface showing both deception and blocking capabilities:
+**Figure HP-2: Honeypot & IP Block Management Interface** - The combined security management interface showing both deception and blocking capabilities:
 
 **Honeypot Accounts Section (Left Panel):**
 - **Statistics Dashboard**: Displays total honeypot accounts, active count, and cumulative trigger count
@@ -2555,7 +2555,7 @@ flowchart TB
     style DatabaseLayer fill:#1a1a2e,stroke:#a855f7
 ```
 
-**Figure 3: Portfolio Security Architecture Diagram** - This diagram illustrates the layered security design across the portfolio's architecture. It shows the progression from user interaction to authentication and database access, highlighting how security policies, validation layers, and sanitization steps prevent unauthorized access and data leaks.
+**Figure SA-1: Portfolio Security Architecture Diagram** - This diagram illustrates the layered security design across the portfolio's architecture. It shows the progression from user interaction to authentication and database access, highlighting how security policies, validation layers, and sanitization steps prevent unauthorized access and data leaks.
 
 ---
 
@@ -2831,7 +2831,7 @@ flowchart LR
     style F5 fill:#2ed573,color:#000
 ```
 
-**Figure 4: Threat Model and Mitigations Diagram** - Each node illustrates the potential exploit, the fix implemented, and the outcome. This demonstrates the comprehensive security hardening applied to the portfolio.
+**Figure SA-2: Threat Model and Mitigations Diagram** - Each node illustrates the potential exploit, the fix implemented, and the outcome. This demonstrates the comprehensive security hardening applied to the portfolio.
 
 ### Security Posture Summary
 
@@ -3401,10 +3401,10 @@ This section provides a quick reference to all figures in this documentation, or
 
 | Figure | Section | Description |
 |--------|---------|-------------|
-| Figure 1 | System Architecture | Complete technical stack diagram showing frontend, backend, and external services |
-| Figure 1 | Visitor Action to Email Alert Flow | Sequence diagram of visitor tracking to email notification |
-| Figure 1 | Threat Detection to Alert Flow | Sequence diagram of security threat detection and alerting |
-| Figure 1 | Weekly Digest Flow | Flowchart of automated weekly summary email generation |
+| Figure SYS-1 | System Architecture | Complete technical stack diagram showing frontend, backend, and external services |
+| Figure DF-1 | Visitor Action to Email Alert Flow | Sequence diagram of visitor tracking to email notification |
+| Figure DF-2 | Threat Detection to Alert Flow | Sequence diagram of security threat detection and alerting |
+| Figure DF-3 | Weekly Digest Flow | Flowchart of automated weekly summary email generation |
 
 ### Screenshots and Visual Reference
 
@@ -3428,37 +3428,37 @@ This section provides a quick reference to all figures in this documentation, or
 
 | Figure | Section | Description |
 |--------|---------|-------------|
-| Figure 1 | Visitor Journey Flow Analysis | Top paths and section order visualization |
-| Figure 2 | Visitor Journey Flow Analysis | Entry and exit points analysis |
-| Figure 1 | Visitor Flow Sankey Diagram | Flow diagram overview with session count |
-| Figure 2 | Visitor Flow Sankey Diagram | Detailed Sankey diagram with flow lines |
-| Figure 3 | Visitor Flow Sankey Diagram | Section drop-off analysis with retention bars |
+| Figure VJ-1 | Visitor Journey Flow Analysis | Top paths and section order visualization |
+| Figure VJ-2 | Visitor Journey Flow Analysis | Entry and exit points analysis |
+| Figure SK-1 | Visitor Flow Sankey Diagram | Flow diagram overview with session count |
+| Figure SK-2 | Visitor Flow Sankey Diagram | Detailed Sankey diagram with flow lines |
+| Figure SK-3 | Visitor Flow Sankey Diagram | Section drop-off analysis with retention bars |
 
 ### Security Systems
 
 | Figure | Section | Description |
 |--------|---------|-------------|
-| Figure 1 | MITRE ATT&CK Threat Detection | Configurable detection thresholds settings |
-| Figure 1 | IP Block List System | Combined Honeypot & IP Block management interface |
-| Figure 1 | Geographic Blocking Rules | Geographic blocking manager with country rules |
-| Figure 1 | Known Login Locations | Auto-trust decision flow diagram |
-| Figure 2 | Known Login Locations | Location management UI with trust controls |
-| Figure 1 | Security & Visitors Map | Interactive 3D globe with dual markers |
-| Figure 2 | Security & Visitors Map | Filterable security and visitor event log |
-| Figure 1 | Honeypot Account System | Honeypot dashboard with mini map and trigger locations |
+| Figure SS-1 | MITRE ATT&CK Threat Detection | Configurable detection thresholds settings |
+| Figure HP-1 | Honeypot Account System | Honeypot dashboard with mini map and trigger locations |
+| Figure HP-2 | IP Block List System | Combined Honeypot & IP Block management interface |
+| Figure GB-1 | Geographic Blocking Rules | Geographic blocking manager with country rules |
+| Figure KL-1 | Known Login Locations | Auto-trust decision flow diagram |
+| Figure KL-2 | Known Login Locations | Location management UI with trust controls |
+| Figure SM-1 | Security & Visitors Map | Interactive 3D globe with dual markers |
+| Figure SM-2 | Security & Visitors Map | Filterable security and visitor event log |
 
 ### Security Architecture & Threat Mitigation
 
 | Figure | Section | Description |
 |--------|---------|-------------|
-| Figure 3 | Security Architecture Overview | Layered security architecture diagram |
-| Figure 4 | Threat Model Summary | Threat to mitigation mapping diagram |
+| Figure SA-1 | Security Architecture Overview | Layered security architecture diagram showing defense-in-depth |
+| Figure SA-2 | Threat Model Summary | Threat to mitigation mapping diagram with outcomes |
 
 ### AI & Chatbot
 
 | Figure | Section | Description |
 |--------|---------|-------------|
-| Figure 1 | RAG Chatbot Architecture | RAG pipeline flow from query to response |
+| Figure RAG-1 | RAG Chatbot Architecture | RAG pipeline flow from query to response |
 
 ---
 
