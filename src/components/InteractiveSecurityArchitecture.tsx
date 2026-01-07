@@ -19,6 +19,8 @@ interface SecurityLayer {
   description: string;
   components: string[];
   threats: string[];
+  passedExplanation: string;
+  blockedExplanation: string;
 }
 
 const securityLayers: SecurityLayer[] = [
@@ -31,6 +33,8 @@ const securityLayers: SecurityLayer[] = [
     description: "Country-level access controls block threats at the perimeter",
     components: ["Country Rules", "IP Geolocation", "Region Blocking"],
     threats: ["Nation-state attacks", "High-risk regions"],
+    passedExplanation: "The request originated from a country that is not on the blocked list. The IP was geolocated and the country code was checked against geographic_blocking_rules table. Since no matching block rule exists, the request proceeds to the next layer.",
+    blockedExplanation: "The request was blocked because the IP address geolocated to a country in the blocked list. The geographic_blocking_rules table has an active 'block' action for this country code. The connection is immediately terminated with no further processing.",
   },
   {
     id: "ip-blocking",
@@ -41,6 +45,8 @@ const securityLayers: SecurityLayer[] = [
     description: "Automatic and manual IP blocking after honeypot triggers",
     components: ["Auto-block (3 triggers)", "24hr Expiration", "Manual Blocks"],
     threats: ["Repeat offenders", "Brute force IPs"],
+    passedExplanation: "This IP address was not found in the blocked_ips table, or the block has expired (is_active = false). The system checked for active blocks and found none, allowing the request to continue to honeypot detection.",
+    blockedExplanation: "This IP was found in the blocked_ips table with is_active = true and expires_at in the future. The IP was auto-blocked after triggering honeypot accounts 3+ times, or was manually blocked by the owner. Request rejected immediately.",
   },
   {
     id: "honeypot",
@@ -51,6 +57,8 @@ const securityLayers: SecurityLayer[] = [
     description: "Decoy accounts detect and track credential attacks",
     components: ["Fake Admin Accounts", "Trigger Logging", "Location Mapping"],
     threats: ["Default credential attacks", "T1078.001"],
+    passedExplanation: "The login attempt used an email that does not match any honeypot_accounts entries. This appears to be a legitimate login attempt rather than an attacker trying default/common credentials. The request continues to rate limiting.",
+    blockedExplanation: "The attacker tried to log in with a honeypot email (e.g., admin@portfolio.dev). The system logged the trigger in honeypot_triggers, geolocated the IP, and sent an alert. If this IP has 3+ triggers, it will be auto-blocked for 24 hours.",
   },
   {
     id: "rate-limiting",
@@ -61,6 +69,8 @@ const securityLayers: SecurityLayer[] = [
     description: "IP-based request throttling prevents abuse",
     components: ["30/hr Chatbot", "5/hr Contact", "Session Limits"],
     threats: ["DDoS", "Spam", "Brute force"],
+    passedExplanation: "The IP has not exceeded the rate limit thresholds. Login attempts from this IP in the past hour are below the brute force detection threshold. The request frequency is within acceptable bounds and proceeds to authentication.",
+    blockedExplanation: "The IP exceeded the rate limit. Too many requests in a short period triggered the brute force detection (5+ failed attempts in 1 hour = T1110 Brute Force). The request is throttled and the owner receives a MITRE ATT&CK-mapped threat alert.",
   },
   {
     id: "auth",
@@ -71,6 +81,8 @@ const securityLayers: SecurityLayer[] = [
     description: "JWT-based auth with server-enforced RBAC",
     components: ["Supabase Auth", "Password Policies", "Session Handling"],
     threats: ["Unauthorized access", "Session hijacking"],
+    passedExplanation: "Valid credentials were provided. Supabase Auth verified the email/password combination, checked against the leaked password database, and issued a JWT token. The user's role was verified via the user_roles table for RBAC enforcement.",
+    blockedExplanation: "Authentication failed. Either the credentials were incorrect, the password failed complexity requirements, or was found in a known data breach. The login attempt is logged and may contribute to threat detection patterns.",
   },
   {
     id: "database",
@@ -81,6 +93,8 @@ const securityLayers: SecurityLayer[] = [
     description: "Row-Level Security ensures data isolation",
     components: ["RLS Policies", "Audit Logging", "Input Validation"],
     threats: ["Data leakage", "SQL injection", "Privilege escalation"],
+    passedExplanation: "The authenticated user's JWT was validated and their user_id extracted. RLS policies on each table ensure they can only access rows where the policy conditions are met (e.g., user_id = auth.uid()). All queries are logged for audit purposes.",
+    blockedExplanation: "RLS policies prevented access. Even with a valid session, the user cannot access data that doesn't belong to them. The database enforces that only the owner role can access sensitive tables like visitor_activity and login_attempts.",
   },
 ];
 
@@ -453,27 +467,60 @@ export const InteractiveSecurityArchitecture = () => {
                           transition={{ duration: 0.2 }}
                           className="overflow-hidden"
                         >
-                          <div className="pt-4 grid grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground mb-2">Components</p>
-                              <div className="space-y-1">
-                                {layer.components.map((comp, i) => (
-                                  <div key={i} className="flex items-center gap-2 text-xs">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${layer.color.replace("text-", "bg-")}`} />
-                                    {comp}
+                          <div className="pt-4 space-y-4">
+                            {/* Simulation Explanation - shown when a simulation is active */}
+                            {selectedSimulation && (status === "passed" || status === "blocked") && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className={`p-3 rounded-lg border ${
+                                  status === "blocked" 
+                                    ? "bg-red-500/10 border-red-500/30" 
+                                    : "bg-green-500/10 border-green-500/30"
+                                }`}
+                              >
+                                <div className="flex items-start gap-2">
+                                  {status === "blocked" ? (
+                                    <XCircle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                                  ) : (
+                                    <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                                  )}
+                                  <div>
+                                    <p className={`text-xs font-semibold mb-1 ${
+                                      status === "blocked" ? "text-red-400" : "text-green-400"
+                                    }`}>
+                                      {status === "blocked" ? "Attack Blocked at This Layer" : "Attack Passed Through"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                      {status === "blocked" ? layer.blockedExplanation : layer.passedExplanation}
+                                    </p>
                                   </div>
-                                ))}
+                                </div>
+                              </motion.div>
+                            )}
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-2">Components</p>
+                                <div className="space-y-1">
+                                  {layer.components.map((comp, i) => (
+                                    <div key={i} className="flex items-center gap-2 text-xs">
+                                      <div className={`w-1.5 h-1.5 rounded-full ${layer.color.replace("text-", "bg-")}`} />
+                                      {comp}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground mb-2">Threats Blocked</p>
-                              <div className="space-y-1">
-                                {layer.threats.map((threat, i) => (
-                                  <div key={i} className="flex items-center gap-2 text-xs">
-                                    <AlertTriangle className="w-3 h-3 text-destructive" />
-                                    {threat}
-                                  </div>
-                                ))}
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-2">Threats Blocked</p>
+                                <div className="space-y-1">
+                                  {layer.threats.map((threat, i) => (
+                                    <div key={i} className="flex items-center gap-2 text-xs">
+                                      <AlertTriangle className="w-3 h-3 text-destructive" />
+                                      {threat}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
