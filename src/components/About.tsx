@@ -152,7 +152,7 @@ export const About = ({ isOwner }: AboutProps) => {
                       </p>
                     )}
                   </div>
-                  <Quote className="absolute -right-2 -bottom-2 w-8 h-8 text-primary/30 rotate-180" />
+                  
                 </div>
 
                 {/* Closing paragraph */}

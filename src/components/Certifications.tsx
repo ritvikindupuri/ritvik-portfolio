@@ -37,6 +37,48 @@ interface Certification {
   issueDate: string;
   expirationDate: string;
   display_order?: number;
+  description?: string;
+}
+
+// Generate professional description based on certification name
+const generateCertDescription = (name: string, issuer?: string): string => {
+  const nameLower = name.toLowerCase();
+  
+  if (nameLower.includes('cybersecurity') || nameLower.includes('cc') || nameLower.includes('isc2')) {
+    return "Validates foundational knowledge in cybersecurity principles, incident response, and security operations.";
+  }
+  if (nameLower.includes('security+') || nameLower.includes('comptia security')) {
+    return "Industry-recognized certification demonstrating core security skills and best practices.";
+  }
+  if (nameLower.includes('network+')) {
+    return "Validates networking concepts, infrastructure, and troubleshooting capabilities.";
+  }
+  if (nameLower.includes('aws') || nameLower.includes('amazon')) {
+    return "Demonstrates proficiency in Amazon Web Services cloud architecture and deployment.";
+  }
+  if (nameLower.includes('azure') || nameLower.includes('microsoft')) {
+    return "Certifies expertise in Microsoft Azure cloud services and solutions.";
+  }
+  if (nameLower.includes('google') || nameLower.includes('gcp')) {
+    return "Validates skills in Google Cloud Platform technologies and services.";
+  }
+  if (nameLower.includes('cissp')) {
+    return "Premier certification for security professionals covering comprehensive security domains.";
+  }
+  if (nameLower.includes('ceh') || nameLower.includes('ethical hacker')) {
+    return "Demonstrates advanced penetration testing and ethical hacking methodologies.";
+  }
+  if (nameLower.includes('python') || nameLower.includes('programming')) {
+    return "Validates programming proficiency and software development best practices.";
+  }
+  if (nameLower.includes('machine learning') || nameLower.includes('ml') || nameLower.includes('ai')) {
+    return "Certifies expertise in machine learning algorithms and AI implementation.";
+  }
+  if (nameLower.includes('data')) {
+    return "Demonstrates proficiency in data analysis, management, and visualization.";
+  }
+  
+  return `Professional certification validating expertise in ${name.split(' ').slice(0, 3).join(' ')}.`;
 }
 
 interface SortableCertProps {
@@ -139,11 +181,11 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
           
           <div className="relative z-10 h-full flex flex-col items-center justify-between text-center">
             <motion.div 
-              className="relative"
+              className="relative mb-4"
               whileHover={{ scale: 1.1, rotate: 360 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="w-24 h-24 flex items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 rounded-2xl border-2 border-accent/40 shadow-glow relative overflow-hidden">
+              <div className="w-20 h-20 flex items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 rounded-2xl border-2 border-accent/40 shadow-glow relative overflow-hidden">
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/30 to-transparent"
                   animate={{
@@ -157,17 +199,23 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
                   }}
                 />
                 {cert.logo.startsWith('data:') ? (
-                  <img src={cert.logo} alt={cert.name} className="w-16 h-16 object-contain relative z-10" />
+                  <img src={cert.logo} alt={cert.name} className="w-14 h-14 object-contain relative z-10" />
                 ) : (
-                  <span className="text-5xl relative z-10">{cert.logo}</span>
+                  <span className="text-4xl relative z-10">{cert.logo}</span>
                 )}
               </div>
             </motion.div>
 
-            <div className="space-y-3 flex-1 flex flex-col justify-center">
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent leading-tight px-2">
+            <div className="space-y-2 flex-1 flex flex-col justify-center mt-2">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent leading-tight px-2">
                 {cert.name}
               </h3>
+              
+              {cert.description && (
+                <p className="text-xs text-muted-foreground/80 px-2 line-clamp-2">
+                  {cert.description}
+                </p>
+              )}
               
               <motion.div 
                 className="w-16 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto rounded-full"
@@ -281,7 +329,8 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
         credentialUrl: cert.credential_url?.startsWith('http') ? cert.credential_url : "",
         issueDate: cert.date ? new Date(cert.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
         expirationDate: cert.expiration_date ? new Date(cert.expiration_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
-        display_order: cert.display_order
+        display_order: cert.display_order,
+        description: generateCertDescription(cert.name, cert.issuer)
       }));
       setCertifications(certs);
     }
