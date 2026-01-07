@@ -459,7 +459,7 @@ export const InteractiveSecurityArchitecture = () => {
   return (
     <div 
       ref={containerRef}
-      className="relative overflow-hidden focus:outline-none"
+      className="relative overflow-hidden focus:outline-none rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-5 sm:p-6 lg:p-8"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       role="region"
@@ -503,7 +503,7 @@ export const InteractiveSecurityArchitecture = () => {
       </div>
 
       {/* Main Content - Side by Side Layout */}
-      <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
         {/* Left Panel - Security Layers */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-4">
@@ -578,7 +578,7 @@ export const InteractiveSecurityArchitecture = () => {
 
                     {/* Layer Card */}
                     <div
-                      className={`p-3 rounded-xl border backdrop-blur-sm transition-all duration-300 ${
+                      className={`p-4 rounded-xl border backdrop-blur-sm transition-all duration-300 ${
                         activeLayer === layer.id
                           ? `${layer.bgColor} border-current ${layer.color} shadow-lg`
                           : "bg-card/50 border-border/50 hover:border-primary/30 hover:bg-card/80 group-hover:shadow-md"
@@ -724,7 +724,7 @@ export const InteractiveSecurityArchitecture = () => {
         </div>
 
         {/* Right Panel - Attack Simulations */}
-        <div className="lg:border-l lg:border-border/50 lg:pl-6">
+        <div className="lg:border-l lg:border-border/50 lg:pl-8">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent to-primary/50 lg:from-primary/50" />
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Attack Simulations</span>
