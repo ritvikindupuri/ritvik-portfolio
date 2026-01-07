@@ -2157,7 +2157,7 @@ if (honeypot) {
 ### Management UI
 
 <p align="center">
-  <img src="./images/honeypot-accounts-map.png" alt="Honeypot Accounts with Recent Trigger Locations Map" width="800"/>
+  <img src="/images/honeypot-accounts-map.png" alt="Honeypot Accounts with Recent Trigger Locations Map" width="800"/>
 </p>
 
 **Figure HP-1: Honeypot Accounts Dashboard with Real-Time Trigger Location Mapping** - The comprehensive honeypot management interface featuring:
@@ -2210,7 +2210,7 @@ When attackers repeatedly trigger honeypots, the IP Block List system automatica
 The IP Block List system works alongside the Honeypot Account System to automatically block malicious IP addresses after they trigger honeypot accounts multiple times. This creates a layered defense that first detects attackers (honeypots) and then prevents further access (IP blocking).
 
 <p align="center">
-  <img src="./public/images/honeypot-ip-blocking.png" alt="Honeypot & IP Block Management Interface" width="800"/>
+  <img src="/images/honeypot-ip-blocking.png" alt="Honeypot & IP Block Management Interface" width="800"/>
 </p>
 
 **Figure HP-2: Honeypot & IP Block Management Interface** - The combined security management interface showing both deception and blocking capabilities:
@@ -2410,7 +2410,7 @@ The `GeographicBlockingManager.tsx` component provides:
 **Code Location**: `src/components/GeographicBlockingManager.tsx`
 
 <p align="center">
-  <img src="public/images/geographic-blocking-manager.png" alt="Geographic Blocking Manager Interface" width="700"/>
+  <img src="/images/geographic-blocking-manager.png" alt="Geographic Blocking Manager Interface" width="700"/>
 </p>
 
 **Figure 1: Geographic Blocking Manager Interface** - The Geo-Block tab in the Analytics & Security Center allows the portfolio owner to configure geographic blocking rules. Features include:

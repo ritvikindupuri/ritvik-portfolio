@@ -212,9 +212,16 @@ const Index = () => {
           
           <Documentation isOwner={isOwner} />
 
+          <SectionTransition 
+            badge="Security Architecture" 
+            subtitle="How this portfolio implements defense-in-depth security with real-time threat detection"
+          />
+
           {/* Interactive Security Architecture */}
-          <section className="py-12 px-4">
-            <div className="container mx-auto max-w-5xl">
+          <section className="py-12 px-4 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+            <div className="container mx-auto max-w-5xl relative z-10">
               <InteractiveSecurityArchitecture />
             </div>
           </section>

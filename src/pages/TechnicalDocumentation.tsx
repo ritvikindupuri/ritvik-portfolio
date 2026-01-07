@@ -82,8 +82,14 @@ const TechnicalDocumentation = () => {
     html = html.replace(/^#####\s+(.*)$/gm, '<h5 class="text-base font-semibold mt-6 mb-2">$1</h5>');
     html = html.replace(/^####\s+(.*)$/gm, '<h4 class="text-lg font-semibold mt-8 mb-3">$1</h4>');
     html = html.replace(/^###\s+(.*)$/gm, '<h3 class="text-xl font-bold mt-10 mb-4 text-primary">$1</h3>');
-    html = html.replace(/^##\s+(.*)$/gm, '<h2 class="text-2xl font-bold mt-12 mb-6 pb-2 border-b border-border">$1</h2>');
+    html = html.replace(/^##\s+(.*)$/gm, '<h2 id="$1" class="text-2xl font-bold mt-12 mb-6 pb-2 border-b border-border scroll-mt-20">$1</h2>');
     html = html.replace(/^#\s+(.*)$/gm, '<h1 class="text-3xl font-bold mt-8 mb-6">$1</h1>');
+
+    // Generate header IDs for linking
+    html = html.replace(/id="([^"]+)"/g, (match, content) => {
+      const id = content.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      return `id="${id}"`;
+    });
 
     // Convert horizontal rules
     html = html.replace(/^---$/gm, '<hr class="my-8 border-border" />');
@@ -99,15 +105,101 @@ const TechnicalDocumentation = () => {
     // Convert links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
 
-    // Convert images with center alignment
+    // Convert images with center alignment (handle various src formats)
     html = html.replace(/<p align="center">\s*<img src="([^"]+)" alt="([^"]*)" width="(\d+)"\/>\s*<\/p>/g, 
-      '<div class="my-6 flex justify-center"><img src="$1" alt="$2" class="max-w-full rounded-lg shadow-lg" style="max-width: $3px" loading="lazy" /></div>');
+      (match, src, alt, width) => {
+        // Normalize image paths for portfolio viewer
+        let normalizedSrc = src;
+        if (src.startsWith('./images/')) {
+          normalizedSrc = src.replace('./images/', '/images/');
+        } else if (src.startsWith('./public/images/')) {
+          normalizedSrc = src.replace('./public/images/', '/images/');
+        } else if (src.startsWith('public/images/')) {
+          normalizedSrc = src.replace('public/images/', '/images/');
+        }
+        return `<figure class="my-8 flex flex-col items-center">
+          <img src="${normalizedSrc}" alt="${alt}" class="max-w-full rounded-lg shadow-lg border border-border" style="max-width: ${width}px" loading="lazy" />
+          <figcaption class="mt-3 text-sm text-muted-foreground italic text-center max-w-2xl">${alt}</figcaption>
+        </figure>`;
+      });
     
-    // Convert regular images
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="my-4 max-w-full rounded-lg shadow-md" loading="lazy" />');
+    // Convert regular markdown images
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, src) => {
+      let normalizedSrc = src;
+      if (src.startsWith('./images/')) {
+        normalizedSrc = src.replace('./images/', '/images/');
+      } else if (src.startsWith('./public/images/')) {
+        normalizedSrc = src.replace('./public/images/', '/images/');
+      } else if (src.startsWith('public/images/')) {
+        normalizedSrc = src.replace('public/images/', '/images/');
+      }
+      return `<img src="${normalizedSrc}" alt="${alt}" class="my-4 max-w-full rounded-lg shadow-md" loading="lazy" />`;
+    });
 
-    // Convert code blocks with mermaid handling
-    html = html.replace(/```mermaid\n([\s\S]*?)```/g, '<div class="my-6 p-4 bg-muted/50 rounded-lg border border-border overflow-x-auto"><pre class="text-sm font-mono text-muted-foreground">$1</pre><p class="text-xs text-muted-foreground mt-2 italic">Mermaid diagram (view in GitHub for rendering)</p></div>');
+    // Convert mermaid code blocks to styled diagram boxes with visual representation
+    html = html.replace(/```mermaid\n([\s\S]*?)```/g, (match, content) => {
+      // Parse the mermaid content to create a visual representation
+      const lines = content.trim().split('\n');
+      const isFlowchart = lines[0]?.includes('flowchart') || lines[0]?.includes('graph');
+      const isSequence = lines[0]?.includes('sequenceDiagram');
+      
+      let diagramType = 'Diagram';
+      let diagramIcon = '📊';
+      if (isFlowchart) {
+        diagramType = 'Architecture Flowchart';
+        diagramIcon = '🔀';
+      } else if (isSequence) {
+        diagramType = 'Sequence Diagram';
+        diagramIcon = '📋';
+      }
+
+      // Extract subgraph names for flowcharts
+      const subgraphs: string[] = [];
+      const nodePattern = /\[([^\]]+)\]/g;
+      const nodes: string[] = [];
+      let nodeMatch;
+      while ((nodeMatch = nodePattern.exec(content)) !== null) {
+        if (nodeMatch[1] && !nodes.includes(nodeMatch[1]) && nodeMatch[1].length < 40) {
+          nodes.push(nodeMatch[1]);
+        }
+      }
+
+      const subgraphPattern = /subgraph\s+(\w+)\["([^"]+)"\]/g;
+      let subMatch;
+      while ((subMatch = subgraphPattern.exec(content)) !== null) {
+        if (subMatch[2]) subgraphs.push(subMatch[2]);
+      }
+
+      const componentsHtml = subgraphs.length > 0 
+        ? `<div class="mt-4 flex flex-wrap gap-2">
+            ${subgraphs.slice(0, 5).map(s => `<span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">${s}</span>`).join('')}
+          </div>`
+        : nodes.length > 0
+        ? `<div class="mt-4 flex flex-wrap gap-2">
+            ${nodes.slice(0, 6).map(n => `<span class="px-2 py-1 bg-muted text-muted-foreground rounded text-xs">${n}</span>`).join('')}
+          </div>`
+        : '';
+
+      return `<div class="my-8 rounded-lg border border-border bg-gradient-to-br from-muted/30 to-muted/10 overflow-hidden">
+        <div class="px-4 py-3 bg-muted/50 border-b border-border flex items-center gap-2">
+          <span class="text-lg">${diagramIcon}</span>
+          <span class="font-semibold text-sm">${diagramType}</span>
+          <span class="ml-auto text-xs text-muted-foreground">Mermaid Diagram</span>
+        </div>
+        <div class="p-4">
+          <div class="text-xs text-muted-foreground mb-2">
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">View on GitHub</a> for full interactive rendering
+          </div>
+          ${componentsHtml}
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+              View diagram source code
+            </summary>
+            <pre class="mt-2 p-3 bg-background rounded border border-border overflow-x-auto"><code class="text-xs font-mono text-muted-foreground">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+          </details>
+        </div>
+      </div>`;
+    });
     
     // Convert other code blocks
     html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="my-6 p-4 bg-muted rounded-lg overflow-x-auto border border-border"><code class="text-sm font-mono">$2</code></pre>');

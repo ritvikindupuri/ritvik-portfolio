@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { 
   Shield, Lock, Eye, Zap, Database, Server, 
   User, AlertTriangle, CheckCircle, XCircle,
-  ChevronRight, Globe, Key, FileText
+  ChevronRight, Globe, Key, FileText, Keyboard
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -168,9 +168,15 @@ const attackSimulations: AttackSimulation[] = [
 
 export const InteractiveSecurityArchitecture = () => {
   const [activeLayer, setActiveLayer] = useState<string | null>(null);
+  const [focusedLayerIndex, setFocusedLayerIndex] = useState(-1);
+  const [focusedSimIndex, setFocusedSimIndex] = useState(-1);
   const [selectedSimulation, setSelectedSimulation] = useState<AttackSimulation | null>(null);
   const [animationStep, setAnimationStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  
+  const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const simRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (selectedSimulation && isAnimating) {
@@ -207,8 +213,95 @@ export const InteractiveSecurityArchitecture = () => {
     return selectedSimulation.steps[stepIndex].status;
   };
 
+  // Keyboard navigation handlers
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const isInLayers = focusedLayerIndex >= 0;
+    const isInSims = focusedSimIndex >= 0;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        if (isInLayers) {
+          const nextIndex = Math.min(focusedLayerIndex + 1, securityLayers.length - 1);
+          setFocusedLayerIndex(nextIndex);
+          layerRefs.current[nextIndex]?.focus();
+        } else if (!isInSims) {
+          setFocusedLayerIndex(0);
+          layerRefs.current[0]?.focus();
+        }
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        if (isInLayers) {
+          const prevIndex = Math.max(focusedLayerIndex - 1, 0);
+          setFocusedLayerIndex(prevIndex);
+          layerRefs.current[prevIndex]?.focus();
+        }
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        if (isInSims) {
+          const nextIndex = Math.min(focusedSimIndex + 1, attackSimulations.length - 1);
+          setFocusedSimIndex(nextIndex);
+          simRefs.current[nextIndex]?.focus();
+        } else if (isInLayers) {
+          // Move from layers to simulations
+          setFocusedLayerIndex(-1);
+          setFocusedSimIndex(0);
+          simRefs.current[0]?.focus();
+        }
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        if (isInSims) {
+          const prevIndex = focusedSimIndex - 1;
+          if (prevIndex < 0) {
+            // Move back to layers
+            setFocusedSimIndex(-1);
+            setFocusedLayerIndex(0);
+            layerRefs.current[0]?.focus();
+          } else {
+            setFocusedSimIndex(prevIndex);
+            simRefs.current[prevIndex]?.focus();
+          }
+        }
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        if (isInLayers) {
+          const layerId = securityLayers[focusedLayerIndex].id;
+          setActiveLayer(activeLayer === layerId ? null : layerId);
+        } else if (isInSims) {
+          startSimulation(attackSimulations[focusedSimIndex]);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        setActiveLayer(null);
+        setFocusedLayerIndex(-1);
+        setFocusedSimIndex(-1);
+        containerRef.current?.focus();
+        break;
+      case "Tab":
+        // Allow natural tab flow but reset focus indices
+        if (!e.shiftKey && isInLayers && focusedLayerIndex === securityLayers.length - 1) {
+          setFocusedLayerIndex(-1);
+          setFocusedSimIndex(0);
+        }
+        break;
+    }
+  }, [focusedLayerIndex, focusedSimIndex, activeLayer]);
+
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border-primary/20 overflow-hidden">
+    <Card 
+      ref={containerRef}
+      className="bg-card/50 backdrop-blur-sm border-primary/20 overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      role="region"
+      aria-label="Interactive Security Architecture - Use arrow keys to navigate, Enter to select"
+    >
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
@@ -216,16 +309,23 @@ export const InteractiveSecurityArchitecture = () => {
               <Shield className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl">Interactive Security Architecture</CardTitle>
-              <CardDescription>Click layers to explore or run attack simulations</CardDescription>
+              <CardTitle className="text-xl">Portfolio Security Architecture</CardTitle>
+              <CardDescription>
+                This portfolio website implements a defense-in-depth security model. 
+                Use arrow keys to navigate, Enter to expand, Escape to close.
+              </CardDescription>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Badge variant="outline" className="border-green-500/50 text-green-400">
               Defense-in-Depth
             </Badge>
             <Badge variant="outline" className="border-blue-500/50 text-blue-400">
               Zero Trust
+            </Badge>
+            <Badge variant="outline" className="border-purple-500/50 text-purple-400 gap-1">
+              <Keyboard className="h-3 w-3" />
+              Keyboard Nav
             </Badge>
           </div>
         </div>
@@ -240,17 +340,30 @@ export const InteractiveSecurityArchitecture = () => {
             {securityLayers.map((layer, index) => {
               const Icon = layer.icon;
               const status = getLayerStatus(layer.id);
+              const isFocused = focusedLayerIndex === index;
               
               return (
                 <motion.div
                   key={layer.id}
+                  ref={(el) => { layerRefs.current[index] = el; }}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`relative pl-16 cursor-pointer group ${
+                  tabIndex={0}
+                  role="button"
+                  aria-expanded={activeLayer === layer.id}
+                  aria-label={`${layer.name} - Layer ${index + 1}. ${layer.description}`}
+                  className={`relative pl-16 cursor-pointer group outline-none ${
                     activeLayer === layer.id ? "z-10" : ""
-                  }`}
+                  } ${isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-lg" : ""}`}
                   onClick={() => setActiveLayer(activeLayer === layer.id ? null : layer.id)}
+                  onFocus={() => setFocusedLayerIndex(index)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setActiveLayer(activeLayer === layer.id ? null : layer.id);
+                    }
+                  }}
                 >
                   {/* Layer Node */}
                   <motion.div
@@ -346,14 +459,19 @@ export const InteractiveSecurityArchitecture = () => {
             <Server className="h-4 w-4 text-primary" />
             Attack Simulations
           </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {attackSimulations.map((sim) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="group" aria-label="Attack simulation scenarios">
+            {attackSimulations.map((sim, index) => (
               <Button
                 key={sim.id}
+                ref={(el) => { simRefs.current[index] = el; }}
                 variant={selectedSimulation?.id === sim.id ? "default" : "outline"}
                 size="sm"
-                className="justify-start h-auto py-2 text-left"
+                className={`justify-start h-auto py-2 text-left ${
+                  focusedSimIndex === index ? "ring-2 ring-primary" : ""
+                }`}
                 onClick={() => startSimulation(sim)}
+                onFocus={() => setFocusedSimIndex(index)}
+                aria-label={`${sim.name}: ${sim.description}`}
               >
                 <div>
                   <div className="font-medium text-xs">{sim.name}</div>
