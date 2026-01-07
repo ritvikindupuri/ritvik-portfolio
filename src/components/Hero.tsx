@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ResumeManager } from "@/components/ResumeManager";
+import { FloatingSkillsKeyboard } from "@/components/FloatingSkillsKeyboard";
 const TypewriterText = () => {
   const fullText = "Hi, my name is Ritvik Indupuri";
   const [displayedText, setDisplayedText] = useState("");
@@ -500,6 +501,16 @@ export const Hero = ({ isOwner }: HeroProps) => {
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          {/* Floating Skills Keyboard - Cyber Tools */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
+            className="w-full max-w-2xl mx-auto"
+          >
+            <FloatingSkillsKeyboard />
           </motion.div>
 
           {/* Social Links & Resume */}
