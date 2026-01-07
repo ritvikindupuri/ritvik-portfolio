@@ -222,6 +222,7 @@ export type Database = {
         Row: {
           content_text: string | null
           created_at: string | null
+          embedding: string | null
           github_url: string
           id: string
           indexed_at: string | null
@@ -233,6 +234,7 @@ export type Database = {
         Insert: {
           content_text?: string | null
           created_at?: string | null
+          embedding?: string | null
           github_url: string
           id?: string
           indexed_at?: string | null
@@ -244,6 +246,7 @@ export type Database = {
         Update: {
           content_text?: string | null
           created_at?: string | null
+          embedding?: string | null
           github_url?: string
           id?: string
           indexed_at?: string | null
