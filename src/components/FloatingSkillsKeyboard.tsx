@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Skill {
   id: string;
@@ -81,29 +82,31 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
   }, [onClick]);
   
   return (
-    <motion.button
-      onClick={handleClick}
-      onMouseEnter={handleHover}
-      className="relative focus:outline-none group"
-      style={{ transformStyle: "preserve-3d" }}
-      initial={{ opacity: 0, scale: 0.9, y: 0 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ 
-        duration: 0.2, 
-        delay: index * 0.03,
-        y: { type: "spring", stiffness: 400, damping: 15 }
-      }}
-      whileHover={{ 
-        y: -3, 
-        transition: { duration: 0.1, ease: "easeOut" } 
-      }}
-      whileTap={{ 
-        y: 8,
-        scale: 0.92,
-        transition: { duration: 0.04, ease: "easeIn" } 
-      }}
-      title={skill.name}
-    >
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <motion.button
+            onClick={handleClick}
+            onMouseEnter={handleHover}
+            className="relative focus:outline-none group"
+            style={{ transformStyle: "preserve-3d" }}
+            initial={{ opacity: 0, scale: 0.9, y: 0 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ 
+              duration: 0.2, 
+              delay: index * 0.03,
+              y: { type: "spring", stiffness: 400, damping: 15 }
+            }}
+            whileHover={{ 
+              y: -3, 
+              transition: { duration: 0.1, ease: "easeOut" } 
+            }}
+            whileTap={{ 
+              y: 8,
+              scale: 0.92,
+              transition: { duration: 0.04, ease: "easeIn" } 
+            }}
+          >
       {/* 3D Keycap with real depth */}
       <div 
         className="relative"
@@ -218,8 +221,17 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
             {skill.name.slice(0, 2).toUpperCase()}
           </span>
         </div>
-      </div>
-    </motion.button>
+          </div>
+        </motion.button>
+      </TooltipTrigger>
+      <TooltipContent 
+        side="bottom" 
+        className="bg-card/95 backdrop-blur-sm border-accent/30 text-foreground font-medium px-3 py-1.5"
+      >
+        {skill.name}
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
   );
 };
 
