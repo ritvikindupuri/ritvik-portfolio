@@ -385,33 +385,33 @@ export const Hero = ({ isOwner }: HeroProps) => {
           transition={{ duration: 0.8 }}
         >
           {/* Main Hero Layout - Side by Side */}
-          <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center gap-12 lg:gap-20 min-h-[60vh]">
-            {/* Left Column - Name & Info */}
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 min-h-[60vh]">
+            {/* Left Column - Name & Info (Centered) */}
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-5"
+              className="flex flex-col items-center text-center space-y-4"
             >
               {/* Intro text */}
               <span className="text-muted-foreground text-base tracking-wide">
                 Hi, I am
               </span>
               
-              {/* Large Name - tighter spacing */}
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] -mt-2">
+              {/* Large Name */}
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1]">
                 <span className="text-foreground">Ritvik</span>
                 <br />
                 <span className="text-gradient-cyber">Indupuri</span>
               </h1>
               
-              {/* Title - closer to name */}
-              <p className="text-muted-foreground text-base font-medium tracking-wide -mt-1">
+              {/* Title */}
+              <p className="text-muted-foreground text-base font-medium tracking-wide">
                 A Cybersecurity Major
               </p>
               
               {/* University Badge */}
-              <div className="flex items-center gap-3 px-5 py-3 bg-card/40 backdrop-blur-sm rounded-xl border border-primary/20 mt-2">
+              <div className="flex items-center gap-3 px-5 py-3 bg-card/40 backdrop-blur-sm rounded-xl border border-primary/20">
                 <img 
                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
                   alt="Purdue University" 
@@ -422,8 +422,8 @@ export const Hero = ({ isOwner }: HeroProps) => {
                 <span className="font-mono text-primary text-sm">2024-2028</span>
               </div>
               
-              {/* Social Links Row */}
-              <div className="flex items-center gap-3 mt-2">
+              {/* Social Links - Centered */}
+              <div className="flex items-center justify-center gap-3">
                 <a
                   href="https://github.com/ritvikindupuri"
                   target="_blank"
