@@ -500,23 +500,13 @@ export const Hero = ({ isOwner }: HeroProps) => {
             <FloatingSkillsKeyboard />
           </motion.div>
 
-          {/* Resume Section - Clean separation */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.85, duration: 0.8 }}
-            className="flex justify-center"
-          >
-            <ResumeManager isOwner={isOwner} />
-          </motion.div>
-
           {/* Analytics Dashboard Button - Owner Only */}
           {isOwner && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.95, duration: 0.8 }}
-              className="flex justify-center"
+              className="flex justify-center mt-8"
             >
               <Button 
                 onClick={() => navigate('/dashboard')}
@@ -533,8 +523,8 @@ export const Hero = ({ isOwner }: HeroProps) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.1, duration: 0.8 }}
-            className="text-center pt-4"
+            transition={{ delay: 1, duration: 0.8 }}
+            className="text-center pt-12"
           >
             <button
               onClick={() => {
@@ -544,13 +534,10 @@ export const Hero = ({ isOwner }: HeroProps) => {
               className="inline-block animate-bounce cursor-pointer hover:scale-110 transition-transform focus:outline-none"
               aria-label="Scroll to skills section"
             >
-              <div className="w-6 h-10 border-2 border-primary rounded-full flex items-start justify-center p-2 mx-auto">
-                <div className="w-1 h-2 bg-primary rounded-full animate-glow-pulse" />
+              <div className="w-6 h-10 border-2 border-primary/50 rounded-full flex items-start justify-center p-2 mx-auto">
+                <div className="w-1 h-2 bg-primary rounded-full" />
               </div>
             </button>
-            <a href="#skills-section" className="mt-3 block text-sm text-muted-foreground hover:text-primary transition-colors">
-              Click here to view my skills
-            </a>
           </motion.div>
         </motion.div>
       </div>
