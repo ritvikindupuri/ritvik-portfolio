@@ -2151,15 +2151,50 @@ if (honeypot) {
 
 ### Management UI
 
+<p align="center">
+  <img src="./images/honeypot-accounts-map.png" alt="Honeypot Accounts with Recent Trigger Locations Map" width="800"/>
+</p>
+
+**Figure: Honeypot Accounts Dashboard with Real-Time Trigger Location Mapping** - The comprehensive honeypot management interface featuring:
+
+**Statistics Dashboard:**
+- **Total Honeypots**: Count of all configured decoy accounts
+- **Active**: Number of currently enabled honeypots
+- **Total Triggers**: Cumulative count of all attack attempts caught
+
+**Recent Trigger Locations Mini Map:**
+The `HoneypotMiniMap.tsx` component provides real-time geographic visualization of honeypot triggers:
+
+- **Interactive Globe View**: A dark-themed Mapbox globe displaying trigger locations with navigation controls
+- **Location Markers**: Each unique IP address that triggered a honeypot is geolocated and displayed as a marker on the map
+- **Recent Trigger Badges**: Below the map, badges show recent trigger details including:
+  - **City Name**: Geographic location of the attacker (e.g., "Groningen")
+  - **Timestamp**: When the trigger occurred (e.g., "Dec 29, 4:28 PM")
+- **IP Geolocation**: Uses the `geolocate-ip` edge function to convert IP addresses to coordinates
+- **Automatic Bounds Fitting**: Map automatically adjusts to show all trigger locations
+
+**How the Mini Map Works:**
+
+1. **Data Collection**: When a honeypot is triggered, the attacker's IP address is logged in the `honeypot_triggers` table
+2. **IP Geolocation**: The `HoneypotMiniMap` component fetches trigger data and calls the `geolocate-ip` edge function to convert IPs to latitude/longitude coordinates
+3. **Map Rendering**: Using Mapbox GL JS, markers are placed on a globe projection showing exact trigger locations
+4. **Location Badges**: The most recent triggers are displayed as badges beneath the map, showing city and timestamp for quick reference
+5. **Real-time Updates**: As new triggers occur, the map updates via Supabase Realtime subscription
+
+**Honeypot Account Management:**
+
 The `HoneypotManager.tsx` component provides:
 
-- **Statistics Dashboard**: Total honeypots, active count, total triggers
-- **Add New Honeypot**: Create custom honeypot emails with descriptions
-- **Toggle Activation**: Enable/disable individual honeypots
+- **Add New Honeypot**: Create custom honeypot emails with optional descriptions
+- **Toggle Activation**: Enable/disable individual honeypots with toggle switches
+- **Trigger Counts**: View how many times each honeypot has been triggered
+- **Last Triggered Time**: See when each honeypot was last accessed
 - **Delete Honeypots**: Remove honeypots that are no longer needed
-- **MITRE ATT&CK Info**: Educational panel explaining T1078.001
+- **MITRE ATT&CK Info**: Educational panel explaining T1078.001 (Default Accounts)
 
-**Code Location**: `src/components/HoneypotManager.tsx`
+**Code Locations**: 
+- `src/components/HoneypotManager.tsx` - Main management interface
+- `src/components/HoneypotMiniMap.tsx` - Geographic visualization component
 
 When attackers repeatedly trigger honeypots, the IP Block List system automatically blocks their access. This creates a layered defense strategy.
 
