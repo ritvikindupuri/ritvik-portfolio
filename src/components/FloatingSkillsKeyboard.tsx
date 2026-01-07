@@ -8,131 +8,80 @@ interface Skill {
   icon: string | null;
 }
 
-// Brand colors for common cybersecurity tools
-const getBrandColor = (skillName: string): string => {
-  const name = skillName.toLowerCase();
-  
-  if (name.includes('crowdstrike')) return 'bg-red-600';
-  if (name.includes('splunk')) return 'bg-green-500';
-  if (name.includes('wireshark')) return 'bg-blue-600';
-  if (name.includes('nmap')) return 'bg-purple-600';
-  if (name.includes('burp')) return 'bg-orange-500';
-  if (name.includes('metasploit')) return 'bg-blue-700';
-  if (name.includes('kali')) return 'bg-slate-700';
-  if (name.includes('hashcat') || name.includes('john')) return 'bg-yellow-600';
-  if (name.includes('nessus')) return 'bg-cyan-600';
-  if (name.includes('ghidra')) return 'bg-red-700';
-  if (name.includes('ida')) return 'bg-purple-700';
-  if (name.includes('autopsy')) return 'bg-blue-800';
-  if (name.includes('volatility')) return 'bg-teal-600';
-  if (name.includes('snort') || name.includes('suricata')) return 'bg-rose-600';
-  if (name.includes('openvas')) return 'bg-green-600';
-  if (name.includes('aircrack')) return 'bg-indigo-600';
-  if (name.includes('hydra')) return 'bg-emerald-600';
-  if (name.includes('nikto')) return 'bg-violet-600';
-  if (name.includes('sqlmap')) return 'bg-amber-600';
-  if (name.includes('elastic') || name.includes('kibana')) return 'bg-pink-500';
-  
-  const fallbackColors = [
-    'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500',
-    'bg-teal-500', 'bg-cyan-500', 'bg-blue-500', 'bg-indigo-500',
-    'bg-purple-500', 'bg-pink-500', 'bg-rose-500', 'bg-emerald-500'
-  ];
-  
-  const hash = name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  return fallbackColors[hash % fallbackColors.length];
-};
-
 interface KeycapProps {
   skill: Skill;
   index: number;
-  row: number;
-  col: number;
   onClick: () => void;
 }
 
-const Keycap = ({ skill, index, row, col, onClick }: KeycapProps) => {
-  const delay = index * 0.05;
-  const brandColor = getBrandColor(skill.name);
-  const zOffset = (row + col) % 3;
+const Keycap = ({ skill, index, onClick }: KeycapProps) => {
+  const delay = index * 0.04;
   
   return (
     <motion.button
       onClick={onClick}
       className="relative focus:outline-none group"
-      initial={{ opacity: 0, scale: 0, y: 20 }}
+      initial={{ opacity: 0, scale: 0, y: 15 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{
-        duration: 0.4,
+        duration: 0.35,
         delay,
         type: "spring",
-        stiffness: 200,
+        stiffness: 250,
         damping: 20,
       }}
       whileHover={{
-        y: -6,
-        scale: 1.1,
+        y: -4,
+        scale: 1.08,
         zIndex: 50,
-        transition: { duration: 0.15 },
+        transition: { duration: 0.12 },
       }}
-      whileTap={{ scale: 0.92, y: 2 }}
-      style={{ zIndex: 10 + zOffset }}
+      whileTap={{ scale: 0.9, y: 2 }}
     >
       <motion.div
-        animate={{
-          y: [0, -3, 0],
-        }}
+        animate={{ y: [0, -2, 0] }}
         transition={{
-          duration: 2.5 + (index % 3) * 0.4,
+          duration: 2 + (index % 3) * 0.3,
           repeat: Infinity,
           repeatType: "reverse",
-          delay: index * 0.08,
+          delay: index * 0.06,
           ease: "easeInOut",
         }}
       >
-        {/* 3D Keycap */}
+        {/* Keycap with white/light background for visibility */}
         <div className="relative" style={{ transformStyle: "preserve-3d" }}>
-          <div 
-            className={`
-              relative w-11 h-11 sm:w-12 sm:h-12
-              ${brandColor}
-              rounded-md cursor-pointer
-              shadow-lg
-              transition-shadow duration-200
-              group-hover:shadow-xl group-hover:shadow-white/15
-            `}
-          >
-            <div className="absolute inset-0 rounded-md bg-gradient-to-br from-white/35 via-white/10 to-transparent" />
-            <div className="absolute inset-1 rounded bg-gradient-to-br from-white/15 to-black/20 flex items-center justify-center overflow-hidden">
+          {/* Key base (dark) */}
+          <div className="absolute inset-0 translate-y-1 bg-slate-800 rounded-md" />
+          
+          {/* Key top surface (white/cream for visibility) */}
+          <div className="relative w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-b from-slate-100 to-slate-200 rounded-md shadow-md group-hover:shadow-lg transition-shadow duration-150 border border-slate-300">
+            {/* Inner content area */}
+            <div className="absolute inset-0.5 rounded flex items-center justify-center overflow-hidden bg-white">
               {skill.icon ? (
                 <img 
                   src={skill.icon} 
                   alt={skill.name}
-                  className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow-md"
+                  className="w-6 h-6 sm:w-7 sm:h-7 object-contain"
                 />
               ) : (
-                <span className="text-white font-bold text-xs drop-shadow-md">
+                <span className="text-slate-700 font-bold text-xs">
                   {skill.name.slice(0, 2).toUpperCase()}
                 </span>
               )}
             </div>
-            <div 
-              className={`absolute -bottom-1.5 left-0.5 right-0.5 h-1.5 ${brandColor} rounded-b opacity-50`}
-              style={{ filter: 'brightness(0.5)' }}
-            />
           </div>
         </div>
         
         {/* Tooltip */}
         <div className="
-          absolute -bottom-8 left-1/2 -translate-x-1/2
+          absolute -bottom-7 left-1/2 -translate-x-1/2
           opacity-0 group-hover:opacity-100
           transition-opacity duration-150
           whitespace-nowrap
-          bg-background/95 backdrop-blur-sm
-          text-foreground text-[10px] font-medium
+          bg-slate-900/95 backdrop-blur-sm
+          text-white text-[10px] font-medium
           px-2 py-1 rounded
-          shadow-lg border border-border/50
+          shadow-lg
           z-50 pointer-events-none
         ">
           {skill.name}
@@ -142,19 +91,66 @@ const Keycap = ({ skill, index, row, col, onClick }: KeycapProps) => {
   );
 };
 
+// Particle component
+const Particle = ({ 
+  index, 
+  mouseX, 
+  mouseY 
+}: { 
+  index: number; 
+  mouseX: ReturnType<typeof useMotionValue<number>>; 
+  mouseY: ReturnType<typeof useMotionValue<number>>; 
+}) => {
+  const randomX = Math.random() * 100;
+  const randomY = Math.random() * 100;
+  const size = 2 + Math.random() * 3;
+  const duration = 3 + Math.random() * 4;
+  
+  const springConfig = { damping: 30, stiffness: 100 };
+  const particleX = useSpring(useTransform(mouseX, [-0.5, 0.5], [randomX - 15, randomX + 15]), springConfig);
+  const particleY = useSpring(useTransform(mouseY, [-0.5, 0.5], [randomY - 15, randomY + 15]), springConfig);
+  
+  return (
+    <motion.div
+      className="absolute rounded-full"
+      style={{
+        width: size,
+        height: size,
+        left: particleX,
+        top: particleY,
+        background: index % 3 === 0 
+          ? 'hsl(var(--primary))' 
+          : index % 3 === 1 
+            ? 'hsl(var(--cyber-purple))' 
+            : 'hsl(var(--cyber-glow))',
+        boxShadow: `0 0 ${size * 2}px currentColor`,
+      }}
+      initial={{ opacity: 0 }}
+      animate={{ 
+        opacity: [0.2, 0.6, 0.2],
+        scale: [1, 1.3, 1],
+      }}
+      transition={{
+        duration,
+        repeat: Infinity,
+        delay: index * 0.15,
+        ease: "easeInOut",
+      }}
+    />
+  );
+};
+
 export const FloatingSkillsKeyboard = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Mouse position for parallax
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   
-  // Smooth spring animation for mouse movement
   const springConfig = { damping: 25, stiffness: 150 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [8, -8]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-12, 12]), springConfig);
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), springConfig);
 
   useEffect(() => {
     const fetchSecuritySkills = async () => {
@@ -187,7 +183,6 @@ export const FloatingSkillsKeyboard = () => {
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       
-      // Normalize to -0.5 to 0.5 based on distance from center
       const normalizedX = (e.clientX - centerX) / window.innerWidth;
       const normalizedY = (e.clientY - centerY) / window.innerHeight;
       
@@ -230,10 +225,19 @@ export const FloatingSkillsKeyboard = () => {
     return null;
   }
 
+  // Keyboard layout - 4 columns
   const cols = 4;
+  const rows = Math.ceil(skills.length / cols);
 
   return (
     <div ref={containerRef} className="relative" style={{ perspective: "1000px" }}>
+      {/* Particle effects layer */}
+      <div className="absolute inset-0 -m-8 overflow-hidden pointer-events-none">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <Particle key={i} index={i} mouseX={mouseX} mouseY={mouseY} />
+        ))}
+      </div>
+
       <motion.div
         className="relative"
         style={{
@@ -245,30 +249,38 @@ export const FloatingSkillsKeyboard = () => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.4, duration: 0.6 }}
       >
-        {/* Ambient glow */}
-        <div className="absolute inset-0 -m-6 bg-gradient-radial from-primary/20 via-cyber-purple/10 to-transparent rounded-full blur-2xl opacity-50" />
-        
-        {/* Keyboard grid */}
-        <div 
-          className="relative grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
-        >
-          {skills.map((skill, index) => {
-            const row = Math.floor(index / cols);
-            const col = index % cols;
+        {/* Keyboard base/frame */}
+        <div className="relative p-4 sm:p-5 rounded-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 shadow-2xl border border-slate-600/50">
+          {/* Keyboard top bezel highlight */}
+          <div className="absolute inset-x-0 top-0 h-1 rounded-t-xl bg-gradient-to-r from-transparent via-slate-500/30 to-transparent" />
+          
+          {/* Inner keyboard plate */}
+          <div className="relative p-2 sm:p-3 rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 shadow-inner">
+            {/* Subtle LED underglow effect */}
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-primary/10 via-transparent to-transparent" />
             
-            return (
-              <Keycap
-                key={skill.id}
-                skill={skill}
-                index={index}
-                row={row}
-                col={col}
-                onClick={() => handleKeycapClick(skill.id)}
-              />
-            );
-          })}
+            {/* Keys grid */}
+            <div 
+              className="relative grid gap-1.5 sm:gap-2"
+              style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+            >
+              {skills.map((skill, index) => (
+                <Keycap
+                  key={skill.id}
+                  skill={skill}
+                  index={index}
+                  onClick={() => handleKeycapClick(skill.id)}
+                />
+              ))}
+            </div>
+          </div>
+          
+          {/* Keyboard bottom edge (3D depth) */}
+          <div className="absolute -bottom-2 left-2 right-2 h-2 rounded-b-xl bg-slate-900 border-x border-b border-slate-700/50" />
         </div>
+        
+        {/* Shadow underneath keyboard */}
+        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-4/5 h-4 bg-black/40 rounded-full blur-xl" />
       </motion.div>
     </div>
   );
