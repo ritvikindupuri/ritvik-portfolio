@@ -138,8 +138,8 @@ export const About = ({ isOwner }: AboutProps) => {
               >
                 {/* Quote-style intro */}
                 <div className="relative">
-                  <Quote className="absolute -left-2 -top-2 w-8 h-8 text-primary/20" />
-                  <div className="pl-8 border-l-2 border-primary/30">
+                  <Quote className="absolute -left-2 -top-2 w-8 h-8 text-primary/30" />
+                  <div className="pl-8 pr-8 border-l-2 border-primary/30">
                     {isEditing ? (
                       <Textarea
                         value={aboutText}
@@ -152,6 +152,7 @@ export const About = ({ isOwner }: AboutProps) => {
                       </p>
                     )}
                   </div>
+                  <Quote className="absolute -right-2 -bottom-2 w-8 h-8 text-primary/30 rotate-180" />
                 </div>
 
                 {/* Closing paragraph */}
