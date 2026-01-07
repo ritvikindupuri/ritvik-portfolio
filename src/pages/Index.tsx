@@ -20,7 +20,7 @@ import { SectionTransition } from "@/components/SectionTransition";
 import { VisitorTrackerProvider } from "@/components/VisitorTrackerProvider";
 import { OwnerHeader } from "@/components/OwnerHeader";
 import { ResumeSection } from "@/components/ResumeSection";
-import { SecurityOverviewCard } from "@/components/SecurityOverviewCard";
+import { InteractiveSecurityArchitecture } from "@/components/InteractiveSecurityArchitecture";
 
 const Index = () => {
   
@@ -212,10 +212,10 @@ const Index = () => {
           
           <Documentation isOwner={isOwner} />
 
-          {/* Security Overview Card */}
+          {/* Interactive Security Architecture */}
           <section className="py-12 px-4">
-            <div className="container mx-auto max-w-4xl">
-              <SecurityOverviewCard />
+            <div className="container mx-auto max-w-5xl">
+              <InteractiveSecurityArchitecture />
             </div>
           </section>
           
