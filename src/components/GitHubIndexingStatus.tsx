@@ -1,0 +1,200 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Github, RefreshCw, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+
+interface IndexingStats {
+  totalProjects: number;
+  indexedProjects: number;
+  lastIndexed: string | null;
+  missingProjects: Array<{ title: string; github_url: string }>;
+}
+
+export const GitHubIndexingStatus = () => {
+  const [stats, setStats] = useState<IndexingStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reindexing, setReindexing] = useState(false);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      // Get all projects with GitHub URLs
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id, title, github_url')
+        .not('github_url', 'is', null)
+        .neq('github_url', '');
+
+      // Get indexed GitHub content
+      const { data: githubContent } = await supabase
+        .from('github_content')
+        .select('github_url, indexed_at')
+        .order('indexed_at', { ascending: false });
+
+      const indexedUrls = new Set(githubContent?.map(gc => gc.github_url) || []);
+      const lastIndexed = githubContent?.[0]?.indexed_at || null;
+
+      const missingProjects = (projects || []).filter(
+        p => p.github_url && !indexedUrls.has(p.github_url)
+      );
+
+      setStats({
+        totalProjects: projects?.length || 0,
+        indexedProjects: (projects || []).filter(p => indexedUrls.has(p.github_url)).length,
+        lastIndexed,
+        missingProjects: missingProjects.map(p => ({ 
+          title: p.title, 
+          github_url: p.github_url 
+        })),
+      });
+    } catch (error) {
+      console.error('Error fetching indexing stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerReindex = async () => {
+    setReindexing(true);
+    try {
+      toast.info("Starting re-indexing of all content...", { duration: 5000 });
+
+      // Call generate-embeddings with regenerate flag
+      const { data, error } = await supabase.functions.invoke('generate-embeddings', {
+        body: { action: 'generate_all', regenerate: true }
+      });
+
+      if (error) throw error;
+
+      console.log('Re-indexing results:', data);
+      toast.success("Re-indexing complete! GitHub READMEs are being processed.", { duration: 5000 });
+      
+      // Refresh stats after a short delay to allow indexing to complete
+      setTimeout(() => {
+        fetchStats();
+      }, 3000);
+    } catch (error) {
+      console.error('Error triggering re-index:', error);
+      toast.error("Failed to trigger re-indexing");
+    } finally {
+      setReindexing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="bg-card/50 border-border/50">
+        <CardContent className="py-8 flex items-center justify-center">
+          <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const indexPercentage = stats ? Math.round((stats.indexedProjects / stats.totalProjects) * 100) : 0;
+  const isFullyIndexed = stats?.indexedProjects === stats?.totalProjects;
+
+  return (
+    <Card className="bg-card/50 border-border/50">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Github className="w-5 h-5 text-primary" />
+            GitHub Content Indexing
+          </CardTitle>
+          <Badge 
+            variant={isFullyIndexed ? "default" : "secondary"}
+            className={isFullyIndexed ? "bg-green-500/20 text-green-400 border-green-500/30" : ""}
+          >
+            {isFullyIndexed ? (
+              <><CheckCircle2 className="w-3 h-3 mr-1" /> All Indexed</>
+            ) : (
+              <><AlertCircle className="w-3 h-3 mr-1" /> {stats?.missingProjects.length} Missing</>
+            )}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-3 bg-muted/30 rounded-lg">
+            <div className="text-2xl font-bold text-primary">{stats?.totalProjects || 0}</div>
+            <div className="text-xs text-muted-foreground">Total Projects</div>
+          </div>
+          <div className="text-center p-3 bg-muted/30 rounded-lg">
+            <div className="text-2xl font-bold text-green-400">{stats?.indexedProjects || 0}</div>
+            <div className="text-xs text-muted-foreground">Indexed</div>
+          </div>
+          <div className="text-center p-3 bg-muted/30 rounded-lg">
+            <div className="text-2xl font-bold text-foreground">{indexPercentage}%</div>
+            <div className="text-xs text-muted-foreground">Coverage</div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="space-y-1">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-primary to-green-400 transition-all duration-500"
+              style={{ width: `${indexPercentage}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Last Indexed */}
+        {stats?.lastIndexed && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="w-4 h-4" />
+            <span>Last indexed: {formatDistanceToNow(new Date(stats.lastIndexed), { addSuffix: true })}</span>
+          </div>
+        )}
+
+        {/* Missing Projects */}
+        {stats?.missingProjects && stats.missingProjects.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-amber-400">Missing READMEs:</p>
+            <div className="max-h-24 overflow-y-auto space-y-1">
+              {stats.missingProjects.map((p, i) => (
+                <div key={i} className="text-xs text-muted-foreground flex items-center gap-2">
+                  <AlertCircle className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                  <span className="truncate">{p.title}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Re-index Button */}
+        <Button 
+          onClick={triggerReindex} 
+          disabled={reindexing}
+          className="w-full gap-2"
+          variant="outline"
+        >
+          {reindexing ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              Re-indexing All Content...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-4 h-4" />
+              Re-index All GitHub READMEs
+            </>
+          )}
+        </Button>
+
+        <p className="text-xs text-muted-foreground text-center">
+          Re-indexing fetches latest README content from GitHub and generates embeddings for the RAG chatbot.
+        </p>
+      </CardContent>
+    </Card>
+  );
+};
