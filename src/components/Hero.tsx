@@ -383,99 +383,108 @@ export const Hero = ({ isOwner }: HeroProps) => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="space-y-10"
         >
-          {/* Hero Title - Centered */}
-          <motion.h1
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 1 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold font-sans text-center"
-          >
-            <TypewriterText />
-          </motion.h1>
-
-          {/* Main Content: Left Info + Right Keyboard */}
-          <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16">
-            {/* Left Column - Profile & Info */}
+          {/* Main Hero Layout - Side by Side */}
+          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 lg:gap-16">
+            {/* Left Column - Name & Info */}
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, x: -40 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="flex flex-col items-center space-y-6"
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 max-w-md"
             >
-              {/* Profile Picture */}
-              <div className="relative inline-block group">
-                <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-2 border-primary/50 bg-secondary/30 flex items-center justify-center relative">
-                  <div className="absolute inset-0 rounded-full animate-neural-pulse" />
-                  {profileImage ? (
-                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover relative z-10" />
-                  ) : (
-                    <Camera className="w-16 h-16 text-muted-foreground relative z-10" />
-                  )}
-                </div>
-                {isOwner && (
-                  <label className="absolute inset-0 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-full h-full rounded-full bg-black/60 flex items-center justify-center">
-                      <Camera className="w-8 h-8 text-foreground" />
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* Info Cards */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center gap-2 px-5 py-2.5 bg-card/40 backdrop-blur-sm rounded-lg border border-primary/20">
-                  <span className="font-mono font-medium text-sm md:text-base">Cybersecurity Major</span>
-                </div>
-                
-                <div className="flex items-center gap-3 px-5 py-2.5 bg-card/40 backdrop-blur-sm rounded-lg border border-primary/20">
-                  <img 
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
-                    alt="Purdue University" 
-                    className="h-7"
-                  />
-                  <span className="font-semibold text-sm md:text-base">Purdue University</span>
-                  <span className="text-primary text-sm">•</span>
-                  <span className="font-mono text-primary text-sm">2024-2028</span>
-                </div>
-              </div>
-
-              {/* Social Links */}
-              <div className="flex items-center gap-3">
+              {/* Small intro text */}
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="text-muted-foreground text-sm md:text-base tracking-wide"
+              >
+                Hi, I am
+              </motion.span>
+              
+              {/* Large Name */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.8 }}
+                className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight"
+              >
+                <span className="text-foreground">Ritvik</span>
+                <br />
+                <span className="text-gradient-cyber">Indupuri</span>
+              </motion.h1>
+              
+              {/* Title */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.6 }}
+                className="text-muted-foreground text-sm md:text-base font-medium tracking-wide"
+              >
+                A Cybersecurity Major
+              </motion.p>
+              
+              {/* University Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+                className="flex items-center gap-3 px-4 py-2.5 bg-card/30 backdrop-blur-sm rounded-lg border border-primary/20"
+              >
+                <img 
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
+                  alt="Purdue University" 
+                  className="h-6"
+                />
+                <span className="font-medium text-sm">Purdue University</span>
+                <span className="text-primary">•</span>
+                <span className="font-mono text-primary text-sm">2024-2028</span>
+              </motion.div>
+              
+              {/* Resume Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+              >
+                <ResumeManager isOwner={isOwner} />
+              </motion.div>
+              
+              {/* Social Links Row */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9, duration: 0.6 }}
+                className="flex items-center gap-4"
+              >
                 <a
                   href="https://github.com/ritvikindupuri"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-2 px-4 py-2 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300"
+                  className="p-2.5 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-lg transition-all duration-300 group"
+                  aria-label="GitHub"
                 >
-                  <Github className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="font-medium text-xs">GitHub</span>
+                  <Github className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </a>
                 <a
                   href="https://www.linkedin.com/in/ritvik-indupuri-4b6037288/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-2 px-4 py-2 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300"
+                  className="p-2.5 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-lg transition-all duration-300 group"
+                  aria-label="LinkedIn"
                 >
-                  <Linkedin className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="font-medium text-xs">LinkedIn</span>
+                  <Linkedin className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </a>
-              </div>
+              </motion.div>
             </motion.div>
 
-            {/* Right Column - Skills Keyboard */}
+            {/* Right Column - Floating Skills Keyboard */}
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
-              className="hidden md:block"
+              initial={{ opacity: 0, x: 40, rotateY: -20 }}
+              animate={{ opacity: 1, x: 0, rotateY: 0 }}
+              transition={{ delay: 0.5, duration: 1, type: "spring" }}
+              className="hidden md:block lg:mt-8"
             >
               <FloatingSkillsKeyboard />
             </motion.div>
@@ -486,7 +495,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.8 }}
-            className="md:hidden flex justify-center"
+            className="md:hidden flex justify-center mt-10"
           >
             <FloatingSkillsKeyboard />
           </motion.div>

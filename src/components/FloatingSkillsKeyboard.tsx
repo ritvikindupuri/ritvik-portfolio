@@ -8,6 +8,43 @@ interface Skill {
   icon: string | null;
 }
 
+// Brand colors for each tool - vibrant and matching their logos
+const getBrandColor = (skillName: string): string => {
+  const name = skillName.toLowerCase();
+  
+  if (name.includes('crowdstrike')) return 'from-red-500 to-red-600';
+  if (name.includes('splunk')) return 'from-green-400 to-green-500';
+  if (name.includes('wireshark')) return 'from-blue-400 to-blue-500';
+  if (name.includes('nmap')) return 'from-purple-500 to-purple-600';
+  if (name.includes('burp')) return 'from-orange-400 to-orange-500';
+  if (name.includes('metasploit')) return 'from-blue-500 to-blue-600';
+  if (name.includes('kali')) return 'from-slate-600 to-slate-700';
+  if (name.includes('hashcat') || name.includes('john')) return 'from-yellow-400 to-yellow-500';
+  if (name.includes('nessus')) return 'from-cyan-400 to-cyan-500';
+  if (name.includes('ghidra')) return 'from-red-600 to-red-700';
+  if (name.includes('ida')) return 'from-purple-600 to-purple-700';
+  if (name.includes('autopsy')) return 'from-blue-600 to-blue-700';
+  if (name.includes('volatility')) return 'from-teal-400 to-teal-500';
+  if (name.includes('snort') || name.includes('suricata')) return 'from-rose-500 to-rose-600';
+  if (name.includes('openvas')) return 'from-green-500 to-green-600';
+  if (name.includes('aircrack')) return 'from-indigo-500 to-indigo-600';
+  if (name.includes('hydra')) return 'from-emerald-400 to-emerald-500';
+  if (name.includes('nikto')) return 'from-violet-500 to-violet-600';
+  if (name.includes('sqlmap')) return 'from-amber-400 to-amber-500';
+  if (name.includes('elastic') || name.includes('kibana')) return 'from-pink-400 to-pink-500';
+  
+  const fallbackColors = [
+    'from-red-400 to-red-500', 'from-orange-400 to-orange-500', 
+    'from-yellow-400 to-yellow-500', 'from-green-400 to-green-500',
+    'from-teal-400 to-teal-500', 'from-cyan-400 to-cyan-500', 
+    'from-blue-400 to-blue-500', 'from-indigo-400 to-indigo-500',
+    'from-purple-400 to-purple-500', 'from-pink-400 to-pink-500'
+  ];
+  
+  const hash = name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  return fallbackColors[hash % fallbackColors.length];
+};
+
 interface KeycapProps {
   skill: Skill;
   index: number;
@@ -15,56 +52,91 @@ interface KeycapProps {
 }
 
 const Keycap = ({ skill, index, onClick }: KeycapProps) => {
-  const delay = index * 0.04;
+  const delay = index * 0.05;
+  const brandColor = getBrandColor(skill.name);
   
   return (
     <motion.button
       onClick={onClick}
       className="relative focus:outline-none group"
-      initial={{ opacity: 0, scale: 0, y: 15 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
+      initial={{ opacity: 0, scale: 0, rotateX: -45 }}
+      animate={{ opacity: 1, scale: 1, rotateX: 0 }}
       transition={{
-        duration: 0.35,
+        duration: 0.5,
         delay,
         type: "spring",
-        stiffness: 250,
-        damping: 20,
+        stiffness: 200,
+        damping: 15,
       }}
       whileHover={{
-        y: -4,
-        scale: 1.08,
-        zIndex: 50,
-        transition: { duration: 0.12 },
+        y: -8,
+        z: 20,
+        scale: 1.15,
+        rotateX: -10,
+        transition: { duration: 0.15 },
       }}
-      whileTap={{ scale: 0.9, y: 2 }}
+      whileTap={{ scale: 0.92, y: 4 }}
+      style={{ transformStyle: "preserve-3d" }}
     >
       <motion.div
-        animate={{ y: [0, -2, 0] }}
+        animate={{ 
+          y: [0, -4, 0],
+          rotateY: [0, 2, 0, -2, 0],
+        }}
         transition={{
-          duration: 2 + (index % 3) * 0.3,
+          duration: 3 + (index % 4) * 0.5,
           repeat: Infinity,
           repeatType: "reverse",
-          delay: index * 0.06,
+          delay: index * 0.1,
           ease: "easeInOut",
         }}
+        style={{ transformStyle: "preserve-3d" }}
       >
-        {/* Keycap with white/light background for visibility */}
-        <div className="relative" style={{ transformStyle: "preserve-3d" }}>
-          {/* Key base (dark) */}
-          <div className="absolute inset-0 translate-y-1 bg-slate-800 rounded-md" />
+        {/* 3D Keycap with depth */}
+        <div 
+          className="relative"
+          style={{ 
+            transformStyle: "preserve-3d",
+            transform: "translateZ(0px)",
+          }}
+        >
+          {/* Key bottom/sides (dark shadow) */}
+          <div 
+            className="absolute inset-0 bg-slate-900 rounded-lg"
+            style={{ transform: "translateZ(-12px)" }}
+          />
           
-          {/* Key top surface (white/cream for visibility) */}
-          <div className="relative w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-b from-slate-100 to-slate-200 rounded-md shadow-md group-hover:shadow-lg transition-shadow duration-150 border border-slate-300">
-            {/* Inner content area */}
-            <div className="absolute inset-0.5 rounded flex items-center justify-center overflow-hidden bg-white">
+          {/* Key sides */}
+          <div 
+            className={`absolute inset-0 bg-gradient-to-b ${brandColor} rounded-lg opacity-60`}
+            style={{ transform: "translateZ(-6px)" }}
+          />
+          
+          {/* Key top surface with brand color */}
+          <div 
+            className={`
+              relative w-12 h-12 sm:w-14 sm:h-14
+              bg-gradient-to-br ${brandColor}
+              rounded-lg
+              shadow-lg
+              group-hover:shadow-2xl
+              transition-shadow duration-200
+            `}
+            style={{ transform: "translateZ(0px)" }}
+          >
+            {/* Glossy highlight */}
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/40 via-white/10 to-transparent" />
+            
+            {/* Icon container */}
+            <div className="absolute inset-1.5 rounded-md bg-white/90 flex items-center justify-center overflow-hidden shadow-inner">
               {skill.icon ? (
                 <img 
                   src={skill.icon} 
                   alt={skill.name}
-                  className="w-6 h-6 sm:w-7 sm:h-7 object-contain"
+                  className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
                 />
               ) : (
-                <span className="text-slate-700 font-bold text-xs">
+                <span className="text-slate-800 font-bold text-sm">
                   {skill.name.slice(0, 2).toUpperCase()}
                 </span>
               )}
@@ -74,14 +146,14 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
         
         {/* Tooltip */}
         <div className="
-          absolute -bottom-7 left-1/2 -translate-x-1/2
+          absolute -bottom-8 left-1/2 -translate-x-1/2
           opacity-0 group-hover:opacity-100
           transition-opacity duration-150
           whitespace-nowrap
           bg-slate-900/95 backdrop-blur-sm
           text-white text-[10px] font-medium
-          px-2 py-1 rounded
-          shadow-lg
+          px-2.5 py-1 rounded-md
+          shadow-xl border border-white/10
           z-50 pointer-events-none
         ">
           {skill.name}
@@ -101,14 +173,17 @@ const Particle = ({
   mouseX: ReturnType<typeof useMotionValue<number>>; 
   mouseY: ReturnType<typeof useMotionValue<number>>; 
 }) => {
-  const randomX = Math.random() * 100;
-  const randomY = Math.random() * 100;
-  const size = 2 + Math.random() * 3;
+  const randomX = 10 + Math.random() * 80;
+  const randomY = 10 + Math.random() * 80;
+  const size = 2 + Math.random() * 4;
   const duration = 3 + Math.random() * 4;
   
-  const springConfig = { damping: 30, stiffness: 100 };
-  const particleX = useSpring(useTransform(mouseX, [-0.5, 0.5], [randomX - 15, randomX + 15]), springConfig);
-  const particleY = useSpring(useTransform(mouseY, [-0.5, 0.5], [randomY - 15, randomY + 15]), springConfig);
+  const springConfig = { damping: 30, stiffness: 80 };
+  const particleX = useSpring(useTransform(mouseX, [-0.5, 0.5], [randomX - 20, randomX + 20]), springConfig);
+  const particleY = useSpring(useTransform(mouseY, [-0.5, 0.5], [randomY - 20, randomY + 20]), springConfig);
+  
+  const colors = ['#00f5ff', '#a855f7', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6'];
+  const color = colors[index % colors.length];
   
   return (
     <motion.div
@@ -116,24 +191,22 @@ const Particle = ({
       style={{
         width: size,
         height: size,
-        left: particleX,
-        top: particleY,
-        background: index % 3 === 0 
-          ? 'hsl(var(--primary))' 
-          : index % 3 === 1 
-            ? 'hsl(var(--cyber-purple))' 
-            : 'hsl(var(--cyber-glow))',
-        boxShadow: `0 0 ${size * 2}px currentColor`,
+        left: `${randomX}%`,
+        top: `${randomY}%`,
+        x: particleX,
+        y: particleY,
+        background: color,
+        boxShadow: `0 0 ${size * 3}px ${color}`,
       }}
       initial={{ opacity: 0 }}
       animate={{ 
-        opacity: [0.2, 0.6, 0.2],
-        scale: [1, 1.3, 1],
+        opacity: [0.3, 0.8, 0.3],
+        scale: [1, 1.5, 1],
       }}
       transition={{
         duration,
         repeat: Infinity,
-        delay: index * 0.15,
+        delay: index * 0.2,
         ease: "easeInOut",
       }}
     />
@@ -148,8 +221,8 @@ export const FloatingSkillsKeyboard = () => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   
-  const springConfig = { damping: 25, stiffness: 150 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), springConfig);
+  const springConfig = { damping: 20, stiffness: 100 };
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [5, -5]), springConfig);
   const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), springConfig);
 
   useEffect(() => {
@@ -201,17 +274,13 @@ export const FloatingSkillsKeyboard = () => {
       
       setTimeout(() => {
         const securityTab = document.querySelector('[data-value="security"]') as HTMLElement;
-        if (securityTab) {
-          securityTab.click();
-        }
+        if (securityTab) securityTab.click();
         
         setTimeout(() => {
           const skillElement = document.querySelector(`[data-skill-id="${skillId}"]`) as HTMLElement;
           if (skillElement) {
             skillElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             skillElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background');
-            skillElement.style.transition = 'all 0.3s ease';
-            
             setTimeout(() => {
               skillElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background');
             }, 3000);
@@ -221,23 +290,24 @@ export const FloatingSkillsKeyboard = () => {
     }
   };
 
-  if (loading || skills.length === 0) {
-    return null;
-  }
+  if (loading || skills.length === 0) return null;
 
-  // Keyboard layout - 4 columns
   const cols = 4;
-  const rows = Math.ceil(skills.length / cols);
 
   return (
-    <div ref={containerRef} className="relative" style={{ perspective: "1000px" }}>
-      {/* Particle effects layer */}
-      <div className="absolute inset-0 -m-8 overflow-hidden pointer-events-none">
-        {Array.from({ length: 20 }).map((_, i) => (
+    <div 
+      ref={containerRef} 
+      className="relative"
+      style={{ perspective: "1200px" }}
+    >
+      {/* Particle effects */}
+      <div className="absolute inset-0 -m-12 overflow-visible pointer-events-none">
+        {Array.from({ length: 25 }).map((_, i) => (
           <Particle key={i} index={i} mouseX={mouseX} mouseY={mouseY} />
         ))}
       </div>
 
+      {/* Keyboard with angle */}
       <motion.div
         className="relative"
         style={{
@@ -245,42 +315,75 @@ export const FloatingSkillsKeyboard = () => {
           rotateY,
           transformStyle: "preserve-3d",
         }}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
+        initial={{ opacity: 0, rotateX: 30, rotateY: -25, rotateZ: 5 }}
+        animate={{ opacity: 1, rotateX: 15, rotateY: -15, rotateZ: 3 }}
+        transition={{ delay: 0.3, duration: 1, type: "spring", stiffness: 50 }}
       >
-        {/* Keyboard base/frame */}
-        <div className="relative p-4 sm:p-5 rounded-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 shadow-2xl border border-slate-600/50">
-          {/* Keyboard top bezel highlight */}
-          <div className="absolute inset-x-0 top-0 h-1 rounded-t-xl bg-gradient-to-r from-transparent via-slate-500/30 to-transparent" />
+        {/* RGB Glow border - animated */}
+        <motion.div
+          className="absolute -inset-1 rounded-2xl opacity-75 blur-md"
+          animate={{
+            background: [
+              'linear-gradient(90deg, #00f5ff, #a855f7, #22c55e, #00f5ff)',
+              'linear-gradient(180deg, #a855f7, #22c55e, #00f5ff, #a855f7)',
+              'linear-gradient(270deg, #22c55e, #00f5ff, #a855f7, #22c55e)',
+              'linear-gradient(360deg, #00f5ff, #a855f7, #22c55e, #00f5ff)',
+            ],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+        
+        {/* Keyboard base */}
+        <div 
+          className="relative p-4 rounded-xl bg-gradient-to-b from-slate-800 via-slate-900 to-black border border-slate-700/50"
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          {/* Top edge highlight */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-t-xl" />
           
-          {/* Inner keyboard plate */}
-          <div className="relative p-2 sm:p-3 rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 shadow-inner">
-            {/* Subtle LED underglow effect */}
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-primary/10 via-transparent to-transparent" />
-            
-            {/* Keys grid */}
-            <div 
-              className="relative grid gap-1.5 sm:gap-2"
-              style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
-            >
-              {skills.map((skill, index) => (
-                <Keycap
-                  key={skill.id}
-                  skill={skill}
-                  index={index}
-                  onClick={() => handleKeycapClick(skill.id)}
-                />
-              ))}
-            </div>
+          {/* RGB Strip on edges */}
+          <motion.div
+            className="absolute inset-x-2 bottom-1 h-0.5 rounded-full"
+            animate={{
+              background: [
+                'linear-gradient(90deg, #00f5ff, #a855f7, #22c55e)',
+                'linear-gradient(90deg, #a855f7, #22c55e, #00f5ff)',
+                'linear-gradient(90deg, #22c55e, #00f5ff, #a855f7)',
+              ],
+              boxShadow: [
+                '0 0 10px #00f5ff, 0 0 20px #00f5ff',
+                '0 0 10px #a855f7, 0 0 20px #a855f7',
+                '0 0 10px #22c55e, 0 0 20px #22c55e',
+              ],
+            }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+          
+          {/* Keys container */}
+          <div 
+            className="relative grid gap-2 sm:gap-2.5"
+            style={{ 
+              gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              transformStyle: "preserve-3d",
+            }}
+          >
+            {skills.map((skill, index) => (
+              <Keycap
+                key={skill.id}
+                skill={skill}
+                index={index}
+                onClick={() => handleKeycapClick(skill.id)}
+              />
+            ))}
           </div>
-          
-          {/* Keyboard bottom edge (3D depth) */}
-          <div className="absolute -bottom-2 left-2 right-2 h-2 rounded-b-xl bg-slate-900 border-x border-b border-slate-700/50" />
         </div>
         
-        {/* Shadow underneath keyboard */}
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-4/5 h-4 bg-black/40 rounded-full blur-xl" />
+        {/* Keyboard shadow */}
+        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-6 bg-black/50 rounded-full blur-xl" />
       </motion.div>
     </div>
   );
