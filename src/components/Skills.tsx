@@ -121,7 +121,7 @@ const SortableSkill = ({ skill, categoryId, isOwner, onEdit, onRemove, onMove, g
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="group relative">
+    <div ref={setNodeRef} style={style} className="group relative" data-skill-id={skill.id}>
       <div className="relative bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-6 hover:border-primary/50 transition-all duration-300 flex flex-col items-center text-center shadow-lg">
         {isOwner && (
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5 z-10">
@@ -553,6 +553,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                       <TabsTrigger
                         key={category.id}
                         value={category.id}
+                        data-value={category.id}
                         className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
                       >
                         <Icon className="w-5 h-5 flex-shrink-0" />
