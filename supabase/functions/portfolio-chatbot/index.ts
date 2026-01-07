@@ -398,8 +398,99 @@ RESPONSE STRATEGY:
 Remember: Your goal is to help hiring managers and recruiters fully understand Ritvik's capabilities, experience, and potential fit for opportunities.`;
 }
 
+// Sanitize input text - removes potentially malicious patterns while preserving meaning
+function sanitizeText(text: string): string {
+  // Remove control characters except newlines and tabs
+  let sanitized = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  
+  // Normalize excessive whitespace
+  sanitized = sanitized.replace(/\s{10,}/g, '     ');
+  
+  // Remove unicode homoglyphs that could be used for visual spoofing
+  const homoglyphMap: Record<string, string> = {
+    'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x', // Cyrillic
+    'А': 'A', 'Е': 'E', 'О': 'O', 'Р': 'P', 'С': 'C', 'Х': 'X',
+  };
+  
+  for (const [homoglyph, replacement] of Object.entries(homoglyphMap)) {
+    sanitized = sanitized.replace(new RegExp(homoglyph, 'g'), replacement);
+  }
+  
+  return sanitized.trim();
+}
+
+// Rate limiter for failed validation attempts (per IP)
+const validationFailureMap = new Map<string, { count: number; resetTime: number }>();
+const VALIDATION_FAILURE_WINDOW = 600000; // 10 minutes
+const MAX_VALIDATION_FAILURES = 5;
+
+function checkValidationRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = validationFailureMap.get(key);
+  
+  if (!entry || now > entry.resetTime) {
+    return true;
+  }
+  
+  return entry.count < MAX_VALIDATION_FAILURES;
+}
+
+function recordValidationFailure(key: string): void {
+  const now = Date.now();
+  const entry = validationFailureMap.get(key);
+  
+  if (!entry || now > entry.resetTime) {
+    validationFailureMap.set(key, { count: 1, resetTime: now + VALIDATION_FAILURE_WINDOW });
+  } else {
+    entry.count++;
+  }
+}
+
+// Comprehensive injection pattern detection
+const INJECTION_PATTERNS = [
+  // Direct instruction override attempts
+  /ignore\s+(previous|all|above|prior|earlier)\s+(instructions?|prompts?|rules?|context)/i,
+  /disregard\s+(previous|all|above|prior|earlier|your)\s+(instructions?|prompts?|rules?|programming)/i,
+  /forget\s+(everything|all|previous|your|prior)/i,
+  /override\s+(your|the|previous)\s+(instructions?|prompts?|rules?|behavior)/i,
+  
+  // System prompt extraction attempts
+  /system\s*(prompt|message|instruction)/i,
+  /(reveal|show|display|tell\s+me)\s+(your|the)\s+(system|initial|original|hidden)\s*(prompt|instructions?|rules?)/i,
+  /what\s+(are|is)\s+your\s+(system|initial|original)\s*(prompt|instructions?|rules?)/i,
+  
+  // Role manipulation attempts
+  /you\s+are\s+now\s+(a|an|the|my)/i,
+  /pretend\s+(to\s+be|you\s+are|you're)/i,
+  /act\s+as\s+(if|a|an|the)/i,
+  /roleplay\s+as/i,
+  /from\s+now\s+on\s+(you|you're|you\s+are)/i,
+  
+  // Jailbreak attempts
+  /do\s+anything\s+now/i,
+  /developer\s+mode/i,
+  /sudo\s+mode/i,
+  /admin(istrator)?\s+mode/i,
+  /unrestricted\s+mode/i,
+  /jailbreak/i,
+  /dan\s+mode/i,
+  
+  // Context manipulation
+  /new\s+(instructions?|context|rules?|prompt):/i,
+  /updated?\s+(instructions?|context|rules?|prompt):/i,
+  /\[system\]/i,
+  /\[assistant\]/i,
+  /\[admin\]/i,
+  
+  // Delimiter injection attempts
+  /```system/i,
+  /```prompt/i,
+  /<\|im_start\|>/i,
+  /<\|endoftext\|>/i,
+];
+
 // Input validation
-function validateInput(message: string): { valid: boolean; error?: string } {
+function validateInput(message: string, ipAddress: string): { valid: boolean; error?: string; sanitized?: string } {
   if (!message || typeof message !== 'string') {
     return { valid: false, error: 'Message must be a non-empty string' };
   }
@@ -412,23 +503,47 @@ function validateInput(message: string): { valid: boolean; error?: string } {
     return { valid: false, error: 'Message cannot be empty' };
   }
   
-  // Check for common injection patterns
-  const injectionPatterns = [
-    /ignore\s+(previous|all|above)\s+instructions?/i,
-    /system\s*prompt/i,
-    /you\s+are\s+now/i,
-    /forget\s+(everything|all|previous)/i,
-    /new\s+instructions?:/i,
-  ];
+  // Check validation rate limit
+  if (!checkValidationRateLimit(ipAddress)) {
+    console.warn(`Validation rate limit exceeded for IP: ${ipAddress}`);
+    return { valid: false, error: 'Too many invalid requests. Please try again later.' };
+  }
   
-  for (const pattern of injectionPatterns) {
-    if (pattern.test(message)) {
-      console.warn('Potential injection attempt detected:', message.substring(0, 100));
-      // Don't reject, just log - let the AI handle it with strong prompt
+  // Sanitize the message
+  const sanitized = sanitizeText(message);
+  
+  // Check for injection patterns
+  let injectionDetected = false;
+  for (const pattern of INJECTION_PATTERNS) {
+    if (pattern.test(sanitized)) {
+      injectionDetected = true;
+      console.warn(`Injection pattern detected from ${ipAddress}:`, {
+        pattern: pattern.source,
+        message: sanitized.substring(0, 100)
+      });
+      break;
     }
   }
   
-  return { valid: true };
+  if (injectionDetected) {
+    recordValidationFailure(ipAddress);
+    // Don't reject but return sanitized version - AI has strong system prompt to handle
+  }
+  
+  return { valid: true, sanitized };
+}
+
+// Sanitize conversation history entries
+function sanitizeConversationHistory(history: { role: string; content: string }[]): { role: string; content: string }[] {
+  if (!Array.isArray(history)) return [];
+  
+  return history
+    .filter(msg => msg && (msg.role === 'user' || msg.role === 'assistant'))
+    .map(msg => ({
+      role: msg.role,
+      content: sanitizeText(String(msg.content || '').slice(0, 2000))
+    }))
+    .slice(-20); // Last 20 messages (10 exchanges)
 }
 
 Deno.serve(async (req: Request) => {
@@ -461,8 +576,8 @@ Deno.serve(async (req: Request) => {
 
     const { message, conversationHistory } = await req.json();
     
-    // Input validation
-    const validation = validateInput(message);
+    // Input validation with IP for rate limiting
+    const validation = validateInput(message, rateLimitKey);
     if (!validation.valid) {
       return new Response(
         JSON.stringify({ error: validation.error }),
@@ -476,6 +591,9 @@ Deno.serve(async (req: Request) => {
         }
       );
     }
+    
+    // Use sanitized message
+    const sanitizedMessage = validation.sanitized || message;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -491,14 +609,14 @@ Deno.serve(async (req: Request) => {
     let searchMethod = 'none';
     
     // Attempt semantic (vector) search first
-    let relevantResults = await semanticSearch(supabase, message);
+    let relevantResults = await semanticSearch(supabase, sanitizedMessage);
     
     if (relevantResults.length > 0) {
       searchMethod = 'semantic';
       console.log(`Semantic RAG found ${relevantResults.length} results`);
     } else {
       // Fall back to keyword search
-      relevantResults = await keywordSearch(supabase, message);
+      relevantResults = await keywordSearch(supabase, sanitizedMessage);
       if (relevantResults.length > 0) {
         searchMethod = 'keyword';
         console.log(`Keyword RAG found ${relevantResults.length} results`);
@@ -518,18 +636,14 @@ Deno.serve(async (req: Request) => {
       { role: 'system', content: systemPrompt }
     ];
 
-    // Add conversation history if provided (limit to last 10 exchanges to stay within context)
-    if (conversationHistory && Array.isArray(conversationHistory)) {
-      const recentHistory = conversationHistory.slice(-20); // Last 20 messages (10 exchanges)
-      for (const msg of recentHistory) {
-        if (msg.role === 'user' || msg.role === 'assistant') {
-          messages.push({ role: msg.role, content: msg.content });
-        }
-      }
+    // Add sanitized conversation history if provided
+    const sanitizedHistory = sanitizeConversationHistory(conversationHistory);
+    for (const msg of sanitizedHistory) {
+      messages.push(msg);
     }
 
-    // Add current message
-    messages.push({ role: 'user', content: message });
+    // Add sanitized current message
+    messages.push({ role: 'user', content: sanitizedMessage });
 
     console.log(`Processing chatbot request with ${messages.length - 1} history messages`);
 
