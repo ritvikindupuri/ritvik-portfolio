@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, BarChart3 } from "lucide-react";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, BarChart3, User, Briefcase, Award, FolderOpen, Mail, Shield, BookOpen, Cpu, Sparkles } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,86 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ResumeManager } from "@/components/ResumeManager";
 import { FloatingSkillsKeyboard } from "@/components/FloatingSkillsKeyboard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// Table of contents data
+const tableOfContents = [
+  {
+    id: "about-section",
+    label: "About",
+    icon: User,
+    tooltip: "Learn about my background, interests, and what drives my passion for cybersecurity and machine learning.",
+    color: "text-blue-400",
+  },
+  {
+    id: "skills-section",
+    label: "Skills",
+    icon: Cpu,
+    tooltip: "Explore my technical arsenal including programming languages, frameworks, security tools, and ML technologies.",
+    color: "text-green-400",
+  },
+  {
+    id: "ml-section",
+    label: "AI/ML",
+    icon: Brain,
+    tooltip: "View my machine learning models and LLM/AI engineering projects with real-world applications.",
+    color: "text-purple-400",
+  },
+  {
+    id: "featured-projects-section",
+    label: "Featured",
+    icon: Sparkles,
+    tooltip: "Highlighted flagship projects demonstrating end-to-end problem solving and technical excellence.",
+    color: "text-yellow-400",
+  },
+  {
+    id: "experience-section",
+    label: "Experience",
+    icon: Briefcase,
+    tooltip: "My professional journey including internships, research positions, and real-world industry experience.",
+    color: "text-orange-400",
+  },
+  {
+    id: "projects-section",
+    label: "Projects",
+    icon: FolderOpen,
+    tooltip: "A comprehensive archive of all my technical work, personal projects, and explorations.",
+    color: "text-cyan-400",
+  },
+  {
+    id: "certifications-section",
+    label: "Certs",
+    icon: Award,
+    tooltip: "Industry certifications validating my expertise in security, cloud, and technology domains.",
+    color: "text-red-400",
+  },
+  {
+    id: "documentation-section",
+    label: "Docs",
+    icon: BookOpen,
+    tooltip: "Technical documentation, detailed project write-ups, and knowledge base articles.",
+    color: "text-indigo-400",
+  },
+  {
+    id: "security-section",
+    label: "Security",
+    icon: Shield,
+    tooltip: "Interactive security architecture showing how this portfolio implements defense-in-depth with real threat detection.",
+    color: "text-emerald-400",
+  },
+  {
+    id: "contact-section",
+    label: "Contact",
+    icon: Mail,
+    tooltip: "Get in touch with me for opportunities, collaborations, or just to say hello.",
+    color: "text-pink-400",
+  },
+];
 const TypewriterText = () => {
   const fullText = "Hi, my name is Ritvik Indupuri";
   const [displayedText, setDisplayedText] = useState("");
@@ -475,13 +555,73 @@ export const Hero = ({ isOwner }: HeroProps) => {
             <FloatingSkillsKeyboard isOwner={isOwner} />
           </motion.div>
 
+          {/* Table of Contents */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
+            className="mt-12 mb-8"
+          >
+            <div className="max-w-4xl mx-auto">
+              {/* Header */}
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="h-px flex-1 max-w-16 bg-gradient-to-r from-transparent to-primary/50" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Quick Navigation</span>
+                <div className="h-px flex-1 max-w-16 bg-gradient-to-l from-transparent to-primary/50" />
+              </div>
+              
+              {/* TOC Grid */}
+              <div className="flex flex-wrap justify-center gap-2">
+                <TooltipProvider delayDuration={100}>
+                  {tableOfContents.map((item, index) => {
+                    const Icon = item.icon;
+                    return (
+                      <Tooltip key={item.id}>
+                        <TooltipTrigger asChild>
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.9 + index * 0.05, duration: 0.3 }}
+                            onClick={() => {
+                              const element = document.getElementById(item.id);
+                              element?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/50 hover:bg-card/60 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+                          >
+                            <Icon className={`w-4 h-4 ${item.color} transition-transform group-hover:scale-110`} />
+                            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                              {item.label}
+                            </span>
+                          </motion.button>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="bottom" 
+                          className="max-w-[250px] p-3"
+                          sideOffset={8}
+                        >
+                          <div className="flex items-start gap-2">
+                            <Icon className={`w-4 h-4 ${item.color} flex-shrink-0 mt-0.5`} />
+                            <div>
+                              <p className="text-xs font-semibold mb-1">{item.label}</p>
+                              <p className="text-xs text-muted-foreground">{item.tooltip}</p>
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </TooltipProvider>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Analytics Dashboard Button - Owner Only */}
           {isOwner && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.95, duration: 0.8 }}
-              className="flex justify-center mt-8"
+              className="flex justify-center mt-4"
             >
               <Button 
                 onClick={() => navigate('/dashboard')}
@@ -498,16 +638,16 @@ export const Hero = ({ isOwner }: HeroProps) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 0.8 }}
-            className="text-center pt-12"
+            transition={{ delay: 1.2, duration: 0.8 }}
+            className="text-center pt-8"
           >
             <button
               onClick={() => {
-                const skillsSection = document.getElementById('skills-section');
-                skillsSection?.scrollIntoView({ behavior: 'smooth' });
+                const aboutSection = document.getElementById('about-section');
+                aboutSection?.scrollIntoView({ behavior: 'smooth' });
               }}
               className="inline-block animate-bounce cursor-pointer hover:scale-110 transition-transform focus:outline-none"
-              aria-label="Scroll to skills section"
+              aria-label="Scroll to about section"
             >
               <div className="w-6 h-10 border-2 border-primary/50 rounded-full flex items-start justify-center p-2 mx-auto">
                 <div className="w-1 h-2 bg-primary rounded-full" />

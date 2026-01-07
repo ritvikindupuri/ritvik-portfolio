@@ -141,14 +141,18 @@ const Index = () => {
             subtitle="Passionate about cybersecurity and machine learning — building intelligent systems for defense"
           />
           
-          <About isOwner={isOwner} />
+          <div id="about-section">
+            <About isOwner={isOwner} />
+          </div>
           
           <SectionTransition 
             badge="Technical Arsenal" 
             subtitle="Core competencies and tools I use to build secure, intelligent systems"
           />
           
-          <Skills isOwner={isOwner} />
+          <div id="skills-section">
+            <Skills isOwner={isOwner} />
+          </div>
           
           <SectionTransition 
             badge="Applied Intelligence" 
@@ -156,7 +160,7 @@ const Index = () => {
           />
           
           {/* ML & LLM Showcase - Side by Side */}
-          <section className="py-16 px-4 relative overflow-hidden">
+          <section id="ml-section" className="py-16 px-4 relative overflow-hidden">
             <div className="absolute inset-0 neural-grid opacity-5" />
             <div className="absolute top-1/4 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
             <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
@@ -182,35 +186,45 @@ const Index = () => {
             subtitle="Highlighted projects that demonstrate end-to-end problem solving"
           />
           
-          <FeaturedProjects isOwner={isOwner} />
+          <div id="featured-projects-section">
+            <FeaturedProjects isOwner={isOwner} />
+          </div>
           
           <SectionTransition 
             badge="Professional Journey" 
             subtitle="Real-world experience building and securing systems"
           />
           
-          <Experience isOwner={isOwner} />
+          <div id="experience-section">
+            <Experience isOwner={isOwner} />
+          </div>
           
           <SectionTransition 
             badge="Project Archive" 
             subtitle="A comprehensive collection of technical work and explorations"
           />
           
-          <Projects isOwner={isOwner} />
+          <div id="projects-section">
+            <Projects isOwner={isOwner} />
+          </div>
           
           <SectionTransition 
             badge="Credentials" 
             subtitle="Industry certifications validating expertise in security and technology"
           />
           
-          <Certifications isOwner={isOwner} />
+          <div id="certifications-section">
+            <Certifications isOwner={isOwner} />
+          </div>
           
           <SectionTransition 
             badge="Knowledge Base" 
             subtitle="Technical documentation and detailed project write-ups"
           />
           
-          <Documentation isOwner={isOwner} />
+          <div id="documentation-section">
+            <Documentation isOwner={isOwner} />
+          </div>
 
           <SectionTransition 
             badge="Security Architecture" 
@@ -218,7 +232,7 @@ const Index = () => {
           />
 
           {/* Interactive Security Architecture */}
-          <section className="py-12 px-4 relative overflow-hidden">
+          <section id="security-section" className="py-12 px-4 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
             <div className="container mx-auto max-w-5xl relative z-10">
@@ -231,7 +245,9 @@ const Index = () => {
             subtitle="Open to opportunities in cybersecurity and machine learning"
           />
           
-          <Contact />
+          <div id="contact-section">
+            <Contact />
+          </div>
 
           {/* Chatbot - Only for guests */}
           <PortfolioChatbot isOwner={isOwner} />
