@@ -172,21 +172,50 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { data, error } = await supabase
+    // First, check if an entry already exists
+    const { data: existingData } = await supabase
       .from('github_content')
-      .upsert({
-        source_type,
-        source_id,
-        github_url,
-        repo_name: `${owner}/${repo}`,
-        content_text: cleanedContent,
-        embedding: `[${embedding.join(',')}]`,
-        indexed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'source_type,source_id,github_url',
-      })
-      .select();
+      .select('id')
+      .eq('github_url', github_url)
+      .eq('source_type', source_type)
+      .eq('source_id', source_id)
+      .maybeSingle();
+    
+    let data, error;
+    
+    if (existingData) {
+      // Update existing record
+      const result = await supabase
+        .from('github_content')
+        .update({
+          repo_name: `${owner}/${repo}`,
+          content_text: cleanedContent,
+          embedding: `[${embedding.join(',')}]`,
+          indexed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingData.id)
+        .select();
+      data = result.data;
+      error = result.error;
+    } else {
+      // Insert new record
+      const result = await supabase
+        .from('github_content')
+        .insert({
+          source_type,
+          source_id,
+          github_url,
+          repo_name: `${owner}/${repo}`,
+          content_text: cleanedContent,
+          embedding: `[${embedding.join(',')}]`,
+          indexed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select();
+      data = result.data;
+      error = result.error;
+    }
     
     if (error) {
       console.error('Database error:', error);

@@ -211,9 +211,9 @@ function scoreRelevance(text: string, keywords: string[]): number {
   return Math.min(matches / (keywords.length * 2), 1);
 }
 
-// Fetch portfolio data from database
+// Fetch portfolio data from database including GitHub README content
 async function fetchPortfolioData(supabase: any) {
-  const [profileRes, skillsRes, experienceRes, projectsRes, certsRes, docsRes, mlModelsRes, llmProjectsRes] = await Promise.all([
+  const [profileRes, skillsRes, experienceRes, projectsRes, certsRes, docsRes, mlModelsRes, llmProjectsRes, githubContentRes] = await Promise.all([
     supabase.from('profiles').select('*').single(),
     supabase.from('skills').select('*'),
     supabase.from('experience').select('*').order('start_date', { ascending: false }),
@@ -222,7 +222,16 @@ async function fetchPortfolioData(supabase: any) {
     supabase.from('documentation').select('*').order('created_at', { ascending: false }),
     supabase.from('ml_models').select('*').order('display_order', { ascending: true }),
     supabase.from('llm_projects').select('*').order('display_order', { ascending: true }),
+    supabase.from('github_content').select('github_url, repo_name, content_text').order('indexed_at', { ascending: false }),
   ]);
+
+  // Create a map of GitHub URLs to their README content
+  const githubContentMap = new Map<string, string>();
+  for (const gc of githubContentRes.data || []) {
+    if (gc.github_url && gc.content_text) {
+      githubContentMap.set(gc.github_url, gc.content_text);
+    }
+  }
 
   return {
     profile: profileRes.data,
@@ -233,6 +242,7 @@ async function fetchPortfolioData(supabase: any) {
     documentation: docsRes.data || [],
     mlModels: mlModelsRes.data || [],
     llmProjects: llmProjectsRes.data || [],
+    githubContentMap,
   };
 }
 
@@ -259,11 +269,28 @@ function generateSystemPrompt(data: any): string {
     return `- ${exp.title} at ${exp.company} (${exp.start_date} - ${endDate})${exp.location ? ` - ${exp.location}` : ''}\n  ${exp.description?.join('\n  ') || ''}${exp.skills ? `\n  Skills: ${exp.skills.join(', ')}` : ''}`;
   }).join('\n\n');
 
-  // Format projects by category
+  // Format projects by category with GitHub README content
+  const githubContentMap = data.githubContentMap || new Map();
   const projectsByCategory = data.projects.reduce((acc: any, proj: any) => {
     const cat = proj.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(`- ${proj.title}: ${proj.description}${proj.technologies ? `\n  Technologies: ${proj.technologies.join(', ')}` : ''}${proj.github_url ? `\n  GitHub: ${proj.github_url}` : ''}`);
+    
+    // Get GitHub README content if available
+    const readmeContent = proj.github_url ? githubContentMap.get(proj.github_url) : null;
+    const truncatedReadme = readmeContent ? readmeContent.slice(0, 1500) + (readmeContent.length > 1500 ? '...' : '') : null;
+    
+    let projectEntry = `- ${proj.title}: ${proj.description}`;
+    if (proj.technologies?.length) {
+      projectEntry += `\n  Technologies: ${proj.technologies.join(', ')}`;
+    }
+    if (proj.github_url) {
+      projectEntry += `\n  GitHub: ${proj.github_url}`;
+    }
+    if (truncatedReadme) {
+      projectEntry += `\n  **Detailed README:**\n  ${truncatedReadme}`;
+    }
+    
+    acc[cat].push(projectEntry);
     return acc;
   }, {});
 
