@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Download, Printer, FileText, ExternalLink, ChevronUp } from "lucide-react";
+import { ArrowLeft, Download, Printer, FileText, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -359,25 +359,14 @@ const TechnicalDocumentation = () => {
             {/* Quick Actions */}
             <Card className="mb-8 no-print">
               <CardContent className="py-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4" />
                     <span>{markdown.split("\n").length.toLocaleString()} lines</span>
-                    <span className="mx-2">•</span>
-                    <span>{markdown.length.toLocaleString()} characters</span>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <a
-                        href="https://github.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="gap-2"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        View on GitHub
-                      </a>
-                    </Button>
+                  <span className="hidden sm:inline">•</span>
+                  <div className="flex items-center gap-2">
+                    <span>{markdown.length.toLocaleString()} characters</span>
                   </div>
                 </div>
               </CardContent>
