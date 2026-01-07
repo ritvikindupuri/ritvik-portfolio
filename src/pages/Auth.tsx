@@ -160,8 +160,10 @@ export default function Auth() {
     }
   };
 
-  const handleGuestContinue = () => {
-    navigate("/");
+  const handleGuestContinue = async () => {
+    // Ensure guest navigation never carries an authenticated owner session.
+    await supabase.auth.signOut();
+    navigate("/", { replace: true, state: { skipWelcomeOnce: true } });
   };
 
   if (!showOwnerAuth) {

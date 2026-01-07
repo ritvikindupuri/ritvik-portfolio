@@ -117,9 +117,12 @@ const Index = () => {
   // Don't auto-close dialog - let user explicitly choose
 
 
-  const handleAccessGranted = (ownerStatus: boolean) => {
-    // When guest continues, ownerStatus = false, chatbot will be visible
-    // When owner signs in (via Auth page), ownerStatus will be checked via checkUserRole
+  const handleAccessGranted = async (ownerStatus: boolean) => {
+    // If someone chooses guest, ensure they never keep an existing owner session.
+    if (!ownerStatus) {
+      await supabase.auth.signOut();
+    }
+
     setIsOwner(ownerStatus);
     setShowAccessDialog(false);
   };
@@ -256,10 +259,10 @@ const Index = () => {
 
           {/* Interactive Security Architecture */}
           <SectionReveal direction="up" delay={0.1}>
-            <section id="security-section" className="py-12 px-4 relative overflow-hidden">
+            <section id="security-section" className="py-14 px-4 sm:px-6 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-              <div className="container mx-auto max-w-5xl relative z-10">
+              <div className="container mx-auto max-w-7xl relative z-10">
                 <InteractiveSecurityArchitecture />
               </div>
             </section>
