@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useState, useRef } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Skill {
@@ -33,14 +33,12 @@ const getBrandColor = (skillName: string): string => {
   if (name.includes('sqlmap')) return 'bg-amber-600';
   if (name.includes('elastic') || name.includes('kibana')) return 'bg-pink-500';
   
-  // Fallback colors based on index
   const fallbackColors = [
     'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500',
     'bg-teal-500', 'bg-cyan-500', 'bg-blue-500', 'bg-indigo-500',
     'bg-purple-500', 'bg-pink-500', 'bg-rose-500', 'bg-emerald-500'
   ];
   
-  // Use a hash of the name to pick a consistent color
   const hash = name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
   return fallbackColors[hash % fallbackColors.length];
 };
@@ -54,130 +52,88 @@ interface KeycapProps {
 }
 
 const Keycap = ({ skill, index, row, col, onClick }: KeycapProps) => {
-  const delay = index * 0.06;
+  const delay = index * 0.05;
   const brandColor = getBrandColor(skill.name);
-  
-  // Different heights for 3D effect - creates the floating look
   const zOffset = (row + col) % 3;
-  const yOffset = zOffset * -4;
   
   return (
     <motion.button
       onClick={onClick}
       className="relative focus:outline-none group"
-      initial={{ 
-        opacity: 0, 
-        scale: 0,
-        rotateX: -30,
-        rotateY: 20,
-        y: 30,
-      }}
-      animate={{ 
-        opacity: 1, 
-        scale: 1,
-        rotateX: 0,
-        rotateY: 0,
-        y: 0,
-      }}
+      initial={{ opacity: 0, scale: 0, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{
-        duration: 0.5,
+        duration: 0.4,
         delay,
         type: "spring",
-        stiffness: 150,
-        damping: 15,
+        stiffness: 200,
+        damping: 20,
       }}
       whileHover={{
-        y: yOffset - 8,
-        scale: 1.08,
+        y: -6,
+        scale: 1.1,
         zIndex: 50,
-        transition: { duration: 0.2 },
+        transition: { duration: 0.15 },
       }}
-      whileTap={{ scale: 0.95, y: yOffset + 2 }}
+      whileTap={{ scale: 0.92, y: 2 }}
       style={{ zIndex: 10 + zOffset }}
     >
-      {/* Floating animation */}
       <motion.div
         animate={{
-          y: [yOffset, yOffset - 6, yOffset],
-          rotateZ: [-1, 1, -1],
+          y: [0, -3, 0],
         }}
         transition={{
-          duration: 3 + (index % 4) * 0.5,
+          duration: 2.5 + (index % 3) * 0.4,
           repeat: Infinity,
           repeatType: "reverse",
-          delay: index * 0.1,
+          delay: index * 0.08,
           ease: "easeInOut",
         }}
-        style={{
-          transformStyle: "preserve-3d",
-        }}
       >
-        {/* 3D Keycap container */}
-        <div 
-          className="relative"
-          style={{
-            transformStyle: "preserve-3d",
-            transform: "perspective(800px) rotateX(10deg)",
-          }}
-        >
-          {/* Keycap top face */}
+        {/* 3D Keycap */}
+        <div className="relative" style={{ transformStyle: "preserve-3d" }}>
           <div 
             className={`
-              relative w-14 h-14 md:w-16 md:h-16
+              relative w-11 h-11 sm:w-12 sm:h-12
               ${brandColor}
-              rounded-lg cursor-pointer
-              shadow-xl
+              rounded-md cursor-pointer
+              shadow-lg
               transition-shadow duration-200
-              group-hover:shadow-2xl group-hover:shadow-white/20
+              group-hover:shadow-xl group-hover:shadow-white/15
             `}
           >
-            {/* Glossy highlight */}
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/40 via-white/10 to-transparent" />
-            
-            {/* Inner face with icon */}
-            <div className="absolute inset-1.5 rounded-md bg-gradient-to-br from-white/20 to-black/20 flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 rounded-md bg-gradient-to-br from-white/35 via-white/10 to-transparent" />
+            <div className="absolute inset-1 rounded bg-gradient-to-br from-white/15 to-black/20 flex items-center justify-center overflow-hidden">
               {skill.icon ? (
                 <img 
                   src={skill.icon} 
                   alt={skill.name}
-                  className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-lg"
-                  style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+                  className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow-md"
                 />
               ) : (
-                <span className="text-white font-bold text-sm drop-shadow-lg">
+                <span className="text-white font-bold text-xs drop-shadow-md">
                   {skill.name.slice(0, 2).toUpperCase()}
                 </span>
               )}
             </div>
-            
-            {/* Bottom edge for 3D depth */}
             <div 
-              className={`absolute -bottom-2 left-1 right-1 h-2 ${brandColor} rounded-b-lg opacity-60`}
-              style={{ 
-                filter: 'brightness(0.5)',
-                transform: 'perspective(100px) rotateX(-45deg)',
-              }}
+              className={`absolute -bottom-1.5 left-0.5 right-0.5 h-1.5 ${brandColor} rounded-b opacity-50`}
+              style={{ filter: 'brightness(0.5)' }}
             />
           </div>
-          
-          {/* Shadow on ground */}
-          <div 
-            className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-12 h-3 bg-black/30 rounded-full blur-md"
-          />
         </div>
         
         {/* Tooltip */}
         <div className="
-          absolute -bottom-10 left-1/2 -translate-x-1/2
+          absolute -bottom-8 left-1/2 -translate-x-1/2
           opacity-0 group-hover:opacity-100
-          transition-opacity duration-200
+          transition-opacity duration-150
           whitespace-nowrap
           bg-background/95 backdrop-blur-sm
-          text-foreground text-xs font-medium
-          px-2.5 py-1.5 rounded-md
-          shadow-xl border border-border/50
-          z-50
-          pointer-events-none
+          text-foreground text-[10px] font-medium
+          px-2 py-1 rounded
+          shadow-lg border border-border/50
+          z-50 pointer-events-none
         ">
           {skill.name}
         </div>
@@ -189,6 +145,16 @@ const Keycap = ({ skill, index, row, col, onClick }: KeycapProps) => {
 export const FloatingSkillsKeyboard = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Mouse position for parallax
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  
+  // Smooth spring animation for mouse movement
+  const springConfig = { damping: 25, stiffness: 150 };
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [8, -8]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-12, 12]), springConfig);
 
   useEffect(() => {
     const fetchSecuritySkills = async () => {
@@ -212,6 +178,26 @@ export const FloatingSkillsKeyboard = () => {
 
     fetchSecuritySkills();
   }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      // Normalize to -0.5 to 0.5 based on distance from center
+      const normalizedX = (e.clientX - centerX) / window.innerWidth;
+      const normalizedY = (e.clientY - centerY) / window.innerHeight;
+      
+      mouseX.set(normalizedX);
+      mouseY.set(normalizedY);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
 
   const handleKeycapClick = (skillId: string) => {
     const skillsSection = document.getElementById('skills-section');
@@ -244,40 +230,28 @@ export const FloatingSkillsKeyboard = () => {
     return null;
   }
 
-  // Calculate grid layout - aim for roughly 4 columns like a numpad
   const cols = 4;
-  const rows = Math.ceil(skills.length / cols);
 
   return (
-    <motion.div 
-      className="relative"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.5, duration: 0.5 }}
-      style={{
-        perspective: "1000px",
-      }}
-    >
-      {/* Keyboard container with 3D perspective */}
+    <div ref={containerRef} className="relative" style={{ perspective: "1000px" }}>
       <motion.div
         className="relative"
-        initial={{ rotateX: 30, rotateY: -20, rotateZ: 5 }}
-        animate={{ rotateX: 15, rotateY: -10, rotateZ: 3 }}
-        transition={{ duration: 1, delay: 0.3 }}
         style={{
+          rotateX,
+          rotateY,
           transformStyle: "preserve-3d",
         }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.4, duration: 0.6 }}
       >
-        {/* Ambient glow behind keyboard */}
-        <div className="absolute inset-0 -m-8 bg-gradient-radial from-primary/30 via-cyber-purple/20 to-transparent rounded-full blur-3xl opacity-60" />
+        {/* Ambient glow */}
+        <div className="absolute inset-0 -m-6 bg-gradient-radial from-primary/20 via-cyber-purple/10 to-transparent rounded-full blur-2xl opacity-50" />
         
         {/* Keyboard grid */}
         <div 
-          className="relative grid gap-3 md:gap-4"
-          style={{
-            gridTemplateColumns: `repeat(${cols}, 1fr)`,
-            transformStyle: "preserve-3d",
-          }}
+          className="relative grid gap-2"
+          style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
         >
           {skills.map((skill, index) => {
             const row = Math.floor(index / cols);
@@ -296,7 +270,7 @@ export const FloatingSkillsKeyboard = () => {
           })}
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
 

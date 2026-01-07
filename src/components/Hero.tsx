@@ -378,190 +378,125 @@ export const Hero = ({ isOwner }: HeroProps) => {
       <NeuralNetworkBackground />
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-6 py-20 text-center">
+      <div className="relative z-10 container mx-auto px-6 py-20">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="space-y-8"
+          className="space-y-10"
         >
-          {/* Profile Picture */}
-          <div className="relative inline-block group">
-            <div className="w-56 h-56 mx-auto rounded-full overflow-hidden border-2 border-primary/50 bg-secondary/30 flex items-center justify-center relative">
-              {/* Animated glow ring */}
-              <div className="absolute inset-0 rounded-full animate-neural-pulse" />
-              {profileImage ? (
-                <img src={profileImage} alt="Profile" className="w-full h-full object-cover relative z-10" />
-              ) : (
-                <Camera className="w-20 h-20 text-muted-foreground relative z-10" />
-              )}
-            </div>
-            {isOwner && (
-              <label className="absolute inset-0 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-full h-full rounded-full bg-black/60 flex items-center justify-center">
-                  <Camera className="w-10 h-10 text-foreground" />
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
+          {/* Hero Title - Centered */}
+          <motion.h1
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 1 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold font-sans text-center"
+          >
+            <TypewriterText />
+          </motion.h1>
 
-          {/* Image Crop Dialog */}
-          <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Crop Profile Picture</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="relative w-full h-96 bg-black rounded-lg overflow-hidden">
-                  {tempImage && (
-                    <Cropper
-                      image={tempImage}
-                      crop={crop}
-                      zoom={zoom}
-                      aspect={1}
-                      cropShape="round"
-                      showGrid={false}
-                      onCropChange={setCrop}
-                      onZoomChange={setZoom}
-                      onCropComplete={onCropComplete}
-                    />
+          {/* Main Content: Left Info + Right Keyboard */}
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16">
+            {/* Left Column - Profile & Info */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="flex flex-col items-center space-y-6"
+            >
+              {/* Profile Picture */}
+              <div className="relative inline-block group">
+                <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-2 border-primary/50 bg-secondary/30 flex items-center justify-center relative">
+                  <div className="absolute inset-0 rounded-full animate-neural-pulse" />
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover relative z-10" />
+                  ) : (
+                    <Camera className="w-16 h-16 text-muted-foreground relative z-10" />
                   )}
                 </div>
-                <div className="flex items-center gap-4">
-                  <ZoomOut className="w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="range"
-                    min={1}
-                    max={3}
-                    step={0.1}
-                    value={zoom}
-                    onChange={(e) => setZoom(Number(e.target.value))}
-                    className="flex-1"
-                  />
-                  <ZoomIn className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setShowCropDialog(false);
-                      setTempImage("");
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSaveCroppedImage}>
-                    Save Profile Picture
-                  </Button>
-                </div>
+                {isOwner && (
+                  <label className="absolute inset-0 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-full h-full rounded-full bg-black/60 flex items-center justify-center">
+                      <Camera className="w-8 h-8 text-foreground" />
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
-            </DialogContent>
-          </Dialog>
 
-          {/* Name and Keyboard Side by Side */}
-          <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
-            {/* Left side - Name and Details */}
-            <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-              {/* Animated Greeting with Typewriter Effect */}
-              <motion.h1
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3, duration: 1 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-bold font-sans"
-              >
-                <TypewriterText />
-              </motion.h1>
-
-              {/* Details */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6, duration: 0.8 }}
-                className="space-y-4"
-              >
-                <div className="flex items-center justify-center lg:justify-start text-lg md:text-xl">
-                  <div className="flex items-center gap-3 px-6 py-3 bg-card/30 backdrop-blur-sm rounded-xl border border-primary/20">
-                    <span className="font-mono font-medium">Cybersecurity Major</span>
-                  </div>
+              {/* Info Cards */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center gap-2 px-5 py-2.5 bg-card/40 backdrop-blur-sm rounded-lg border border-primary/20">
+                  <span className="font-mono font-medium text-sm md:text-base">Cybersecurity Major</span>
                 </div>
                 
-                <div className="flex flex-col items-center lg:items-start gap-4 text-lg">
-                  <div className="flex flex-col md:flex-row items-center gap-4 px-6 py-4 bg-card/30 backdrop-blur-sm rounded-xl border border-primary/20">
-                    <img 
-                      src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
-                      alt="Purdue University" 
-                      className="h-10"
-                    />
-                    <div className="flex flex-col md:flex-row items-center gap-2">
-                      <span className="font-semibold text-lg">Purdue University</span>
-                      <span className="text-primary hidden md:inline">•</span>
-                      <span className="font-mono text-primary">2024-2028</span>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-3 px-5 py-2.5 bg-card/40 backdrop-blur-sm rounded-lg border border-primary/20">
+                  <img 
+                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
+                    alt="Purdue University" 
+                    className="h-7"
+                  />
+                  <span className="font-semibold text-sm md:text-base">Purdue University</span>
+                  <span className="text-primary text-sm">•</span>
+                  <span className="font-mono text-primary text-sm">2024-2028</span>
                 </div>
-              </motion.div>
-            </div>
+              </div>
 
-            {/* Right side - Floating Skills Keyboard */}
+              {/* Social Links */}
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://github.com/ritvikindupuri"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-2 px-4 py-2 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300"
+                >
+                  <Github className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="font-medium text-xs">GitHub</span>
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/ritvik-indupuri-4b6037288/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-2 px-4 py-2 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300"
+                >
+                  <Linkedin className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="font-medium text-xs">LinkedIn</span>
+                </a>
+              </div>
+            </motion.div>
+
+            {/* Right Column - Skills Keyboard */}
             <motion.div
-              initial={{ opacity: 0, x: 50, rotateY: -20 }}
-              animate={{ opacity: 1, x: 0, rotateY: 0 }}
-              transition={{ delay: 0.5, duration: 1, type: "spring" }}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
               className="hidden md:block"
             >
               <FloatingSkillsKeyboard />
             </motion.div>
           </div>
 
-          {/* Mobile Keyboard (shown below on small screens) */}
+          {/* Mobile Keyboard */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.75, duration: 0.8 }}
-            className="md:hidden w-full max-w-sm mx-auto mt-6"
+            transition={{ delay: 0.7, duration: 0.8 }}
+            className="md:hidden flex justify-center"
           >
             <FloatingSkillsKeyboard />
           </motion.div>
 
-          {/* Social Links & Resume */}
+          {/* Resume Section - Clean separation */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-4 pt-6"
-          >
-            <a
-              href="https://github.com/ritvikindupuri"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center gap-2 px-6 py-3 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300 hover:shadow-elegant"
-            >
-              <Github className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              <span className="font-medium text-sm">GitHub</span>
-            </a>
-            <a
-              href="https://www.linkedin.com/in/ritvik-indupuri-4b6037288/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center gap-2 px-6 py-3 bg-card/50 hover:bg-card border border-border hover:border-primary/50 rounded-full transition-all duration-300 hover:shadow-elegant"
-            >
-              <Linkedin className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              <span className="font-medium text-sm">LinkedIn</span>
-            </a>
-          </motion.div>
-
-          {/* Resume Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.95, duration: 0.8 }}
-            className="pt-4"
+            transition={{ delay: 0.85, duration: 0.8 }}
+            className="flex justify-center"
           >
             <ResumeManager isOwner={isOwner} />
           </motion.div>
@@ -571,8 +506,8 @@ export const Hero = ({ isOwner }: HeroProps) => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1, duration: 0.8 }}
-              className="pt-4"
+              transition={{ delay: 0.95, duration: 0.8 }}
+              className="flex justify-center"
             >
               <Button 
                 onClick={() => navigate('/dashboard')}
@@ -585,12 +520,12 @@ export const Hero = ({ isOwner }: HeroProps) => {
             </motion.div>
           )}
 
-          {/* Scroll Indicator - Clickable */}
+          {/* Scroll Indicator */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.8 }}
-            className="pt-12 text-center"
+            transition={{ delay: 1.1, duration: 0.8 }}
+            className="text-center pt-4"
           >
             <button
               onClick={() => {
@@ -610,6 +545,59 @@ export const Hero = ({ isOwner }: HeroProps) => {
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Image Crop Dialog */}
+      <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Crop Profile Picture</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative w-full h-96 bg-black rounded-lg overflow-hidden">
+              {tempImage && (
+                <Cropper
+                  image={tempImage}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  cropShape="round"
+                  showGrid={false}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={onCropComplete}
+                />
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              <ZoomOut className="w-5 h-5 text-muted-foreground" />
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="flex-1"
+              />
+              <ZoomIn className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowCropDialog(false);
+                  setTempImage("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveCroppedImage}>
+                Save Profile Picture
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
