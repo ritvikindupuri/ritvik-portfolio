@@ -1,8 +1,29 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+async function sendEmail(to: string[], subject: string, html: string) {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "Portfolio Weekly Digest <onboarding@resend.dev>",
+      to,
+      subject,
+      html,
+    }),
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to send email: ${error}`);
+  }
+  
+  return response.json();
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -255,17 +276,13 @@ const handler = async (req: Request): Promise<Response> => {
     const emailHtml = generateEmailHtml(digestData);
 
     const ownerEmail = "ritvik.indupuri@gmail.com";
-    const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Portfolio Weekly Digest <onboarding@resend.dev>",
-      to: [ownerEmail],
-      subject: `Portfolio Weekly Digest: ${digestData.dateRange.start} - ${digestData.dateRange.end}`,
-      html: emailHtml,
-    });
+    const emailData = await sendEmail(
+      [ownerEmail],
+      `Portfolio Weekly Digest: ${digestData.dateRange.start} - ${digestData.dateRange.end}`,
+      emailHtml
+    );
 
-    if (emailError) {
-      console.error("Error sending email:", emailError);
-      throw emailError;
-    }
+    console.log("Weekly digest sent successfully:", emailData);
 
     console.log("Weekly digest sent successfully:", emailData);
 
@@ -574,8 +591,7 @@ function generateEmailHtml(data: WeeklyDigestData): string {
 
       </div>
     </body>
-    </html>
   `;
 }
 
-serve(handler);
+Deno.serve(handler);
