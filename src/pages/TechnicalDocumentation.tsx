@@ -56,6 +56,19 @@ const TechnicalDocumentation = () => {
     }, 500);
   };
 
+  const handleDownloadMarkdown = () => {
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'TECHNICAL_DOCUMENTATION.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Documentation downloaded as Markdown");
+  };
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -201,6 +214,10 @@ const TechnicalDocumentation = () => {
             </Button>
           </Link>
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownloadMarkdown} className="gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Download .md</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
               <Printer className="h-4 w-4" />
               <span className="hidden sm:inline">Print</span>
