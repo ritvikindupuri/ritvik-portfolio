@@ -2226,22 +2226,69 @@ The IP Block List system works alongside the Honeypot Account System to automati
 - **Manual Block Input**: Add IPs manually with custom reason
 - **Real-time Updates**: Changes sync immediately via Supabase Realtime
 
-### How IP Blocking Works
+### Automatic IP Blocking Workflow
 
-1. **Detection via Honeypots**: When an attacker attempts to login with a honeypot email (e.g., `admin@portfolio.dev`), the attempt is logged and a trigger is recorded.
+The following diagram illustrates the complete flow from honeypot trigger to automatic IP blocking:
 
-2. **Automatic Threshold**: After **3 honeypot triggers** from the same IP address, the system automatically blocks that IP.
+```mermaid
+flowchart TD
+    A[Login Attempt] --> B{Is IP Already Blocked?}
+    B -->|Yes| C[❌ Reject: Access Denied]
+    B -->|No| D{Is Email a Honeypot?}
+    D -->|No| E[Continue Normal Auth Flow]
+    D -->|Yes| F[Log Trigger to honeypot_triggers]
+    F --> G[Increment honeypot.times_triggered]
+    G --> H[Geolocate IP Address]
+    H --> I[Update HoneypotMiniMap]
+    I --> J{Count Triggers from this IP}
+    J -->|< 3 triggers| K[📧 Send Honeypot Alert Email]
+    K --> L[Return Generic Error]
+    J -->|≥ 3 triggers| M[🚫 Auto-Block IP for 24 Hours]
+    M --> N[Insert into blocked_ips table]
+    N --> O[📧 Send IP Blocked Alert Email]
+    O --> L
 
-3. **Temporary Block**: Blocked IPs are blocked for **24 hours** by default. After expiration, the block is automatically lifted.
+    style A fill:#1a1a2e,stroke:#00d4ff,color:#fff
+    style C fill:#ff4757,stroke:#ff4757,color:#fff
+    style M fill:#ff4757,stroke:#ff4757,color:#fff
+    style K fill:#ffa502,stroke:#ffa502,color:#000
+    style O fill:#ffa502,stroke:#ffa502,color:#000
+    style I fill:#2ed573,stroke:#2ed573,color:#000
+```
 
-4. **Login Rejection**: Any login attempt from a blocked IP is immediately rejected with "Access denied" before authentication even occurs.
+**Workflow Steps:**
 
-5. **Email Notification**: The owner receives an email alert when an IP is auto-blocked, including:
-   - The blocked IP address
-   - Number of honeypot triggers
-   - The honeypot email that triggered the block
-   - Block expiration time
-   - Geographic location of the attacker
+1. **Login Attempt Received**: The `log-auth-attempt` edge function intercepts every login attempt before authentication.
+
+2. **IP Block Check**: First, the system checks if the source IP is in the `blocked_ips` table and active. If blocked, the request is immediately rejected.
+
+3. **Honeypot Detection**: The email is checked against the `honeypot_accounts` table to see if it's a decoy account.
+
+4. **Trigger Logging**: If a honeypot match is found:
+   - A record is inserted into `honeypot_triggers` with IP address and user agent
+   - The honeypot's `times_triggered` counter is incremented
+   - The IP is geolocated and displayed on the HoneypotMiniMap
+
+5. **Threshold Evaluation**: The system counts how many times this specific IP has triggered any honeypot:
+   - **Less than 3 triggers**: An alert email is sent, but access is not blocked
+   - **3 or more triggers**: The IP is automatically added to `blocked_ips` with a 24-hour expiration
+
+6. **Automatic Blocking**:
+   - IP is inserted into `blocked_ips` with `reason: "Auto-blocked: X honeypot triggers"`
+   - `expires_at` is set to 24 hours from now
+   - `honeypot_triggers` count is stored for reference
+   - An email notification is sent to the owner
+
+7. **Generic Response**: The attacker always receives "Invalid login credentials" - never revealing they triggered a honeypot or got blocked.
+
+### Block Lifecycle
+
+| Phase | Duration | Status |
+|-------|----------|--------|
+| **Active Block** | 0-24 hours | Login attempts rejected |
+| **Expiration Check** | Hourly via `cleanup-expired-blocks` | Marks expired blocks inactive |
+| **Post-Expiration** | After 24 hours | IP can attempt login again |
+| **Re-trigger** | On next honeypot trigger | Counter continues, may re-block |
 
 ### Database Schema
 
@@ -2368,6 +2415,74 @@ The `GeographicBlockingManager.tsx` component provides:
 - **Action Selection**: Choose between "Block" (immediate rejection) or "Flag" (allow but alert)
 - **Rule Management Table**: Displays all configured rules with toggle switches for activation and notification settings
 - **Delete Functionality**: Remove rules that are no longer needed
+
+### Integration with Honeypot and IP Blocking Systems
+
+The Geographic Blocking system works in concert with the Honeypot and IP Block systems to create a comprehensive, layered defense:
+
+```mermaid
+flowchart LR
+    subgraph Layer1["Layer 1: Geographic Filtering"]
+        A[Login Attempt] --> B{Country Blocked?}
+        B -->|Yes| C[❌ Reject by Country]
+        B -->|No/Flagged| D[Continue to Layer 2]
+    end
+    
+    subgraph Layer2["Layer 2: IP Blocking"]
+        D --> E{IP Blocked?}
+        E -->|Yes| F[❌ Reject by IP]
+        E -->|No| G[Continue to Layer 3]
+    end
+    
+    subgraph Layer3["Layer 3: Honeypot Detection"]
+        G --> H{Honeypot Email?}
+        H -->|Yes| I[Log & Alert]
+        I --> J{3+ Triggers?}
+        J -->|Yes| K[Auto-Block IP]
+        H -->|No| L[✅ Normal Auth]
+    end
+
+    style C fill:#ff4757,color:#fff
+    style F fill:#ff4757,color:#fff
+    style K fill:#ffa502,color:#000
+    style L fill:#2ed573,color:#000
+```
+
+**How the Layers Work Together:**
+
+1. **Geographic Layer (First Check)**: 
+   - Fastest rejection path - stops attacks from entire countries before any processing
+   - Flagged countries still proceed but generate alerts
+   - Reduces load on honeypot and IP blocking systems
+
+2. **IP Block Layer (Second Check)**:
+   - Catches individual bad actors that may use VPNs to bypass geographic blocks
+   - Includes both manually blocked IPs and auto-blocked honeypot offenders
+   - 24-hour auto-blocks provide temporary relief from persistent attackers
+
+3. **Honeypot Layer (Final Detection)**:
+   - Catches sophisticated attackers who bypass geographic and IP blocks
+   - Feeds the IP Block system with new threat intelligence
+   - Provides forensic data via the HoneypotMiniMap for pattern analysis
+
+**Cross-System Intelligence Sharing:**
+
+| Source System | Data Generated | Consuming System |
+|---------------|----------------|------------------|
+| Geographic Blocking | Country-based threat patterns | Threat Detector analytics |
+| Honeypot Accounts | IP addresses of attackers | IP Block List (auto-block) |
+| IP Block List | Blocked attacker IPs | Login rejection layer |
+| HoneypotMiniMap | Geographic visualization | Owner situational awareness |
+
+**Example Attack Scenario:**
+
+1. Attacker from Russia (RU) attempts login with `admin@portfolio.dev`
+2. **Layer 1**: If RU is set to "Block" → Immediate rejection
+3. **Layer 1**: If RU is set to "Flag" → Alert sent, continues to Layer 2
+4. **Layer 2**: If attacker's IP is already blocked → Rejection
+5. **Layer 3**: Email matches honeypot → Trigger logged, location mapped
+6. After 3 triggers from same IP → Auto-blocked for 24 hours
+7. Future attempts rejected at Layer 2 (IP Block) before reaching Layer 3
 
 With security systems in place to block threats, the portfolio keeps the owner informed through a comprehensive automated email notification system.
 
