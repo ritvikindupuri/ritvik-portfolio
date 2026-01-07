@@ -202,7 +202,7 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
             <img 
               src={skill.icon} 
               alt={skill.name}
-              className="w-6 h-6 sm:w-7 sm:h-7 object-contain relative z-10 opacity-90 group-hover:opacity-100 transition-opacity"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain relative z-10 opacity-90 group-hover:opacity-100 transition-opacity"
               style={{ filter: "drop-shadow(0 1px 2px hsl(230 25% 4% / 0.5))" }}
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
