@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { HoneypotMiniMap } from "@/components/HoneypotMiniMap";
 
 interface HoneypotAccount {
   id: string;
@@ -160,6 +161,13 @@ export const HoneypotManager = () => {
 
   const totalTriggers = accounts.reduce((sum, a) => sum + a.times_triggered, 0);
   const activeAccounts = accounts.filter(a => a.is_active).length;
+  const recentTriggerIps = Array.from(
+    new Set(
+      triggers
+        .map((t) => t.ip_address)
+        .filter((ip): ip is string => Boolean(ip) && ip !== "unknown")
+    )
+  ).slice(0, 25);
 
   if (loading) {
     return (
@@ -198,6 +206,12 @@ export const HoneypotManager = () => {
             <div className="text-xs text-muted-foreground">Total Triggers</div>
           </div>
         </div>
+
+        {recentTriggerIps.length > 0 && (
+          <div className="p-3 bg-secondary/20 rounded-lg">
+            <HoneypotMiniMap ipAddresses={recentTriggerIps} />
+          </div>
+        )}
 
         {/* Add New Honeypot */}
         <div className="space-y-3 p-3 bg-secondary/20 rounded-lg">
