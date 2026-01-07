@@ -48,6 +48,11 @@ This documentation covers the complete system architecture, data flows, implemen
 - [IP Block List System](#ip-block-list-system)
 - [Geographic Blocking Rules System](#geographic-blocking-rules-system)
 
+### Security Architecture & Threat Mitigation
+- [Security Architecture Overview](#security-architecture-overview)
+- [Identified Threats and Mitigation Strategies](#identified-threats-and-mitigation-strategies)
+- [Threat Model Summary](#threat-model-summary)
+
 ### Notifications & Communication
 - [Automated Email System](#automated-email-system)
 
@@ -2488,7 +2493,369 @@ With security systems in place to block threats, the portfolio keeps the owner i
 
 ---
 
-## Automated Email System
+## Security Architecture Overview
+
+This section provides a comprehensive overview of the security architecture and hardening process implemented in the portfolio web application and integrated AI chatbot. The design follows enterprise-level cybersecurity practices, including defense-in-depth, zero-trust principles, and secure-by-design methodology (OWASP Foundation, 2025).
+
+### Core Security Components
+
+The portfolio application consists of three core components that work together under Supabase's managed infrastructure:
+
+| Component | Security Responsibilities |
+|-----------|--------------------------|
+| **Frontend (React + Supabase Auth)** | User sessions, secure authentication, input validation |
+| **Backend (Supabase)** | Row-Level Security (RLS), Role-Based Access Control (RBAC), database triggers |
+| **AI Chatbot** | Data isolation, sanitization, request throttling via DOMPurify |
+
+### Security Architecture Diagram
+
+```mermaid
+flowchart TB
+    subgraph UserLayer["User Interaction Layer"]
+        CB[Chatbot Component]
+        IV[Input Validation]
+        PID[Prompt Injection Detection]
+        RL[Rate Limiting - 30/hr]
+    end
+    
+    subgraph SanitizationLayer["Sanitization Layer"]
+        DP[DOMPurify Sanitization]
+        SMR[Safe Message Rendering]
+    end
+    
+    subgraph AccessControlLayer["Access Control Layer"]
+        RBAC[Role-Based Access Control]
+        VM[Viewer Mode - Read Only]
+        OM[Owner Mode - Verified Email Only]
+    end
+    
+    subgraph AuthLayer["Authentication Layer"]
+        SA[Supabase Auth Service]
+        EP[Encrypted Authentication]
+        PP[Password Policies]
+        PSH[Password Protection + Session Handling]
+    end
+    
+    subgraph DatabaseLayer["Database Layer"]
+        RLS[Row-Level Security]
+        AL[Audit Logging]
+        CORS[CORS & Security Headers]
+        XFO[X-Frame-Options]
+    end
+    
+    UserLayer --> SanitizationLayer
+    SanitizationLayer --> AccessControlLayer
+    AccessControlLayer --> AuthLayer
+    AuthLayer --> DatabaseLayer
+
+    style UserLayer fill:#1a1a2e,stroke:#00d4ff
+    style SanitizationLayer fill:#1a1a2e,stroke:#ffa502
+    style AccessControlLayer fill:#1a1a2e,stroke:#2ed573
+    style AuthLayer fill:#1a1a2e,stroke:#ff4757
+    style DatabaseLayer fill:#1a1a2e,stroke:#a855f7
+```
+
+**Figure 3: Portfolio Security Architecture Diagram** - This diagram illustrates the layered security design across the portfolio's architecture. It shows the progression from user interaction to authentication and database access, highlighting how security policies, validation layers, and sanitization steps prevent unauthorized access and data leaks.
+
+---
+
+## Identified Threats and Mitigation Strategies
+
+This section outlines each identified threat, its associated risk, and the implemented mitigation strategy. All solutions align with current OWASP Top 10 recommendations.
+
+### 1. Unauthorized Owner Access
+
+**Threat**: The application could allow anyone with console access to gain owner privileges if access flags were stored client-side.
+
+**Mitigation**: Implemented Supabase JWT-based authentication with server-enforced RBAC. Owner privileges are verified via `has_role(auth.uid(), 'owner')` and assigned exclusively to the verified email address.
+
+```typescript
+// Server-side role verification in user_roles table
+const checkUserRole = async (userId: string) => {
+  const { data } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'owner')
+    .maybeSingle();
+  
+  return !!data; // Only true if owner role exists
+};
+```
+
+**Code Location**: `src/pages/Index.tsx` - `checkUserRole()` function
+
+### 2. Cross-Site Scripting (XSS)
+
+**Threat**: The chatbot could display unsanitized HTML, allowing potential script execution.
+
+**Mitigation**: Integrated DOMPurify to sanitize all chatbot messages before rendering. Only safe HTML elements (bold, italic, paragraph) are permitted.
+
+```typescript
+import DOMPurify from 'dompurify';
+
+// Sanitize all AI responses before rendering
+const sanitizedHtml = DOMPurify.sanitize(response, {
+  ALLOWED_TAGS: ['p', 'strong', 'em', 'br', 'ul', 'li'],
+  ALLOWED_ATTR: []
+});
+```
+
+**Code Location**: `src/components/PortfolioChatbot.tsx`
+
+### 3. Weak Password Protection
+
+**Threat**: Original password policy allowed short or reused credentials.
+
+**Mitigation**: Enforced a minimum of eight characters with uppercase, lowercase, numeric, and special character requirements. Enabled Supabase's Leaked Password Protection to reject compromised passwords.
+
+```typescript
+// Password validation schema
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Must contain uppercase letter")
+  .regex(/[a-z]/, "Must contain lowercase letter")
+  .regex(/[0-9]/, "Must contain number")
+  .regex(/[^A-Za-z0-9]/, "Must contain special character");
+```
+
+### 4. Rate Limiting and Abuse Prevention
+
+**Threat**: Without rate limits, APIs were vulnerable to brute-force or spam attacks.
+
+**Mitigation**: Added IP-based rate limiting through Supabase edge functions:
+
+| Endpoint | Rate Limit | Window |
+|----------|------------|--------|
+| Chatbot API | 30 requests | Per hour per IP |
+| Contact Form | 5 requests | Per hour per IP |
+| Login Attempts | Auto-block after 3 honeypot triggers | 24 hours |
+
+```typescript
+// Rate limiting implementation in edge functions
+const rateLimitKey = `ratelimit:${ip}:${endpoint}`;
+const currentCount = await redis.incr(rateLimitKey);
+if (currentCount === 1) {
+  await redis.expire(rateLimitKey, 3600); // 1 hour window
+}
+if (currentCount > limit) {
+  return new Response('Rate limit exceeded', { status: 429 });
+}
+```
+
+**Code Location**: `supabase/functions/portfolio-chatbot/index.ts`
+
+### 5. Prompt Injection and Chatbot Manipulation
+
+**Threat**: Malicious users could attempt to override the chatbot's system prompt to expose hidden data.
+
+**Mitigation**: Added prompt injection detection that identifies manipulation phrases and rejects them. The chatbot is limited to querying public portfolio tables only.
+
+```typescript
+// Prompt injection detection patterns
+const injectionPatterns = [
+  /ignore.*previous.*instructions/i,
+  /forget.*system.*prompt/i,
+  /reveal.*hidden/i,
+  /bypass.*security/i,
+  /act as.*admin/i
+];
+
+function detectInjection(input: string): boolean {
+  return injectionPatterns.some(pattern => pattern.test(input));
+}
+```
+
+**Code Location**: `supabase/functions/portfolio-chatbot/index.ts`
+
+### 6. Missing Security Headers and CORS Configuration
+
+**Threat**: Absence of standard browser headers and open CORS policies exposed the application to cross-origin attacks.
+
+**Mitigation**: Implemented strict HTTP security headers and CORS configuration:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `Content-Security-Policy` | `default-src 'self'` | Prevents unauthorized script sources |
+| `X-Frame-Options` | `DENY` | Prevents clickjacking |
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME type sniffing |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Controls referrer information |
+
+```typescript
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://portfolio.lovable.app',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff'
+};
+```
+
+### 7. Session Handling and Race Conditions
+
+**Threat**: Login dialogs could close before Supabase finished validating the user session.
+
+**Mitigation**: Updated session-handling logic to synchronize state loading and user interactions. The dialog now persists until an explicit selection is made.
+
+```typescript
+// Session state synchronization
+const [sessionLoaded, setSessionLoaded] = useState(false);
+
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session);
+    setSessionLoaded(true); // Only set after session is confirmed
+  });
+}, []);
+
+// Dialog only shows after session is loaded
+if (!sessionLoaded) return <LoadingSpinner />;
+```
+
+**Code Location**: `src/pages/Index.tsx`
+
+### 8. Input Validation and Sanitization
+
+**Threat**: Unvalidated user input could lead to injection or data corruption.
+
+**Mitigation**: Added Zod schema validation for all form inputs, ensuring type safety and proper formatting before database entry.
+
+```typescript
+import { z } from 'zod';
+
+const contactFormSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(1, "Name is required")
+    .max(100, "Name must be less than 100 characters"),
+  email: z.string()
+    .trim()
+    .email("Invalid email address")
+    .max(255, "Email must be less than 255 characters"),
+  message: z.string()
+    .trim()
+    .min(1, "Message is required")
+    .max(2000, "Message must be less than 2000 characters"),
+});
+```
+
+**Code Location**: `src/components/Contact.tsx`
+
+### 9. Chatbot Data Exposure
+
+**Threat**: Without scope restrictions, the chatbot could access internal or private data.
+
+**Mitigation**: Limited chatbot queries to read-only public portfolio data. No personal data is accessible, and API calls run under least-privilege policies enforced by RLS.
+
+```sql
+-- RLS policy ensuring chatbot only accesses public data
+CREATE POLICY "Public read access for portfolio content"
+ON public.github_content
+FOR SELECT
+USING (true);
+
+-- No insert/update/delete for anonymous users
+```
+
+### 10. Development Server Exposure
+
+**Threat**: The development server was accessible from external interfaces.
+
+**Mitigation**: Restricted the Vite development host to localhost only.
+
+```typescript
+// vite.config.ts
+export default defineConfig({
+  server: {
+    host: '127.0.0.1', // Only local access
+    port: 8080
+  }
+});
+```
+
+---
+
+## Threat Model Summary
+
+The following diagram presents a one-to-one mapping between identified vulnerabilities and their corresponding mitigations:
+
+```mermaid
+flowchart LR
+    subgraph Threats["Potential Threats"]
+        T1[Weak Passwords]
+        T2[Abuse via Flooding]
+        T3[Prompt Injection]
+        T4[Owner Access Exploit]
+        T5[Cross-Site Scripting]
+    end
+    
+    subgraph Vulnerabilities["Vulnerability Details"]
+        V1[Minimal password rules]
+        V2[Unlimited API calls]
+        V3[Chatbot manipulation]
+        V4[localStorage vulnerability]
+        V5[Unsanitized HTML]
+    end
+    
+    subgraph Fixes["Implemented Fixes"]
+        F1[8+ char complexity + Leaked Password Protection]
+        F2[IP-based Rate Limiting]
+        F3[Input validation + CORS restriction]
+        F4[Server-side JWT + RLS]
+        F5[DOMPurify sanitization]
+    end
+    
+    subgraph Outcomes["Security Outcomes"]
+        O1[Secure authentication baseline]
+        O2[Abuse prevention]
+        O3[No unauthorized data exposure]
+        O4[Owner-only access enforced]
+        O5[No script execution possible]
+    end
+    
+    T1 --> V1 --> F1 --> O1
+    T2 --> V2 --> F2 --> O2
+    T3 --> V3 --> F3 --> O3
+    T4 --> V4 --> F4 --> O4
+    T5 --> V5 --> F5 --> O5
+
+    style T1 fill:#ff4757,color:#fff
+    style T2 fill:#ff4757,color:#fff
+    style T3 fill:#ff4757,color:#fff
+    style T4 fill:#ff4757,color:#fff
+    style T5 fill:#ff4757,color:#fff
+    style F1 fill:#2ed573,color:#000
+    style F2 fill:#2ed573,color:#000
+    style F3 fill:#2ed573,color:#000
+    style F4 fill:#2ed573,color:#000
+    style F5 fill:#2ed573,color:#000
+```
+
+**Figure 4: Threat Model and Mitigations Diagram** - Each node illustrates the potential exploit, the fix implemented, and the outcome. This demonstrates the comprehensive security hardening applied to the portfolio.
+
+### Security Posture Summary
+
+Following the complete security review, the portfolio system conforms to modern enterprise cybersecurity standards:
+
+| Security Domain | Implementation |
+|-----------------|----------------|
+| **Authentication** | Supabase JWTs with server-enforced RBAC |
+| **Authorization** | Row-Level Security (RLS) on all tables |
+| **Input Validation** | Zod schema validation + DOMPurify sanitization |
+| **Data Isolation** | Least-privilege chatbot access |
+| **Infrastructure** | Security headers, CORS, rate limiting |
+| **Monitoring** | MITRE ATT&CK threat detection + honeypots |
+
+### References
+
+- DOMPurify. (2025). DOMPurify: Client-side HTML sanitization library. https://github.com/cure53/DOMPurify
+- Lovable AI Gateway. (2025). Secure AI integration and API gateway documentation. https://lovable.dev/docs
+- Mozilla Developer Network. (2025). HTTP security headers and CORS best practices. https://developer.mozilla.org/
+- OWASP Foundation. (2025). OWASP Top 10: The ten most critical web application security risks. https://owasp.org/www-project-top-ten/
+- Supabase. (2025). Supabase authentication and Row-Level Security (RLS) documentation. https://supabase.com/docs
+- Zod. (2025). Zod schema validation library documentation. https://zod.dev
+
+---
 
 The portfolio includes a comprehensive automated email notification system that keeps the owner informed about visitor engagement, security threats, and weekly analytics. All emails are sent via **Resend** through dedicated edge functions.
 
@@ -3078,6 +3445,14 @@ This section provides a quick reference to all figures in this documentation, or
 | Figure 2 | Known Login Locations | Location management UI with trust controls |
 | Figure 1 | Security & Visitors Map | Interactive 3D globe with dual markers |
 | Figure 2 | Security & Visitors Map | Filterable security and visitor event log |
+| Figure 1 | Honeypot Account System | Honeypot dashboard with mini map and trigger locations |
+
+### Security Architecture & Threat Mitigation
+
+| Figure | Section | Description |
+|--------|---------|-------------|
+| Figure 3 | Security Architecture Overview | Layered security architecture diagram |
+| Figure 4 | Threat Model Summary | Threat to mitigation mapping diagram |
 
 ### AI & Chatbot
 

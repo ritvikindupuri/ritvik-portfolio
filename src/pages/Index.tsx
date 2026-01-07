@@ -20,6 +20,7 @@ import { SectionTransition } from "@/components/SectionTransition";
 import { VisitorTrackerProvider } from "@/components/VisitorTrackerProvider";
 import { OwnerHeader } from "@/components/OwnerHeader";
 import { ResumeSection } from "@/components/ResumeSection";
+import { SecurityOverviewCard } from "@/components/SecurityOverviewCard";
 
 const Index = () => {
   
@@ -210,6 +211,13 @@ const Index = () => {
           />
           
           <Documentation isOwner={isOwner} />
+
+          {/* Security Overview Card */}
+          <section className="py-12 px-4">
+            <div className="container mx-auto max-w-4xl">
+              <SecurityOverviewCard />
+            </div>
+          </section>
           
           <SectionTransition 
             badge="Let's Connect" 
@@ -223,10 +231,27 @@ const Index = () => {
 
           {/* Footer */}
           <footer className="py-8 border-t border-primary/20 bg-gradient-to-b from-background to-card/30">
-            <div className="container mx-auto px-6 text-center">
-              <p className="text-muted-foreground font-medium">
-                Ritvik Indupuri • Purdue University • Cybersecurity '28
-              </p>
+            <div className="container mx-auto px-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <p className="text-muted-foreground font-medium">
+                  Ritvik Indupuri • Purdue University • Cybersecurity '28
+                </p>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <a 
+                    href="/technical-documentation" 
+                    className="hover:text-primary transition-colors flex items-center gap-1"
+                  >
+                    📄 Technical Documentation
+                  </a>
+                  <span className="hidden md:inline">•</span>
+                  <a 
+                    href="/rag-documentation" 
+                    className="hover:text-primary transition-colors flex items-center gap-1"
+                  >
+                    🤖 RAG Architecture
+                  </a>
+                </div>
+              </div>
             </div>
           </footer>
           </div>
