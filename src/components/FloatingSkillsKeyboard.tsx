@@ -79,11 +79,6 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
     }
     onClick();
   }, [onClick]);
-
-  // Truncate long names for display on keycap
-  const displayName = skill.name.length > 12 
-    ? skill.name.slice(0, 11) + "…" 
-    : skill.name;
   
   return (
     <motion.button
@@ -95,37 +90,36 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
       transition={{ duration: 0.2, delay: index * 0.03 }}
       whileHover={{ y: -3, transition: { duration: 0.08 } }}
       whileTap={{ y: 1 }}
+      title={skill.name}
     >
-      {/* 3D Keycap with mechanical keyboard styling - showing icon + label */}
+      {/* 3D Keycap - icon only */}
       <div className="relative">
         {/* Deep shadow for 3D depth */}
-        <div className="absolute inset-0 bg-slate-950 rounded-lg translate-y-[5px]" />
+        <div className="absolute inset-0 bg-slate-950 rounded-lg translate-y-[4px]" />
         
         {/* Keycap side walls */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 rounded-lg translate-y-[3px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 rounded-lg translate-y-[2px]" />
         
-        {/* Main keycap top surface - larger to fit icon + text */}
+        {/* Main keycap top surface */}
         <div className="
           relative
-          w-20 h-16 sm:w-24 sm:h-20
+          w-12 h-12 sm:w-14 sm:h-14
           bg-gradient-to-b from-slate-600 via-slate-700 to-slate-750
           rounded-lg
-          flex flex-col items-center justify-center gap-1 sm:gap-1.5
-          p-1.5 sm:p-2
+          flex items-center justify-center
           border border-slate-500/40
           group-hover:from-slate-500 group-hover:via-slate-600 group-hover:to-slate-700
           transition-all duration-100
-          shadow-[inset_0_-3px_6px_rgba(0,0,0,0.4),inset_0_2px_4px_rgba(255,255,255,0.1)]
+          shadow-[inset_0_-2px_4px_rgba(0,0,0,0.4),inset_0_2px_3px_rgba(255,255,255,0.1)]
         ">
           {/* Concave top surface effect */}
-          <div className="absolute inset-[4px] rounded-md bg-gradient-to-br from-slate-500/15 via-transparent to-slate-900/25 pointer-events-none" />
+          <div className="absolute inset-[3px] rounded-md bg-gradient-to-br from-slate-500/15 via-transparent to-slate-900/25 pointer-events-none" />
           
-          {/* Icon */}
           {skill.icon ? (
             <img 
               src={skill.icon} 
               alt={skill.name}
-              className="w-7 h-7 sm:w-9 sm:h-9 object-contain relative z-10 drop-shadow-sm flex-shrink-0"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain relative z-10 drop-shadow-sm"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 const fallback = e.currentTarget.nextElementSibling;
@@ -133,13 +127,8 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
               }}
             />
           ) : null}
-          <span className={`text-slate-300 font-bold text-base sm:text-lg relative z-10 ${skill.icon ? 'hidden' : ''}`}>
+          <span className={`text-slate-300 font-bold text-sm relative z-10 ${skill.icon ? 'hidden' : ''}`}>
             {skill.name.slice(0, 2).toUpperCase()}
-          </span>
-          
-          {/* Skill name label on keycap */}
-          <span className="text-slate-300 text-[9px] sm:text-[10px] font-medium leading-tight text-center relative z-10 max-w-full truncate">
-            {displayName}
           </span>
         </div>
       </div>
