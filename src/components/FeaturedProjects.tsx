@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { motion } from "framer-motion";
 
 interface FeaturedProjectsProps {
   isOwner: boolean;
@@ -377,32 +378,68 @@ export const FeaturedProjects = ({ isOwner }: FeaturedProjectsProps) => {
             items={projects.map(p => p.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <motion.div 
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-50px" }}
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.15, delayChildren: 0.1 }
+                }
+              }}
+            >
               {projects.map((project) => (
-                <SortableFeaturedProject
+                <motion.div
                   key={project.id}
-                  project={project}
-                  isOwner={isOwner}
-                  onEdit={() => {
-                    setEditingProject(project.id);
-                    setNewProject({
-                      title: project.title,
-                      description: project.description,
-                      youtube_url: project.youtube_url,
-                      github_url: project.github_url || "",
-                      technologies: project.technologies,
-                      start_date: project.start_date || "",
-                      end_date: project.end_date || "",
-                    });
-                    setIsAddDialogOpen(true);
+                  variants={{
+                    hidden: { opacity: 0, y: 40, scale: 0.95 },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0, 
+                      scale: 1,
+                      transition: { duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }
+                    }
                   }}
-                  onRemove={() => handleRemoveProject(project.id)}
-                  getYoutubeEmbedUrl={getYoutubeEmbedUrl}
-                />
+                >
+                  <SortableFeaturedProject
+                    key={project.id}
+                    project={project}
+                    isOwner={isOwner}
+                    onEdit={() => {
+                      setEditingProject(project.id);
+                      setNewProject({
+                        title: project.title,
+                        description: project.description,
+                        youtube_url: project.youtube_url,
+                        github_url: project.github_url || "",
+                        technologies: project.technologies,
+                        start_date: project.start_date || "",
+                        end_date: project.end_date || "",
+                      });
+                      setIsAddDialogOpen(true);
+                    }}
+                    onRemove={() => handleRemoveProject(project.id)}
+                    getYoutubeEmbedUrl={getYoutubeEmbedUrl}
+                  />
+                </motion.div>
               ))}
 
               {/* Add Project Button - Owner Only */}
               {isOwner && (
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: 40, scale: 0.95 },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0, 
+                      scale: 1,
+                      transition: { duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }
+                    }
+                  }}
+                >
             <Dialog
               open={isAddDialogOpen}
               onOpenChange={(open) => {
@@ -514,8 +551,9 @@ export const FeaturedProjects = ({ isOwner }: FeaturedProjectsProps) => {
                 </div>
               </DialogContent>
               </Dialog>
-            )}
-            </div>
+                </motion.div>
+              )}
+            </motion.div>
           </SortableContext>
         </DndContext>
       </div>
