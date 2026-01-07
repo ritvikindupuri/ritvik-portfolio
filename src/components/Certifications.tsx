@@ -120,7 +120,7 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
       viewport={{ once: true }}
       className="group relative"
     >
-      <div className="relative w-72 min-h-[20rem]">
+      <div className="relative w-72 min-h-[24rem]">
         <motion.div
           className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/20 via-primary/20 to-accent/20 blur-2xl"
           animate={{
@@ -295,6 +295,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
     credentialUrl: "",
     issueDate: "",
     expirationDate: "",
+    description: "",
   });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
 
@@ -330,7 +331,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
         issueDate: cert.date ? new Date(cert.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
         expirationDate: cert.expiration_date ? new Date(cert.expiration_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
         display_order: cert.display_order,
-        description: generateCertDescription(cert.name, cert.issuer)
+        description: (cert as any).description || generateCertDescription(cert.name, cert.issuer)
       }));
       setCertifications(certs);
     }
@@ -433,8 +434,9 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           credential_url: credentialUrlValue,
           date: dateValue,
           expiration_date: expirationDateValue,
-          issuer: "Certification Issuer"
-        })
+          issuer: "Certification Issuer",
+          description: newCert.description || null
+        } as any)
         .eq('user_id', user.id)
         .eq('name', editingCert);
 
@@ -457,8 +459,9 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           date: dateValue,
           expiration_date: expirationDateValue,
           image_url: newCert.logo,
-          credential_url: credentialUrlValue
-        });
+          credential_url: credentialUrlValue,
+          description: newCert.description || null
+        } as any);
 
       if (error) {
         toast.error("Failed to add certification");
@@ -470,7 +473,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
       toast.success("Certification added successfully");
     }
     
-    setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "" });
+    setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "", description: "" });
     setUploadedLogo("");
     setEditingCert(null);
     setIsAddDialogOpen(false);
@@ -545,7 +548,8 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                           credentialId: cert.credentialId,
                           credentialUrl: cert.credentialUrl,
                           issueDate: cert.issueDate,
-                          expirationDate: cert.expirationDate
+                          expirationDate: cert.expirationDate,
+                          description: cert.description || ""
                         });
                         setUploadedLogo(cert.logo);
                         setIsAddDialogOpen(true);
@@ -562,7 +566,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                   setIsAddDialogOpen(open);
                   if (!open) {
                     setEditingCert(null);
-                    setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "" });
+                    setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "", description: "" });
                     setUploadedLogo("");
                   }
                 }}>
@@ -574,7 +578,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                       viewport={{ once: true }}
                       onClick={() => {
                         setEditingCert(null);
-                        setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "" });
+                        setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "", description: "" });
                         setUploadedLogo("");
                         setIsAddDialogOpen(true);
                       }}
@@ -665,13 +669,23 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                           onChange={(e) => setNewCert({ ...newCert, expirationDate: e.target.value })}
                         />
                       </div>
+                      
+                      <div className="space-y-2 col-span-2">
+                        <label className="text-sm font-medium">Description (optional)</label>
+                        <Input
+                          placeholder="Professional description of this certification..."
+                          value={newCert.description}
+                          onChange={(e) => setNewCert({ ...newCert, description: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground">Leave empty to auto-generate based on certification name</p>
+                      </div>
                     </div>
                     
                     <div className="flex justify-end gap-3">
                       <Button variant="outline" onClick={() => {
                         setIsAddDialogOpen(false);
                         setEditingCert(null);
-                        setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "" });
+                        setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "", description: "" });
                         setUploadedLogo("");
                       }}>
                         Cancel
