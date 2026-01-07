@@ -16,6 +16,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+interface ComponentDetail {
+  name: string;
+  tooltip: string;
+}
+
+interface ThreatDetail {
+  name: string;
+  tooltip: string;
+}
+
 interface SecurityLayer {
   id: string;
   name: string;
@@ -23,8 +33,8 @@ interface SecurityLayer {
   color: string;
   bgColor: string;
   description: string;
-  components: string[];
-  threats: string[];
+  components: ComponentDetail[];
+  threats: ThreatDetail[];
   passedExplanation: string;
   blockedExplanation: string;
 }
@@ -37,8 +47,15 @@ const securityLayers: SecurityLayer[] = [
     color: "text-red-400",
     bgColor: "bg-red-500/10",
     description: "Country-level access controls block threats at the perimeter",
-    components: ["Country Rules", "IP Geolocation", "Region Blocking"],
-    threats: ["Nation-state attacks", "High-risk regions"],
+    components: [
+      { name: "Country Rules", tooltip: "Database table (geographic_blocking_rules) that stores which countries are blocked/monitored. Admin can add countries by code (e.g., CN, RU) with 'block' or 'monitor' actions." },
+      { name: "IP Geolocation", tooltip: "Uses ipapi.co API to convert visitor IP addresses into geographic data (country, city, coordinates). Called via the geolocate-ip edge function." },
+      { name: "Region Blocking", tooltip: "When a blocked country is detected, the request is immediately rejected. Optionally sends email alerts to the portfolio owner when triggered." },
+    ],
+    threats: [
+      { name: "Nation-state attacks", tooltip: "Sophisticated attacks originating from countries known for state-sponsored hacking. Blocking high-risk regions reduces attack surface from APT groups." },
+      { name: "High-risk regions", tooltip: "Countries with historically high rates of credential stuffing, spam, and automated attacks. Proactive blocking prevents reconnaissance." },
+    ],
     passedExplanation: "The request originated from a country that is not on the blocked list. The IP was geolocated and the country code was checked against geographic_blocking_rules table. Since no matching block rule exists, the request proceeds to the next layer.",
     blockedExplanation: "The request was blocked because the IP address geolocated to a country in the blocked list. The geographic_blocking_rules table has an active 'block' action for this country code. The connection is immediately terminated with no further processing.",
   },
@@ -49,8 +66,15 @@ const securityLayers: SecurityLayer[] = [
     color: "text-orange-400",
     bgColor: "bg-orange-500/10",
     description: "Automatic and manual IP blocking after honeypot triggers",
-    components: ["Auto-block (3 triggers)", "24hr Expiration", "Manual Blocks"],
-    threats: ["Repeat offenders", "Brute force IPs"],
+    components: [
+      { name: "Auto-block (3 triggers)", tooltip: "When an IP triggers honeypot accounts 3+ times, it's automatically added to the blocked_ips table with a 24-hour expiration. This catches persistent attackers." },
+      { name: "24hr Expiration", tooltip: "Auto-blocks expire after 24 hours (expires_at field). This prevents permanently blocking IPs that may be shared (NAT, VPNs) while still deterring attacks." },
+      { name: "Manual Blocks", tooltip: "Portfolio owner can manually add IPs to the blocklist with custom expiration or permanent blocks. Useful for known malicious IPs or targeted harassment." },
+    ],
+    threats: [
+      { name: "Repeat offenders", tooltip: "Attackers who return multiple times to try different credentials. The escalating response (trigger → warn → block) adapts to threat persistence." },
+      { name: "Brute force IPs", tooltip: "IPs that have been identified attempting brute force attacks. Once blocked, all requests from that IP are rejected at the perimeter." },
+    ],
     passedExplanation: "This IP address was not found in the blocked_ips table, or the block has expired (is_active = false). The system checked for active blocks and found none, allowing the request to continue to honeypot detection.",
     blockedExplanation: "This IP was found in the blocked_ips table with is_active = true and expires_at in the future. The IP was auto-blocked after triggering honeypot accounts 3+ times, or was manually blocked by the owner. Request rejected immediately.",
   },
@@ -61,8 +85,15 @@ const securityLayers: SecurityLayer[] = [
     color: "text-yellow-400",
     bgColor: "bg-yellow-500/10",
     description: "Decoy accounts detect and track credential attacks",
-    components: ["Fake Admin Accounts", "Trigger Logging", "Location Mapping"],
-    threats: ["Default credential attacks", "T1078.001"],
+    components: [
+      { name: "Fake Admin Accounts", tooltip: "Fake email accounts like 'admin@portfolio.dev' or 'root@portfolio.dev' that don't exist. Any login attempt using these emails is automatically flagged as malicious." },
+      { name: "Trigger Logging", tooltip: "Every honeypot trigger is logged in honeypot_triggers table with IP, user agent, and timestamp. This creates an audit trail and feeds threat intelligence." },
+      { name: "Location Mapping", tooltip: "Honeypot triggers are geolocated and visualized on a map in the security dashboard. Shows geographic distribution of attackers for pattern analysis." },
+    ],
+    threats: [
+      { name: "Default credential attacks", tooltip: "Attackers trying common admin emails (admin@, root@, test@) with default or common passwords. These are automated scans looking for easy targets." },
+      { name: "T1078.001 (Valid Accounts)", tooltip: "MITRE ATT&CK technique where attackers use valid-looking credentials. Honeypots detect this by creating attractive-but-fake credentials that legitimate users would never use." },
+    ],
     passedExplanation: "The login attempt used an email that does not match any honeypot_accounts entries. This appears to be a legitimate login attempt rather than an attacker trying default/common credentials. The request continues to rate limiting.",
     blockedExplanation: "The attacker tried to log in with a honeypot email (e.g., admin@portfolio.dev). The system logged the trigger in honeypot_triggers, geolocated the IP, and sent an alert. If this IP has 3+ triggers, it will be auto-blocked for 24 hours.",
   },
@@ -73,8 +104,16 @@ const securityLayers: SecurityLayer[] = [
     color: "text-green-400",
     bgColor: "bg-green-500/10",
     description: "IP-based request throttling prevents abuse",
-    components: ["30/hr Chatbot", "5/hr Contact", "Session Limits"],
-    threats: ["DDoS", "Spam", "Brute force"],
+    components: [
+      { name: "30/hr Chatbot", tooltip: "The AI chatbot allows 30 queries per IP per hour. Prevents abuse of the LLM API and protects against prompt injection attacks at scale." },
+      { name: "5/hr Contact", tooltip: "Contact form submissions are limited to 5 per IP per hour. Prevents spam campaigns and email bombing through the contact form." },
+      { name: "Session Limits", tooltip: "Login attempts are tracked per session. Configurable threshold (default: 5 failures in 1 hour) triggers brute force detection and alerts." },
+    ],
+    threats: [
+      { name: "DDoS", tooltip: "Distributed Denial of Service attempts to overwhelm the application. Rate limiting caps requests per IP, reducing single-source attack effectiveness." },
+      { name: "Spam", tooltip: "Automated spam submissions through contact forms or chatbot. Limits prevent bulk spam campaigns from a single source." },
+      { name: "Brute force", tooltip: "Rapid password guessing attempts. After the threshold is exceeded, the attack is classified as T1110 (Brute Force) and an alert is sent." },
+    ],
     passedExplanation: "The IP has not exceeded the rate limit thresholds. Login attempts from this IP in the past hour are below the brute force detection threshold. The request frequency is within acceptable bounds and proceeds to authentication.",
     blockedExplanation: "The IP exceeded the rate limit. Too many requests in a short period triggered the brute force detection (5+ failed attempts in 1 hour = T1110 Brute Force). The request is throttled and the owner receives a MITRE ATT&CK-mapped threat alert.",
   },
@@ -85,8 +124,15 @@ const securityLayers: SecurityLayer[] = [
     color: "text-blue-400",
     bgColor: "bg-blue-500/10",
     description: "JWT-based auth with server-enforced RBAC",
-    components: ["Supabase Auth", "Password Policies", "Session Handling"],
-    threats: ["Unauthorized access", "Session hijacking"],
+    components: [
+      { name: "Supabase Auth", tooltip: "Handles user authentication, password hashing (bcrypt), and JWT token issuance. Passwords are never stored in plaintext." },
+      { name: "Password Policies", tooltip: "Enforces minimum password requirements and checks against known breached passwords. Weak or compromised passwords are rejected." },
+      { name: "Session Handling", tooltip: "JWT tokens with secure expiration. Sessions are validated on each request. Token refresh happens automatically before expiration." },
+    ],
+    threats: [
+      { name: "Unauthorized access", tooltip: "Attempts to access protected resources without valid credentials. Auth layer ensures only authenticated users with valid JWTs can proceed." },
+      { name: "Session hijacking", tooltip: "Attempts to steal or forge session tokens. Secure JWT implementation with proper signing prevents token tampering." },
+    ],
     passedExplanation: "Valid credentials were provided. Supabase Auth verified the email/password combination, checked against the leaked password database, and issued a JWT token. The user's role was verified via the user_roles table for RBAC enforcement.",
     blockedExplanation: "Authentication failed. Either the credentials were incorrect, the password failed complexity requirements, or was found in a known data breach. The login attempt is logged and may contribute to threat detection patterns.",
   },
@@ -97,8 +143,16 @@ const securityLayers: SecurityLayer[] = [
     color: "text-purple-400",
     bgColor: "bg-purple-500/10",
     description: "Row-Level Security ensures data isolation",
-    components: ["RLS Policies", "Audit Logging", "Input Validation"],
-    threats: ["Data leakage", "SQL injection", "Privilege escalation"],
+    components: [
+      { name: "RLS Policies", tooltip: "PostgreSQL Row-Level Security policies on every table. Each policy defines who can SELECT, INSERT, UPDATE, DELETE based on auth.uid() matching the row's user_id." },
+      { name: "Audit Logging", tooltip: "All login attempts, visitor activity, and security events are logged with timestamps, IPs, and user agents. Creates accountability and forensic capability." },
+      { name: "Input Validation", tooltip: "All user inputs are validated and sanitized before database operations. Prevents SQL injection, XSS, and other injection attacks." },
+    ],
+    threats: [
+      { name: "Data leakage", tooltip: "Unauthorized access to sensitive data. RLS ensures users can only query rows they own—even with direct database access, other users' data is invisible." },
+      { name: "SQL injection", tooltip: "Malicious SQL in user inputs. Parameterized queries and input validation prevent attackers from executing arbitrary SQL commands." },
+      { name: "Privilege escalation", tooltip: "Attempts to gain higher access than authorized. user_roles table combined with RLS policies strictly enforce the owner/viewer role separation." },
+    ],
     passedExplanation: "The authenticated user's JWT was validated and their user_id extracted. RLS policies on each table ensure they can only access rows where the policy conditions are met (e.g., user_id = auth.uid()). All queries are logged for audit purposes.",
     blockedExplanation: "RLS policies prevented access. Even with a valid session, the user cannot access data that doesn't belong to them. The database enforces that only the owner role can access sensitive tables like visitor_activity and login_attempts.",
   },
@@ -116,7 +170,7 @@ const attackSimulations: AttackSimulation[] = [
   {
     id: "geo-block",
     name: "Attack from Blocked Country",
-    description: "Attacker from a geo-blocked region attempts login",
+    description: "Attacker from geo-blocked region (e.g., sanctioned country) attempts login",
     blockedAt: "geographic",
     steps: [
       { layer: "geographic", status: "blocked" },
@@ -129,8 +183,8 @@ const attackSimulations: AttackSimulation[] = [
   },
   {
     id: "honeypot-trigger",
-    name: "Default Credential Attack",
-    description: "Attacker tries admin@portfolio.dev (honeypot)",
+    name: "Default Credential Attack (T1078)",
+    description: "Attacker tries admin@portfolio.dev honeypot account",
     blockedAt: "honeypot",
     steps: [
       { layer: "geographic", status: "passed" },
@@ -144,7 +198,7 @@ const attackSimulations: AttackSimulation[] = [
   {
     id: "repeat-offender",
     name: "Repeat Honeypot Offender",
-    description: "IP with 3+ honeypot triggers attempts login",
+    description: "Previously flagged IP (3+ honeypot triggers) returns",
     blockedAt: "ip-blocking",
     steps: [
       { layer: "geographic", status: "passed" },
@@ -157,8 +211,8 @@ const attackSimulations: AttackSimulation[] = [
   },
   {
     id: "brute-force",
-    name: "Brute Force Attack",
-    description: "Rapid repeated login attempts from single IP",
+    name: "Brute Force Attack (T1110)",
+    description: "Rapid password guessing from single IP exceeds threshold",
     blockedAt: "rate-limiting",
     steps: [
       { layer: "geographic", status: "passed" },
@@ -170,9 +224,65 @@ const attackSimulations: AttackSimulation[] = [
     ],
   },
   {
+    id: "password-spray",
+    name: "Password Spray Attack (T1110.003)",
+    description: "Same password tried across multiple accounts slowly",
+    blockedAt: "rate-limiting",
+    steps: [
+      { layer: "geographic", status: "passed" },
+      { layer: "ip-blocking", status: "passed" },
+      { layer: "honeypot", status: "passed" },
+      { layer: "rate-limiting", status: "blocked" },
+      { layer: "auth", status: "pending" },
+      { layer: "database", status: "pending" },
+    ],
+  },
+  {
+    id: "credential-stuffing",
+    name: "Credential Stuffing Attack",
+    description: "Leaked credentials from breached sites tested",
+    blockedAt: "auth",
+    steps: [
+      { layer: "geographic", status: "passed" },
+      { layer: "ip-blocking", status: "passed" },
+      { layer: "honeypot", status: "passed" },
+      { layer: "rate-limiting", status: "passed" },
+      { layer: "auth", status: "blocked" },
+      { layer: "database", status: "pending" },
+    ],
+  },
+  {
+    id: "sql-injection",
+    name: "SQL Injection Attempt (T1190)",
+    description: "Malicious SQL in login form: ' OR 1=1 --",
+    blockedAt: "database",
+    steps: [
+      { layer: "geographic", status: "passed" },
+      { layer: "ip-blocking", status: "passed" },
+      { layer: "honeypot", status: "passed" },
+      { layer: "rate-limiting", status: "passed" },
+      { layer: "auth", status: "passed" },
+      { layer: "database", status: "blocked" },
+    ],
+  },
+  {
+    id: "privilege-escalation",
+    name: "Privilege Escalation (T1548)",
+    description: "Viewer account attempts to access owner-only data",
+    blockedAt: "database",
+    steps: [
+      { layer: "geographic", status: "passed" },
+      { layer: "ip-blocking", status: "passed" },
+      { layer: "honeypot", status: "passed" },
+      { layer: "rate-limiting", status: "passed" },
+      { layer: "auth", status: "passed" },
+      { layer: "database", status: "blocked" },
+    ],
+  },
+  {
     id: "legitimate",
-    name: "Legitimate User Login",
-    description: "Valid user with correct credentials",
+    name: "Legitimate Owner Login",
+    description: "Valid owner with correct credentials from trusted location",
     blockedAt: "",
     steps: [
       { layer: "geographic", status: "passed" },
@@ -515,17 +625,27 @@ export const InteractiveSecurityArchitecture = () => {
                                         <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="max-w-[250px]">
-                                        <p className="text-xs">The specific security mechanisms and features that make up this layer. These are the actual code components and configurations that enforce security at this level.</p>
+                                        <p className="text-xs">The specific security mechanisms and features that make up this layer. Hover each component for details.</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
                                 </div>
                                 <div className="space-y-1">
                                   {layer.components.map((comp, i) => (
-                                    <div key={i} className="flex items-center gap-2 text-xs">
-                                      <div className={`w-1.5 h-1.5 rounded-full ${layer.color.replace("text-", "bg-")}`} />
-                                      {comp}
-                                    </div>
+                                    <TooltipProvider key={i}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="flex items-center gap-2 text-xs cursor-help hover:text-foreground transition-colors">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${layer.color.replace("text-", "bg-")}`} />
+                                            <span className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2">{comp.name}</span>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-[300px]">
+                                          <p className="text-xs font-semibold mb-1">{comp.name}</p>
+                                          <p className="text-xs text-muted-foreground">{comp.tooltip}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   ))}
                                 </div>
                               </div>
@@ -538,17 +658,27 @@ export const InteractiveSecurityArchitecture = () => {
                                         <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="max-w-[250px]">
-                                        <p className="text-xs">The types of attacks and malicious activities that this security layer is specifically designed to detect and prevent.</p>
+                                        <p className="text-xs">The types of attacks this layer detects and prevents. Hover each threat for details.</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
                                 </div>
                                 <div className="space-y-1">
                                   {layer.threats.map((threat, i) => (
-                                    <div key={i} className="flex items-center gap-2 text-xs">
-                                      <AlertTriangle className="w-3 h-3 text-destructive" />
-                                      {threat}
-                                    </div>
+                                    <TooltipProvider key={i}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="flex items-center gap-2 text-xs cursor-help hover:text-foreground transition-colors">
+                                            <AlertTriangle className="w-3 h-3 text-destructive flex-shrink-0" />
+                                            <span className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2">{threat.name}</span>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-[300px]">
+                                          <p className="text-xs font-semibold mb-1">{threat.name}</p>
+                                          <p className="text-xs text-muted-foreground">{threat.tooltip}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   ))}
                                 </div>
                               </div>
