@@ -5,7 +5,6 @@ import {
   User, AlertTriangle, CheckCircle, XCircle,
   ChevronRight, Globe, Key, FileText, Keyboard, ExternalLink, Play, Pause, Info
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -458,391 +457,507 @@ export const InteractiveSecurityArchitecture = () => {
   }, [focusedLayerIndex, focusedSimIndex, activeLayer]);
 
   return (
-    <Card 
+    <div 
       ref={containerRef}
-      className="bg-card/50 backdrop-blur-sm border-primary/20 overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50"
+      className="relative overflow-hidden focus:outline-none"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       role="region"
       aria-label="Interactive Security Architecture - Use arrow keys to navigate, Enter to select"
     >
-      <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Shield className="h-6 w-6 text-primary" />
+      {/* Background gradient decoration */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+      
+      {/* Header */}
+      <div className="relative mb-8">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-xl blur-xl" />
+              <div className="relative p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20">
+                <Shield className="h-8 w-8 text-primary" />
+              </div>
             </div>
             <div>
-              <CardTitle className="text-xl">Portfolio Security Architecture</CardTitle>
-              <CardDescription>
-                This portfolio website implements a defense-in-depth security model. 
-                Use arrow keys to navigate, Enter to expand, Escape to close.
-              </CardDescription>
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                Security Architecture
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                Defense-in-depth model with 6 security layers. Click any layer to explore, or run attack simulations.
+              </p>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Badge variant="outline" className="border-green-500/50 text-green-400">
+            <Badge className="bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20">
+              <CheckCircle className="h-3 w-3 mr-1" />
               Defense-in-Depth
             </Badge>
-            <Badge variant="outline" className="border-blue-500/50 text-blue-400">
+            <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20">
+              <Lock className="h-3 w-3 mr-1" />
               Zero Trust
-            </Badge>
-            <Badge variant="outline" className="border-purple-500/50 text-purple-400 gap-1">
-              <Keyboard className="h-3 w-3" />
-              Keyboard Nav
             </Badge>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-6">
-        {/* Security Layers Visualization */}
-        <div className="relative">
-          <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-red-500 via-yellow-500 to-purple-500 opacity-30" />
+      {/* Main Content - Side by Side Layout */}
+      <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Panel - Security Layers */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-primary/50 to-transparent" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Security Layers</span>
+            <div className="h-px flex-1 bg-gradient-to-l from-primary/50 to-transparent" />
+          </div>
           
-          <div className="space-y-3">
-            {securityLayers.map((layer, index) => {
-              const Icon = layer.icon;
-              const status = getLayerStatus(layer.id);
-              const isFocused = focusedLayerIndex === index;
-              
-              return (
-                <motion.div
-                  key={layer.id}
-                  ref={(el) => { layerRefs.current[index] = el; }}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  tabIndex={0}
-                  role="button"
-                  aria-expanded={activeLayer === layer.id}
-                  aria-label={`${layer.name} - Layer ${index + 1}. ${layer.description}`}
-                  className={`relative pl-16 cursor-pointer group outline-none ${
-                    activeLayer === layer.id ? "z-10" : ""
-                  } ${isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-lg" : ""}`}
-                  onClick={() => setActiveLayer(activeLayer === layer.id ? null : layer.id)}
-                  onFocus={() => setFocusedLayerIndex(index)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setActiveLayer(activeLayer === layer.id ? null : layer.id);
-                    }
-                  }}
-                >
-                  {/* Layer Node */}
+          <div className="relative">
+            {/* Animated gradient line */}
+            <div className="absolute left-[18px] top-0 bottom-0 w-0.5 overflow-hidden rounded-full">
+              <motion.div 
+                className="w-full h-full bg-gradient-to-b from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500"
+                animate={isAnimating ? { 
+                  y: ["-100%", "0%"],
+                } : {}}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              {securityLayers.map((layer, index) => {
+                const Icon = layer.icon;
+                const status = getLayerStatus(layer.id);
+                const isFocused = focusedLayerIndex === index;
+                
+                return (
                   <motion.div
-                    className={`absolute left-4 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                      status === "blocked" 
-                        ? "bg-red-500 border-red-400" 
-                        : status === "passed" 
-                        ? "bg-green-500 border-green-400"
-                        : status === "pending"
-                        ? "bg-muted border-muted-foreground/30"
-                        : `${layer.bgColor} border-current ${layer.color}`
-                    }`}
-                    animate={status === "blocked" || status === "passed" ? { scale: [1, 1.2, 1] } : {}}
-                    transition={{ duration: 0.3 }}
+                    key={layer.id}
+                    ref={(el) => { layerRefs.current[index] = el; }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.08 }}
+                    tabIndex={0}
+                    role="button"
+                    aria-expanded={activeLayer === layer.id}
+                    aria-label={`${layer.name} - Layer ${index + 1}. ${layer.description}`}
+                    className={`relative pl-12 cursor-pointer group outline-none ${
+                      activeLayer === layer.id ? "z-10" : ""
+                    } ${isFocused ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-lg" : ""}`}
+                    onClick={() => setActiveLayer(activeLayer === layer.id ? null : layer.id)}
+                    onFocus={() => setFocusedLayerIndex(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveLayer(activeLayer === layer.id ? null : layer.id);
+                      }
+                    }}
                   >
-                    {status === "blocked" ? (
-                      <XCircle className="h-4 w-4 text-white" />
-                    ) : status === "passed" ? (
-                      <CheckCircle className="h-4 w-4 text-white" />
-                    ) : (
-                      <Icon className={`h-4 w-4 ${status === "pending" ? "text-muted-foreground/50" : layer.color}`} />
-                    )}
-                  </motion.div>
+                    {/* Layer Node */}
+                    <motion.div
+                      className={`absolute left-1 w-9 h-9 rounded-xl flex items-center justify-center border-2 transition-all duration-300 shadow-lg ${
+                        status === "blocked" 
+                          ? "bg-gradient-to-br from-red-500 to-red-600 border-red-400 shadow-red-500/25" 
+                          : status === "passed" 
+                          ? "bg-gradient-to-br from-green-500 to-green-600 border-green-400 shadow-green-500/25"
+                          : status === "pending"
+                          ? "bg-muted/50 border-muted-foreground/20"
+                          : `bg-gradient-to-br ${layer.bgColor} border-current ${layer.color}`
+                      }`}
+                      animate={status === "blocked" || status === "passed" ? { scale: [1, 1.15, 1] } : {}}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {status === "blocked" ? (
+                        <XCircle className="h-4 w-4 text-white" />
+                      ) : status === "passed" ? (
+                        <CheckCircle className="h-4 w-4 text-white" />
+                      ) : (
+                        <Icon className={`h-4 w-4 ${status === "pending" ? "text-muted-foreground/50" : layer.color}`} />
+                      )}
+                    </motion.div>
 
-                  {/* Layer Card */}
-                  <div
-                    className={`p-4 rounded-lg border transition-all duration-300 ${
-                      activeLayer === layer.id
-                        ? `${layer.bgColor} border-current ${layer.color}`
-                        : "bg-background/50 border-border/50 hover:border-border group-hover:bg-muted/30"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className={`font-semibold ${layer.color}`}>{layer.name}</span>
-                        <Badge variant="outline" className="text-xs">Layer {index + 1}</Badge>
+                    {/* Layer Card */}
+                    <div
+                      className={`p-3 rounded-xl border backdrop-blur-sm transition-all duration-300 ${
+                        activeLayer === layer.id
+                          ? `${layer.bgColor} border-current ${layer.color} shadow-lg`
+                          : "bg-card/50 border-border/50 hover:border-primary/30 hover:bg-card/80 group-hover:shadow-md"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-semibold text-sm ${activeLayer === layer.id ? layer.color : "text-foreground"}`}>
+                            {layer.name}
+                          </span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                            L{index + 1}
+                          </Badge>
+                        </div>
+                        <ChevronRight 
+                          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                            activeLayer === layer.id ? "rotate-90" : ""
+                          }`} 
+                        />
                       </div>
-                      <ChevronRight 
-                        className={`h-4 w-4 text-muted-foreground transition-transform ${
-                          activeLayer === layer.id ? "rotate-90" : ""
-                        }`} 
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">{layer.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{layer.description}</p>
 
-                    {/* Expanded Details */}
-                    <AnimatePresence>
-                      {activeLayer === layer.id && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="pt-4 space-y-4">
-                            {/* Simulation Explanation - shown when a simulation is active */}
-                            {selectedSimulation && (status === "passed" || status === "blocked") && (
-                              <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className={`p-3 rounded-lg border ${
-                                  status === "blocked" 
-                                    ? "bg-red-500/10 border-red-500/30" 
-                                    : "bg-green-500/10 border-green-500/30"
-                                }`}
-                              >
-                                <div className="flex items-start gap-2">
-                                  {status === "blocked" ? (
-                                    <XCircle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
-                                  ) : (
-                                    <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                                  )}
-                                  <div>
-                                    <p className={`text-xs font-semibold mb-1 ${
-                                      status === "blocked" ? "text-red-400" : "text-green-400"
-                                    }`}>
-                                      {status === "blocked" ? "Attack Blocked at This Layer" : "Attack Passed Through"}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                      {status === "blocked" ? layer.blockedExplanation : layer.passedExplanation}
-                                    </p>
+                      {/* Expanded Details */}
+                      <AnimatePresence>
+                        {activeLayer === layer.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="pt-3 space-y-3">
+                              {/* Simulation Explanation */}
+                              {selectedSimulation && (status === "passed" || status === "blocked") && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className={`p-2.5 rounded-lg border ${
+                                    status === "blocked" 
+                                      ? "bg-red-500/10 border-red-500/30" 
+                                      : "bg-green-500/10 border-green-500/30"
+                                  }`}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    {status === "blocked" ? (
+                                      <XCircle className="h-3.5 w-3.5 text-red-400 mt-0.5 flex-shrink-0" />
+                                    ) : (
+                                      <CheckCircle className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
+                                    )}
+                                    <div>
+                                      <p className={`text-[10px] font-semibold mb-0.5 ${
+                                        status === "blocked" ? "text-red-400" : "text-green-400"
+                                      }`}>
+                                        {status === "blocked" ? "BLOCKED" : "PASSED"}
+                                      </p>
+                                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                        {status === "blocked" ? layer.blockedExplanation : layer.passedExplanation}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                              
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <div className="flex items-center gap-1 mb-1.5">
+                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Components</p>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Info className="h-2.5 w-2.5 text-muted-foreground/60 cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-[250px]">
+                                          <p className="text-xs">Security mechanisms that make up this layer.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    {layer.components.map((comp, i) => (
+                                      <TooltipProvider key={i}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <div className="flex items-center gap-1.5 text-[10px] cursor-help hover:text-foreground transition-colors">
+                                              <div className={`w-1 h-1 rounded-full ${layer.color.replace("text-", "bg-")}`} />
+                                              <span className="underline decoration-dotted decoration-muted-foreground/40 underline-offset-2">{comp.name}</span>
+                                            </div>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="right" className="max-w-[280px]">
+                                            <p className="text-xs font-semibold mb-1">{comp.name}</p>
+                                            <p className="text-xs text-muted-foreground">{comp.tooltip}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    ))}
                                   </div>
                                 </div>
-                              </motion.div>
-                            )}
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <div className="flex items-center gap-1.5 mb-2">
-                                  <p className="text-xs font-semibold text-muted-foreground">Components</p>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" className="max-w-[250px]">
-                                        <p className="text-xs">The specific security mechanisms and features that make up this layer. Hover each component for details.</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                                <div className="space-y-1">
-                                  {layer.components.map((comp, i) => (
-                                    <TooltipProvider key={i}>
+                                <div>
+                                  <div className="flex items-center gap-1 mb-1.5">
+                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Threats</p>
+                                    <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <div className="flex items-center gap-2 text-xs cursor-help hover:text-foreground transition-colors">
-                                            <div className={`w-1.5 h-1.5 rounded-full ${layer.color.replace("text-", "bg-")}`} />
-                                            <span className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2">{comp.name}</span>
-                                          </div>
+                                          <Info className="h-2.5 w-2.5 text-muted-foreground/60 cursor-help" />
                                         </TooltipTrigger>
-                                        <TooltipContent side="right" className="max-w-[300px]">
-                                          <p className="text-xs font-semibold mb-1">{comp.name}</p>
-                                          <p className="text-xs text-muted-foreground">{comp.tooltip}</p>
+                                        <TooltipContent side="top" className="max-w-[250px]">
+                                          <p className="text-xs">Attack types this layer prevents.</p>
                                         </TooltipContent>
                                       </Tooltip>
                                     </TooltipProvider>
-                                  ))}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-1.5 mb-2">
-                                  <p className="text-xs font-semibold text-muted-foreground">Threats Blocked</p>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" className="max-w-[250px]">
-                                        <p className="text-xs">The types of attacks this layer detects and prevents. Hover each threat for details.</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                                <div className="space-y-1">
-                                  {layer.threats.map((threat, i) => (
-                                    <TooltipProvider key={i}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="flex items-center gap-2 text-xs cursor-help hover:text-foreground transition-colors">
-                                            <AlertTriangle className="w-3 h-3 text-destructive flex-shrink-0" />
-                                            <span className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2">{threat.name}</span>
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="right" className="max-w-[300px]">
-                                          <p className="text-xs font-semibold mb-1">{threat.name}</p>
-                                          <p className="text-xs text-muted-foreground">{threat.tooltip}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  ))}
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    {layer.threats.map((threat, i) => (
+                                      <TooltipProvider key={i}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <div className="flex items-center gap-1.5 text-[10px] cursor-help hover:text-foreground transition-colors">
+                                              <AlertTriangle className="w-2.5 h-2.5 text-destructive flex-shrink-0" />
+                                              <span className="underline decoration-dotted decoration-muted-foreground/40 underline-offset-2">{threat.name}</span>
+                                            </div>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="right" className="max-w-[280px]">
+                                            <p className="text-xs font-semibold mb-1">{threat.name}</p>
+                                            <p className="text-xs text-muted-foreground">{threat.tooltip}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              );
-            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Attack Simulations */}
-        <div className="pt-4 border-t border-border/50">
-          <div className="mb-4">
-            <h4 className="text-sm font-semibold flex items-center gap-2">
-              <Server className="h-4 w-4 text-primary" />
-              Attack Simulations
-            </h4>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-              <Play className="h-3 w-3" />
-              Click any scenario below to visualize how the attack progresses through each security layer
-            </p>
+        {/* Right Panel - Attack Simulations */}
+        <div className="lg:border-l lg:border-border/50 lg:pl-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-primary/50 lg:from-primary/50" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Attack Simulations</span>
+            <div className="h-px flex-1 bg-gradient-to-l from-primary/50 to-transparent lg:to-transparent" />
           </div>
 
-          {/* Progress Indicator */}
-          {selectedSimulation && (isAnimating || animationStep > 0) && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 rounded-lg bg-muted/30 border border-border/50"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {isAnimating ? (isPaused ? "Paused" : "Processing") : "Complete"}:
-                  </span>
-                  <span className="text-sm font-semibold text-primary">
-                    {currentLayerName || "Finished"}
-                  </span>
-                  <Badge variant="outline" className="text-xs">
-                    Layer {Math.min(animationStep + 1, securityLayers.length)} of {securityLayers.length}
-                  </Badge>
-                </div>
-                {isAnimating && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={togglePause}
-                    className="h-7 px-2 gap-1"
-                    aria-label={isPaused ? "Resume simulation" : "Pause simulation"}
-                  >
-                    {isPaused ? (
-                      <>
-                        <Play className="h-3 w-3" />
-                        <span className="text-xs">Resume</span>
-                      </>
-                    ) : (
-                      <>
-                        <Pause className="h-3 w-3" />
-                        <span className="text-xs">Pause</span>
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-              <Progress value={progressPercentage} className="h-2" />
-              <div className="flex justify-between mt-1">
-                <span className="text-xs text-muted-foreground">Entry</span>
-                <span className="text-xs text-muted-foreground">Database</span>
-              </div>
-            </motion.div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="group" aria-label="Attack simulation scenarios - click to run simulation">
-            {attackSimulations.map((sim, index) => (
-              <Button
-                key={sim.id}
-                ref={(el) => { simRefs.current[index] = el; }}
-                variant={selectedSimulation?.id === sim.id ? "default" : "outline"}
-                size="sm"
-                className={`justify-start h-auto py-2 text-left ${
-                  focusedSimIndex === index ? "ring-2 ring-primary" : ""
-                }`}
-                onClick={() => startSimulation(sim)}
-                onFocus={() => setFocusedSimIndex(index)}
-                aria-label={`Run simulation: ${sim.name}. ${sim.description}`}
-              >
-                <div>
-                  <div className="font-medium text-xs">{sim.name}</div>
-                  <div className="text-xs text-muted-foreground font-normal truncate">
-                    {sim.description}
-                  </div>
-                </div>
-              </Button>
-            ))}
-          </div>
-
-          {/* Simulation Result */}
-          <AnimatePresence>
-            {selectedSimulation && !isAnimating && animationStep > 0 && (
+          {/* Simulation Status Card */}
+          <AnimatePresence mode="wait">
+            {selectedSimulation ? (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                key="active"
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className={`mt-4 p-3 rounded-lg ${
-                  selectedSimulation.blockedAt 
-                    ? "bg-green-500/10 border border-green-500/30" 
-                    : "bg-blue-500/10 border border-blue-500/30"
-                }`}
-                role="status"
+                className="mb-4"
               >
-                <div className="flex items-center gap-2">
-                  {selectedSimulation.blockedAt ? (
-                    <>
-                      <Shield className="h-4 w-4 text-green-400" />
-                      <span className="text-sm font-medium text-green-400">
-                        Attack blocked at {securityLayers.find(l => l.id === selectedSimulation.blockedAt)?.name}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 text-blue-400" />
-                      <span className="text-sm font-medium text-blue-400">
-                        Legitimate access granted through all layers
-                      </span>
-                    </>
+                <div className={`p-4 rounded-xl border backdrop-blur-sm ${
+                  !isAnimating && animationStep > 0
+                    ? selectedSimulation.blockedAt 
+                      ? "bg-green-500/5 border-green-500/30" 
+                      : "bg-blue-500/5 border-blue-500/30"
+                    : "bg-card/50 border-primary/30"
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{selectedSimulation.name}</span>
+                        {isAnimating && (
+                          <motion.div 
+                            className="w-2 h-2 rounded-full bg-primary"
+                            animate={{ opacity: [1, 0.3, 1] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{selectedSimulation.description}</p>
+                    </div>
+                    {isAnimating && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={togglePause}
+                        className="h-8 px-3 gap-1.5"
+                        aria-label={isPaused ? "Resume simulation" : "Pause simulation"}
+                      >
+                        {isPaused ? (
+                          <>
+                            <Play className="h-3 w-3" />
+                            <span className="text-xs">Resume</span>
+                          </>
+                        ) : (
+                          <>
+                            <Pause className="h-3 w-3" />
+                            <span className="text-xs">Pause</span>
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Visual Progress */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1">
+                      {securityLayers.map((layer, idx) => {
+                        const stepStatus = getLayerStatus(layer.id);
+                        return (
+                          <TooltipProvider key={layer.id}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <motion.div 
+                                  className={`flex-1 h-2 rounded-full cursor-help transition-colors ${
+                                    stepStatus === "blocked" 
+                                      ? "bg-red-500" 
+                                      : stepStatus === "passed" 
+                                      ? "bg-green-500"
+                                      : stepStatus === "pending"
+                                      ? "bg-muted"
+                                      : "bg-primary/30"
+                                  }`}
+                                  animate={stepStatus === "blocked" || stepStatus === "passed" ? { scale: [1, 1.1, 1] } : {}}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">{layer.name}: {stepStatus}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <span>Entry</span>
+                      <span>Layer {Math.min(animationStep + 1, securityLayers.length)}/{securityLayers.length}</span>
+                      <span>Database</span>
+                    </div>
+                  </div>
+
+                  {/* Result */}
+                  {!isAnimating && animationStep > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-3 pt-3 border-t border-border/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        {selectedSimulation.blockedAt ? (
+                          <>
+                            <div className="p-1.5 rounded-lg bg-green-500/10">
+                              <Shield className="h-4 w-4 text-green-400" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-green-400">Attack Blocked</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                Stopped at {securityLayers.find(l => l.id === selectedSimulation.blockedAt)?.name}
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="p-1.5 rounded-lg bg-blue-500/10">
+                              <CheckCircle className="h-4 w-4 text-blue-400" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-blue-400">Access Granted</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                Legitimate user passed all layers
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </motion.div>
                   )}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="mb-4 p-4 rounded-xl border border-dashed border-border/50 bg-muted/20"
+              >
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Play className="h-5 w-5" />
+                  <div>
+                    <p className="text-sm font-medium">Select a scenario</p>
+                    <p className="text-xs">Click any attack below to see how it's handled</p>
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
 
-        {/* Documentation Link - External GitHub */}
-        <div className="pt-2 border-t border-border/50">
-          <Button asChild variant="ghost" size="sm" className="w-full justify-between group">
-            <a 
-              href="https://github.com/ritvikindupuri/ritvik-portfolio/blob/main/TECHNICAL_DOCUMENTATION.md" 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
-              <span className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                View Full Portfolio Documentation on GitHub
-              </span>
-              <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </a>
-          </Button>
-        </div>
+          {/* Simulation Buttons */}
+          <div className="grid grid-cols-1 gap-2" role="group" aria-label="Attack simulation scenarios">
+            {attackSimulations.map((sim, index) => {
+              const blockedLayer = securityLayers.find(l => l.id === sim.blockedAt);
+              const isSelected = selectedSimulation?.id === sim.id;
+              
+              return (
+                <Button
+                  key={sim.id}
+                  ref={(el) => { simRefs.current[index] = el; }}
+                  variant="outline"
+                  size="sm"
+                  className={`justify-between h-auto py-2.5 px-3 text-left transition-all ${
+                    isSelected 
+                      ? "border-primary bg-primary/5 shadow-md" 
+                      : "hover:border-primary/50 hover:bg-card/80"
+                  } ${focusedSimIndex === index ? "ring-2 ring-primary" : ""}`}
+                  onClick={() => startSimulation(sim)}
+                  onFocus={() => setFocusedSimIndex(index)}
+                  aria-label={`Run simulation: ${sim.name}. ${sim.description}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-xs">{sim.name}</span>
+                      {isSelected && isAnimating && (
+                        <motion.div 
+                          className="w-1.5 h-1.5 rounded-full bg-primary"
+                          animate={{ opacity: [1, 0.3, 1] }}
+                          transition={{ duration: 0.8, repeat: Infinity }}
+                        />
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                      {sim.description}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="outline" 
+                    className={`text-[9px] ml-2 flex-shrink-0 ${
+                      sim.blockedAt 
+                        ? `border-${blockedLayer?.color.replace("text-", "")}/50 ${blockedLayer?.color}`
+                        : "border-blue-500/50 text-blue-400"
+                    }`}
+                  >
+                    {sim.blockedAt ? `L${securityLayers.findIndex(l => l.id === sim.blockedAt) + 1}` : "✓"}
+                  </Badge>
+                </Button>
+              );
+            })}
+          </div>
 
-        {/* Screen Reader Announcements */}
-        <div 
-          role="status" 
-          aria-live="polite" 
-          aria-atomic="true" 
-          className="sr-only"
-        >
-          {announcement}
+          {/* Documentation Link */}
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <Button asChild variant="ghost" size="sm" className="w-full justify-between group hover:bg-primary/5">
+              <a 
+                href="https://github.com/ritvikindupuri/ritvik-portfolio/blob/main/TECHNICAL_DOCUMENTATION.md" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <span className="flex items-center gap-2 text-xs">
+                  <FileText className="h-3.5 w-3.5" />
+                  Full Documentation
+                </span>
+                <ExternalLink className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </a>
+            </Button>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Screen Reader Announcements */}
+      <div 
+        role="status" 
+        aria-live="polite" 
+        aria-atomic="true" 
+        className="sr-only"
+      >
+        {announcement}
+      </div>
+    </div>
   );
 };
