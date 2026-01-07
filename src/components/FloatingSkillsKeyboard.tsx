@@ -221,9 +221,10 @@ export const FloatingSkillsKeyboard = () => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   
-  const springConfig = { damping: 25, stiffness: 120 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [5, -5]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), springConfig);
+  const springConfig = { damping: 20, stiffness: 150 };
+  // Base tilt + mouse-driven parallax
+  const parallaxRotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [25, 15]), springConfig);
+  const parallaxRotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-15, -5]), springConfig);
 
   useEffect(() => {
     const fetchSecuritySkills = async () => {
@@ -304,12 +305,12 @@ export const FloatingSkillsKeyboard = () => {
         className="relative"
         style={{ 
           transformStyle: "preserve-3d",
-          rotateX: 20,
-          rotateY: -10,
+          rotateX: parallaxRotateX,
+          rotateY: parallaxRotateY,
           rotateZ: 1,
         }}
         initial={{ opacity: 0, x: 100, rotateY: -25 }}
-        animate={{ opacity: 1, x: 0, rotateY: -10 }}
+        animate={{ opacity: 1, x: 0 }}
         transition={{ 
           duration: 0.8, 
           ease: [0.25, 0.46, 0.45, 0.94],
