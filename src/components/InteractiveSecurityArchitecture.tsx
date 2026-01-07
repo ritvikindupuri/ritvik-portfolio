@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Shield, Lock, Eye, Zap, Database, Server, 
   User, AlertTriangle, CheckCircle, XCircle,
-  ChevronRight, Globe, Key, FileText, Keyboard, ExternalLink, Play
+  ChevronRight, Globe, Key, FileText, Keyboard, ExternalLink, Play, Pause
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 interface SecurityLayer {
   id: string;
@@ -171,6 +172,7 @@ export const InteractiveSecurityArchitecture = () => {
   const [selectedSimulation, setSelectedSimulation] = useState<AttackSimulation | null>(null);
   const [animationStep, setAnimationStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   
   const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -184,8 +186,18 @@ export const InteractiveSecurityArchitecture = () => {
     setTimeout(() => setAnnouncement(message), 100);
   }, []);
 
+  // Calculate progress percentage
+  const progressPercentage = selectedSimulation 
+    ? ((animationStep + 1) / selectedSimulation.steps.length) * 100 
+    : 0;
+
+  // Get current layer name for progress indicator
+  const currentLayerName = selectedSimulation && animationStep < selectedSimulation.steps.length
+    ? securityLayers.find(l => l.id === selectedSimulation.steps[animationStep]?.layer)?.name
+    : null;
+
   useEffect(() => {
-    if (selectedSimulation && isAnimating) {
+    if (selectedSimulation && isAnimating && !isPaused) {
       const timer = setInterval(() => {
         setAnimationStep((prev) => {
           const nextStep = prev + 1;
@@ -209,15 +221,22 @@ export const InteractiveSecurityArchitecture = () => {
           
           return nextStep;
         });
-      }, 600);
+      }, 800);
       return () => clearInterval(timer);
     }
-  }, [selectedSimulation, isAnimating, announce]);
+  }, [selectedSimulation, isAnimating, isPaused, announce]);
 
   const startSimulation = (sim: AttackSimulation) => {
     setSelectedSimulation(sim);
     setAnimationStep(0);
     setIsAnimating(true);
+    setIsPaused(false);
+    announce(`Starting simulation: ${sim.name}. ${sim.description}`);
+  };
+
+  const togglePause = () => {
+    setIsPaused(prev => !prev);
+    announce(isPaused ? "Simulation resumed" : "Simulation paused");
   };
 
   const getLayerStatus = (layerId: string) => {
@@ -480,6 +499,56 @@ export const InteractiveSecurityArchitecture = () => {
               Click any scenario below to visualize how the attack progresses through each security layer
             </p>
           </div>
+
+          {/* Progress Indicator */}
+          {selectedSimulation && (isAnimating || animationStep > 0) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 rounded-lg bg-muted/30 border border-border/50"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {isAnimating ? (isPaused ? "Paused" : "Processing") : "Complete"}:
+                  </span>
+                  <span className="text-sm font-semibold text-primary">
+                    {currentLayerName || "Finished"}
+                  </span>
+                  <Badge variant="outline" className="text-xs">
+                    Layer {Math.min(animationStep + 1, securityLayers.length)} of {securityLayers.length}
+                  </Badge>
+                </div>
+                {isAnimating && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={togglePause}
+                    className="h-7 px-2 gap-1"
+                    aria-label={isPaused ? "Resume simulation" : "Pause simulation"}
+                  >
+                    {isPaused ? (
+                      <>
+                        <Play className="h-3 w-3" />
+                        <span className="text-xs">Resume</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="h-3 w-3" />
+                        <span className="text-xs">Pause</span>
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              <Progress value={progressPercentage} className="h-2" />
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-muted-foreground">Entry</span>
+                <span className="text-xs text-muted-foreground">Database</span>
+              </div>
+            </motion.div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="group" aria-label="Attack simulation scenarios - click to run simulation">
             {attackSimulations.map((sim, index) => (
               <Button
@@ -544,13 +613,13 @@ export const InteractiveSecurityArchitecture = () => {
         <div className="pt-2 border-t border-border/50">
           <Button asChild variant="ghost" size="sm" className="w-full justify-between group">
             <a 
-              href="https://github.com/yourusername/portfolio/blob/main/TECHNICAL_DOCUMENTATION.md#security-architecture-overview" 
+              href="https://github.com/ritvikindupuri/ritvik-portfolio/blob/main/TECHNICAL_DOCUMENTATION.md" 
               target="_blank" 
               rel="noopener noreferrer"
             >
               <span className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                View Full Security Documentation on GitHub
+                View Full Portfolio Documentation on GitHub
               </span>
               <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </a>
