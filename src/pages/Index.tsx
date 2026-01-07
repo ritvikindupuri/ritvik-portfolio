@@ -22,6 +22,7 @@ import { OwnerHeader } from "@/components/OwnerHeader";
 import { ResumeSection } from "@/components/ResumeSection";
 import { InteractiveSecurityArchitecture } from "@/components/InteractiveSecurityArchitecture";
 import { ScrollProgressIndicator } from "@/components/ScrollProgressIndicator";
+import { SectionReveal } from "@/components/SectionReveal";
 
 const Index = () => {
   
@@ -145,18 +146,22 @@ const Index = () => {
             subtitle="Passionate about cybersecurity and machine learning — building intelligent systems for defense"
           />
           
-          <div id="about-section">
-            <About isOwner={isOwner} />
-          </div>
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="about-section">
+              <About isOwner={isOwner} />
+            </div>
+          </SectionReveal>
           
           <SectionTransition 
             badge="Technical Arsenal" 
             subtitle="Core competencies and tools I use to build secure, intelligent systems"
           />
           
-          <div id="skills-section">
-            <Skills isOwner={isOwner} />
-          </div>
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="skills-section">
+              <Skills isOwner={isOwner} />
+            </div>
+          </SectionReveal>
           
           <SectionTransition 
             badge="Applied Intelligence" 
@@ -164,71 +169,83 @@ const Index = () => {
           />
           
           {/* ML & LLM Showcase - Side by Side */}
-          <section id="ml-section" className="py-16 px-4 relative overflow-hidden">
-            <div className="absolute inset-0 neural-grid opacity-5" />
-            <div className="absolute top-1/4 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-            
-            <div className="container mx-auto max-w-7xl relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                {/* ML Model Showcase */}
-                <MLShowcase isOwner={isOwner} />
-                
-                {/* Vertical Divider */}
-                <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 -translate-x-1/2">
-                  <div className="w-px h-full bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
+          <SectionReveal direction="up" delay={0.1}>
+            <section id="ml-section" className="py-16 px-4 relative overflow-hidden">
+              <div className="absolute inset-0 neural-grid opacity-5" />
+              <div className="absolute top-1/4 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+              
+              <div className="container mx-auto max-w-7xl relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  {/* ML Model Showcase */}
+                  <MLShowcase isOwner={isOwner} />
+                  
+                  {/* Vertical Divider */}
+                  <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 -translate-x-1/2">
+                    <div className="w-px h-full bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
+                  </div>
+                  
+                  {/* LLM/AI Engineering Showcase */}
+                  <LLMShowcase isOwner={isOwner} />
                 </div>
-                
-                {/* LLM/AI Engineering Showcase */}
-                <LLMShowcase isOwner={isOwner} />
               </div>
-            </div>
-          </section>
+            </section>
+          </SectionReveal>
           
           <SectionTransition 
             badge="Flagship Work" 
             subtitle="Highlighted projects that demonstrate end-to-end problem solving"
           />
           
-          <div id="featured-projects-section">
-            <FeaturedProjects isOwner={isOwner} />
-          </div>
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="featured-projects-section">
+              <FeaturedProjects isOwner={isOwner} />
+            </div>
+          </SectionReveal>
           
           <SectionTransition 
             badge="Professional Journey" 
             subtitle="Real-world experience building and securing systems"
           />
           
-          <div id="experience-section">
-            <Experience isOwner={isOwner} />
-          </div>
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="experience-section">
+              <Experience isOwner={isOwner} />
+            </div>
+          </SectionReveal>
           
           <SectionTransition 
             badge="Project Archive" 
             subtitle="A comprehensive collection of technical work and explorations"
           />
           
-          <div id="projects-section">
-            <Projects isOwner={isOwner} />
-          </div>
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="projects-section">
+              <Projects isOwner={isOwner} />
+            </div>
+          </SectionReveal>
           
           <SectionTransition 
             badge="Credentials" 
             subtitle="Industry certifications validating expertise in security and technology"
           />
           
-          <div id="certifications-section">
-            <Certifications isOwner={isOwner} />
-          </div>
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="certifications-section">
+              <Certifications isOwner={isOwner} />
+            </div>
+          </SectionReveal>
           
           <SectionTransition 
             badge="Knowledge Base" 
             subtitle="Technical documentation and detailed project write-ups"
           />
           
-          <div id="documentation-section">
-            <Documentation isOwner={isOwner} />
-          </div>
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="documentation-section">
+              <Documentation isOwner={isOwner} />
+            </div>
+          </SectionReveal>
 
           <SectionTransition 
             badge="Security Architecture" 
@@ -236,22 +253,26 @@ const Index = () => {
           />
 
           {/* Interactive Security Architecture */}
-          <section id="security-section" className="py-12 px-4 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-            <div className="container mx-auto max-w-5xl relative z-10">
-              <InteractiveSecurityArchitecture />
-            </div>
-          </section>
+          <SectionReveal direction="up" delay={0.1}>
+            <section id="security-section" className="py-12 px-4 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+              <div className="container mx-auto max-w-5xl relative z-10">
+                <InteractiveSecurityArchitecture />
+              </div>
+            </section>
+          </SectionReveal>
           
           <SectionTransition 
             badge="Let's Connect" 
             subtitle="Open to opportunities in cybersecurity and machine learning"
           />
           
-          <div id="contact-section">
-            <Contact />
-          </div>
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="contact-section">
+              <Contact />
+            </div>
+          </SectionReveal>
 
           {/* Chatbot - Only for guests */}
           <PortfolioChatbot isOwner={isOwner} />
