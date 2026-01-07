@@ -385,79 +385,45 @@ export const Hero = ({ isOwner }: HeroProps) => {
           transition={{ duration: 0.8 }}
         >
           {/* Main Hero Layout - Side by Side */}
-          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 lg:gap-16">
+          <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center gap-12 lg:gap-20 min-h-[60vh]">
             {/* Left Column - Name & Info */}
             <motion.div
-              initial={{ opacity: 0, x: -40 }}
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 max-w-md"
+              className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-5"
             >
-              {/* Small intro text */}
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-                className="text-muted-foreground text-sm md:text-base tracking-wide"
-              >
+              {/* Intro text */}
+              <span className="text-muted-foreground text-base tracking-wide">
                 Hi, I am
-              </motion.span>
+              </span>
               
-              {/* Large Name */}
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.8 }}
-                className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight"
-              >
+              {/* Large Name - tighter spacing */}
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] -mt-2">
                 <span className="text-foreground">Ritvik</span>
                 <br />
                 <span className="text-gradient-cyber">Indupuri</span>
-              </motion.h1>
+              </h1>
               
-              {/* Title */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
-                className="text-muted-foreground text-sm md:text-base font-medium tracking-wide"
-              >
+              {/* Title - closer to name */}
+              <p className="text-muted-foreground text-base font-medium tracking-wide -mt-1">
                 A Cybersecurity Major
-              </motion.p>
+              </p>
               
               {/* University Badge */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.6 }}
-                className="flex items-center gap-3 px-4 py-2.5 bg-card/30 backdrop-blur-sm rounded-lg border border-primary/20"
-              >
+              <div className="flex items-center gap-3 px-5 py-3 bg-card/40 backdrop-blur-sm rounded-xl border border-primary/20 mt-2">
                 <img 
                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
                   alt="Purdue University" 
-                  className="h-6"
+                  className="h-7"
                 />
-                <span className="font-medium text-sm">Purdue University</span>
+                <span className="font-semibold text-sm">Purdue University</span>
                 <span className="text-primary">•</span>
                 <span className="font-mono text-primary text-sm">2024-2028</span>
-              </motion.div>
-              
-              {/* Resume Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-              >
-                <ResumeManager isOwner={isOwner} />
-              </motion.div>
+              </div>
               
               {/* Social Links Row */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.9, duration: 0.6 }}
-                className="flex items-center gap-4"
-              >
+              <div className="flex items-center gap-3 mt-2">
                 <a
                   href="https://github.com/ritvikindupuri"
                   target="_blank"
@@ -476,15 +442,15 @@ export const Hero = ({ isOwner }: HeroProps) => {
                 >
                   <Linkedin className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </a>
-              </motion.div>
+              </div>
             </motion.div>
 
-            {/* Right Column - Floating Skills Keyboard */}
+            {/* Right Column - Skills Keyboard */}
             <motion.div
-              initial={{ opacity: 0, x: 40, rotateY: -20 }}
-              animate={{ opacity: 1, x: 0, rotateY: 0 }}
-              transition={{ delay: 0.5, duration: 1, type: "spring" }}
-              className="hidden md:block lg:mt-8"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="hidden md:block"
             >
               <FloatingSkillsKeyboard />
             </motion.div>
@@ -495,7 +461,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.8 }}
-            className="md:hidden flex justify-center mt-10"
+            className="md:hidden flex justify-center mt-8"
           >
             <FloatingSkillsKeyboard />
           </motion.div>

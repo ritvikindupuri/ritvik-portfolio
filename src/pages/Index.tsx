@@ -19,6 +19,7 @@ import { LLMShowcase } from "@/components/LLMShowcase";
 import { SectionTransition } from "@/components/SectionTransition";
 import { VisitorTrackerProvider } from "@/components/VisitorTrackerProvider";
 import { OwnerHeader } from "@/components/OwnerHeader";
+import { ResumeSection } from "@/components/ResumeSection";
 
 const Index = () => {
   
@@ -131,6 +132,8 @@ const Index = () => {
           
           <div className="relative bg-background">
             <Hero isOwner={isOwner} />
+          
+          <ResumeSection isOwner={isOwner} />
           
           <SectionTransition 
             badge="Who I Am" 
