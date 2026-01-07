@@ -398,10 +398,9 @@ export const Hero = ({ isOwner }: HeroProps) => {
                 Hi, I am
               </span>
               
-              {/* Large Name */}
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1]">
-                <span className="text-foreground">Ritvik</span>
-                <br />
+              {/* Large Name - Single Line */}
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1]">
+                <span className="text-foreground">Ritvik </span>
                 <span className="text-gradient-cyber">Indupuri</span>
               </h1>
               

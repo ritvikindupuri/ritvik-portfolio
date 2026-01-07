@@ -8,34 +8,34 @@ interface Skill {
   icon: string | null;
 }
 
-// Brand colors based on tool logos
-const getBrandColors = (skillName: string): string => {
+// Lighter keycap colors for better icon visibility
+const getKeycapColor = (skillName: string): string => {
   const name = skillName.toLowerCase();
   
-  if (name.includes('kali')) return 'bg-blue-600';
-  if (name.includes('crowdstrike')) return 'bg-red-600';
-  if (name.includes('splunk')) return 'bg-green-600';
-  if (name.includes('wireshark')) return 'bg-sky-600';
-  if (name.includes('nmap')) return 'bg-indigo-600';
-  if (name.includes('burp')) return 'bg-orange-500';
-  if (name.includes('metasploit')) return 'bg-blue-700';
-  if (name.includes('hashcat') || name.includes('john')) return 'bg-amber-500';
-  if (name.includes('nessus')) return 'bg-teal-600';
-  if (name.includes('ghidra')) return 'bg-rose-600';
-  if (name.includes('ida')) return 'bg-purple-600';
-  if (name.includes('autopsy')) return 'bg-cyan-700';
-  if (name.includes('volatility')) return 'bg-emerald-600';
-  if (name.includes('snort') || name.includes('suricata')) return 'bg-red-500';
-  if (name.includes('openvas')) return 'bg-lime-600';
-  if (name.includes('aircrack')) return 'bg-violet-600';
-  if (name.includes('hydra')) return 'bg-cyan-600';
-  if (name.includes('nikto')) return 'bg-fuchsia-600';
-  if (name.includes('sqlmap')) return 'bg-yellow-600';
-  if (name.includes('elastic') || name.includes('kibana')) return 'bg-pink-500';
+  // Use lighter shades so icons are visible
+  if (name.includes('kali')) return 'bg-slate-700';
+  if (name.includes('crowdstrike')) return 'bg-slate-700';
+  if (name.includes('splunk')) return 'bg-slate-700';
+  if (name.includes('wireshark')) return 'bg-slate-700';
+  if (name.includes('nmap')) return 'bg-slate-700';
+  if (name.includes('burp')) return 'bg-slate-700';
+  if (name.includes('metasploit')) return 'bg-slate-700';
+  if (name.includes('hashcat') || name.includes('john')) return 'bg-slate-700';
+  if (name.includes('nessus')) return 'bg-slate-700';
+  if (name.includes('ghidra')) return 'bg-slate-700';
+  if (name.includes('ida')) return 'bg-slate-700';
+  if (name.includes('autopsy')) return 'bg-slate-700';
+  if (name.includes('volatility')) return 'bg-slate-700';
+  if (name.includes('snort') || name.includes('suricata')) return 'bg-slate-700';
+  if (name.includes('openvas')) return 'bg-slate-700';
+  if (name.includes('aircrack')) return 'bg-slate-700';
+  if (name.includes('hydra')) return 'bg-slate-700';
+  if (name.includes('nikto')) return 'bg-slate-700';
+  if (name.includes('sqlmap')) return 'bg-slate-700';
+  if (name.includes('elastic') || name.includes('kibana')) return 'bg-slate-700';
+  if (name.includes('sentinel')) return 'bg-slate-700';
   
-  const colors = ['bg-blue-600', 'bg-purple-600', 'bg-green-600', 'bg-orange-500', 'bg-cyan-600'];
-  const hash = name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  return colors[hash % colors.length];
+  return 'bg-slate-700';
 };
 
 interface KeycapProps {
@@ -45,7 +45,7 @@ interface KeycapProps {
 }
 
 const Keycap = ({ skill, index, onClick }: KeycapProps) => {
-  const bgColor = getBrandColors(skill.name);
+  const bgColor = getKeycapColor(skill.name);
   
   return (
     <motion.button
@@ -53,48 +53,64 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
       className="relative focus:outline-none group"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2, delay: index * 0.02 }}
-      whileHover={{ scale: 1.05, transition: { duration: 0.1 } }}
-      whileTap={{ scale: 0.95 }}
+      transition={{ duration: 0.2, delay: index * 0.03 }}
+      whileHover={{ y: -2, transition: { duration: 0.1 } }}
+      whileTap={{ y: 2 }}
     >
-      {/* Flat keycap */}
-      <div className={`
-        w-11 h-11 sm:w-12 sm:h-12
-        ${bgColor}
-        rounded-md
-        flex items-center justify-center
-        shadow-md
-        border border-white/10
-        group-hover:brightness-110
-        transition-all duration-150
-      `}>
-        {skill.icon ? (
-          <img 
-            src={skill.icon} 
-            alt={skill.name}
-            className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow-md"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-        ) : null}
-        <span className={`text-white font-bold text-xs ${skill.icon ? 'hidden' : ''}`}>
-          {skill.name.slice(0, 2).toUpperCase()}
-        </span>
+      {/* 3D Keycap with depth */}
+      <div className="relative">
+        {/* Keycap shadow/base for 3D effect */}
+        <div className="absolute inset-0 bg-slate-900 rounded-md translate-y-1" />
+        
+        {/* Main keycap surface */}
+        <div className={`
+          relative
+          w-12 h-12 sm:w-14 sm:h-14
+          ${bgColor}
+          rounded-md
+          flex items-center justify-center
+          border-t border-l border-slate-600
+          border-b-2 border-r-2 border-b-slate-900 border-r-slate-800
+          group-hover:bg-slate-600
+          transition-colors duration-150
+        `}>
+          {/* Inner highlight for keycap look */}
+          <div className="absolute inset-1 rounded-sm bg-gradient-to-br from-slate-600/30 to-transparent pointer-events-none" />
+          
+          {skill.icon ? (
+            <img 
+              src={skill.icon} 
+              alt={skill.name}
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain relative z-10"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling;
+                if (fallback) fallback.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <span className={`text-white font-bold text-sm relative z-10 ${skill.icon ? 'hidden' : ''}`}>
+            {skill.name.slice(0, 2).toUpperCase()}
+          </span>
+        </div>
       </div>
       
-      {/* Tooltip */}
+      {/* Tooltip - positioned above with proper z-index */}
       <div className="
-        absolute -bottom-8 left-1/2 -translate-x-1/2
+        absolute -top-10 left-1/2 -translate-x-1/2
         opacity-0 group-hover:opacity-100
         transition-opacity duration-150
         whitespace-nowrap
         bg-slate-900 text-white text-xs font-medium
-        px-2 py-1 rounded
-        z-50 pointer-events-none
+        px-3 py-1.5 rounded-md
+        shadow-lg border border-slate-700
+        z-[100] pointer-events-none
       ">
         {skill.name}
+        {/* Tooltip arrow */}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
+          <div className="border-4 border-transparent border-t-slate-900" />
+        </div>
       </div>
     </motion.button>
   );
@@ -103,14 +119,15 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
 export const FloatingSkillsKeyboard = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasAnimated, setHasAnimated] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   
   const springConfig = { damping: 25, stiffness: 120 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [8, -8]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-10, 10]), springConfig);
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [5, -5]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), springConfig);
 
   useEffect(() => {
     const fetchSecuritySkills = async () => {
@@ -136,6 +153,16 @@ export const FloatingSkillsKeyboard = () => {
   }, []);
 
   useEffect(() => {
+    // Enable mouse tracking after entrance animation completes
+    if (!loading && skills.length > 0 && !hasAnimated) {
+      const timer = setTimeout(() => setHasAnimated(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, skills, hasAnimated]);
+
+  useEffect(() => {
+    if (!hasAnimated) return;
+    
     const handleMouseMove = (e: MouseEvent) => {
       const normalizedX = (e.clientX / window.innerWidth) - 0.5;
       const normalizedY = (e.clientY / window.innerHeight) - 0.5;
@@ -146,7 +173,7 @@ export const FloatingSkillsKeyboard = () => {
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [mouseX, mouseY]);
+  }, [mouseX, mouseY, hasAnimated]);
 
   const handleKeycapClick = (skillId: string) => {
     const skillsSection = document.getElementById('skills-section');
@@ -176,28 +203,42 @@ export const FloatingSkillsKeyboard = () => {
   const cols = 4;
 
   return (
-    <div ref={containerRef} className="relative" style={{ perspective: "600px" }}>
+    <div ref={containerRef} className="relative overflow-visible" style={{ perspective: "800px" }}>
       <motion.div
         className="relative"
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
+        style={{ 
+          rotateX: hasAnimated ? rotateX : 0, 
+          rotateY: hasAnimated ? rotateY : 0, 
+          transformStyle: "preserve-3d" 
+        }}
+        initial={{ opacity: 0, x: 100, rotateY: -15 }}
+        animate={{ opacity: 1, x: 0, rotateY: 0 }}
+        transition={{ 
+          duration: 0.8, 
+          ease: [0.25, 0.46, 0.45, 0.94],
+          delay: 0.3
+        }}
       >
-        {/* Keyboard base */}
-        <div className="p-3 sm:p-4 rounded-xl bg-slate-900/90 border border-slate-700/50 backdrop-blur-sm">
-          <div 
-            className="grid gap-1.5 sm:gap-2"
-            style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
-          >
-            {skills.map((skill, index) => (
-              <Keycap
-                key={skill.id}
-                skill={skill}
-                index={index}
-                onClick={() => handleKeycapClick(skill.id)}
-              />
-            ))}
+        {/* Keyboard base with depth */}
+        <div className="relative">
+          {/* Keyboard shadow */}
+          <div className="absolute inset-0 bg-slate-950 rounded-xl translate-y-2 blur-sm" />
+          
+          {/* Main keyboard body */}
+          <div className="relative p-4 sm:p-5 rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700/50 shadow-2xl">
+            <div 
+              className="grid gap-2 sm:gap-2.5"
+              style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+            >
+              {skills.map((skill, index) => (
+                <Keycap
+                  key={skill.id}
+                  skill={skill}
+                  index={index}
+                  onClick={() => handleKeycapClick(skill.id)}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </motion.div>
