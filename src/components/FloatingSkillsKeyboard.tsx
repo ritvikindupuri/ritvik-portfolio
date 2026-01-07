@@ -86,11 +86,18 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
       onMouseEnter={handleHover}
       className="relative focus:outline-none group"
       style={{ transformStyle: "preserve-3d" }}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, scale: 0.9, y: 0 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.03 }}
-      whileHover={{ translateZ: 8, transition: { duration: 0.1 } }}
-      whileTap={{ translateZ: -4 }}
+      whileHover={{ 
+        y: -3, 
+        transition: { duration: 0.1, ease: "easeOut" } 
+      }}
+      whileTap={{ 
+        y: 6,
+        scale: 0.95,
+        transition: { duration: 0.05, ease: "easeIn" } 
+      }}
       title={skill.name}
     >
       {/* 3D Keycap with real depth */}
