@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server, MoreVertical, Brain } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -578,31 +579,56 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                     items={category.skills.map(s => s.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mt-10">
+                    <motion.div 
+                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mt-10"
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: "-50px" }}
+                      variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                          opacity: 1,
+                          transition: { staggerChildren: 0.1, delayChildren: 0.05 }
+                        }
+                      }}
+                    >
                       {category.skills.map((skill) => (
-                        <SortableSkill
+                        <motion.div
                           key={skill.id}
-                          skill={skill}
-                          categoryId={category.id}
-                          isOwner={isOwner}
-                          categories={skillCategories.map(cat => ({ id: cat.id, label: cat.label }))}
-                          onEdit={() => {
-                            setEditingSkill({ name: skill.name, category: category.id });
-                            setNewSkill({
-                              name: skill.name,
-                              level: skill.level,
-                              logo: skill.logo,
-                              description: skill.description,
-                              link: skill.link,
-                              projectLinks: skill.projectLinks || []
-                            });
-                            setUploadedLogo(skill.logo);
-                            setIsAddDialogOpen(true);
+                          variants={{
+                            hidden: { opacity: 0, y: 30, scale: 0.95 },
+                            visible: { 
+                              opacity: 1, 
+                              y: 0, 
+                              scale: 1,
+                              transition: { duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }
+                            }
                           }}
-                          onRemove={() => handleRemoveSkill(category.id, skill.name)}
-                          onMove={(targetCategoryId) => handleMoveSkill(skill.id, category.id, targetCategoryId, skill.name)}
-                          getLevelColor={getLevelColor}
-                        />
+                        >
+                          <SortableSkill
+                            key={skill.id}
+                            skill={skill}
+                            categoryId={category.id}
+                            isOwner={isOwner}
+                            categories={skillCategories.map(cat => ({ id: cat.id, label: cat.label }))}
+                            onEdit={() => {
+                              setEditingSkill({ name: skill.name, category: category.id });
+                              setNewSkill({
+                                name: skill.name,
+                                level: skill.level,
+                                logo: skill.logo,
+                                description: skill.description,
+                                link: skill.link,
+                                projectLinks: skill.projectLinks || []
+                              });
+                              setUploadedLogo(skill.logo);
+                              setIsAddDialogOpen(true);
+                            }}
+                            onRemove={() => handleRemoveSkill(category.id, skill.name)}
+                            onMove={(targetCategoryId) => handleMoveSkill(skill.id, category.id, targetCategoryId, skill.name)}
+                            getLevelColor={getLevelColor}
+                          />
+                        </motion.div>
                       ))}
 
                       {/* Add Skill Button - Owner Only */}
@@ -775,7 +801,7 @@ export const Skills = ({ isOwner }: SkillsProps) => {
                         </DialogContent>
                       </Dialog>
                     )}
-                    </div>
+                    </motion.div>
                   </SortableContext>
                 </TabsContent>
               ))}

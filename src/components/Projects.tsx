@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -524,21 +525,46 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                     items={projectList.filter(p => p.id).map(p => p.id!)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
+                    <motion.div 
+                      className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10"
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: "-50px" }}
+                      variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                          opacity: 1,
+                          transition: { staggerChildren: 0.12, delayChildren: 0.1 }
+                        }
+                      }}
+                    >
                       {projectList.filter(p => p.id).map((project) => (
-                        <SortableProject
+                        <motion.div
                           key={project.id}
-                          project={project}
-                          category={key}
-                          isOwner={isOwner}
-                          onEdit={() => {
-                            setEditingProject(project.title);
-                            setNewProject(project);
-                            setIsAddDialogOpen(true);
+                          variants={{
+                            hidden: { opacity: 0, y: 40, scale: 0.95 },
+                            visible: { 
+                              opacity: 1, 
+                              y: 0, 
+                              scale: 1,
+                              transition: { duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }
+                            }
                           }}
-                          onRemove={() => handleRemoveProject(key, project.title)}
-                          onProjectClick={trackProjectClick}
-                        />
+                        >
+                          <SortableProject
+                            key={project.id}
+                            project={project}
+                            category={key}
+                            isOwner={isOwner}
+                            onEdit={() => {
+                              setEditingProject(project.title);
+                              setNewProject(project);
+                              setIsAddDialogOpen(true);
+                            }}
+                            onRemove={() => handleRemoveProject(key, project.title)}
+                            onProjectClick={trackProjectClick}
+                          />
+                        </motion.div>
                       ))}
 
                       {/* Add Project Button - Owner Only */}
@@ -683,7 +709,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                         </DialogContent>
                       </Dialog>
                     )}
-                    </div>
+                    </motion.div>
                   </SortableContext>
                 </DndContext>
               </TabsContent>
