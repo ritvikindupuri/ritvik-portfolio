@@ -1,15 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
 import { 
   Shield, Lock, Eye, Zap, Database, Server, 
   User, AlertTriangle, CheckCircle, XCircle,
-  ChevronRight, Globe, Key, FileText, Keyboard
+  ChevronRight, Globe, Key, FileText, Keyboard, ExternalLink, Play
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 
 interface SecurityLayer {
   id: string;
@@ -173,31 +171,48 @@ export const InteractiveSecurityArchitecture = () => {
   const [selectedSimulation, setSelectedSimulation] = useState<AttackSimulation | null>(null);
   const [animationStep, setAnimationStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
   
   const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const simRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Screen reader announcement helper
+  const announce = useCallback((message: string) => {
+    setAnnouncement("");
+    // Small delay to ensure the announcement is picked up
+    setTimeout(() => setAnnouncement(message), 100);
+  }, []);
 
   useEffect(() => {
     if (selectedSimulation && isAnimating) {
       const timer = setInterval(() => {
         setAnimationStep((prev) => {
           const nextStep = prev + 1;
+          const currentStep = selectedSimulation.steps[prev];
+          const currentLayer = securityLayers.find(l => l.id === currentStep?.layer);
+          
           if (nextStep >= selectedSimulation.steps.length) {
             setIsAnimating(false);
+            announce("Simulation complete. Legitimate access granted through all security layers.");
             return prev;
           }
-          // Stop at blocked layer
-          if (selectedSimulation.steps[prev]?.status === "blocked") {
+          
+          // Announce current layer status
+          if (currentStep?.status === "blocked") {
             setIsAnimating(false);
+            announce(`Attack blocked! ${currentLayer?.name} layer stopped the attack.`);
             return prev;
+          } else if (currentStep?.status === "passed") {
+            announce(`Passed through ${currentLayer?.name} layer. Moving to next layer.`);
           }
+          
           return nextStep;
         });
       }, 600);
       return () => clearInterval(timer);
     }
-  }, [selectedSimulation, isAnimating]);
+  }, [selectedSimulation, isAnimating, announce]);
 
   const startSimulation = (sim: AttackSimulation) => {
     setSelectedSimulation(sim);
@@ -455,11 +470,17 @@ export const InteractiveSecurityArchitecture = () => {
 
         {/* Attack Simulations */}
         <div className="pt-4 border-t border-border/50">
-          <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Server className="h-4 w-4 text-primary" />
-            Attack Simulations
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="group" aria-label="Attack simulation scenarios">
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <Server className="h-4 w-4 text-primary" />
+              Attack Simulations
+            </h4>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <Play className="h-3 w-3" />
+              Click any scenario below to visualize how the attack progresses through each security layer
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="group" aria-label="Attack simulation scenarios - click to run simulation">
             {attackSimulations.map((sim, index) => (
               <Button
                 key={sim.id}
@@ -471,7 +492,7 @@ export const InteractiveSecurityArchitecture = () => {
                 }`}
                 onClick={() => startSimulation(sim)}
                 onFocus={() => setFocusedSimIndex(index)}
-                aria-label={`${sim.name}: ${sim.description}`}
+                aria-label={`Run simulation: ${sim.name}. ${sim.description}`}
               >
                 <div>
                   <div className="font-medium text-xs">{sim.name}</div>
@@ -495,6 +516,7 @@ export const InteractiveSecurityArchitecture = () => {
                     ? "bg-green-500/10 border border-green-500/30" 
                     : "bg-blue-500/10 border border-blue-500/30"
                 }`}
+                role="status"
               >
                 <div className="flex items-center gap-2">
                   {selectedSimulation.blockedAt ? (
@@ -518,17 +540,31 @@ export const InteractiveSecurityArchitecture = () => {
           </AnimatePresence>
         </div>
 
-        {/* Documentation Link */}
+        {/* Documentation Link - External GitHub */}
         <div className="pt-2 border-t border-border/50">
           <Button asChild variant="ghost" size="sm" className="w-full justify-between group">
-            <Link to="/technical-documentation#security-architecture-overview">
+            <a 
+              href="https://github.com/yourusername/portfolio/blob/main/TECHNICAL_DOCUMENTATION.md#security-architecture-overview" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
               <span className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                View Full Security Documentation
+                View Full Security Documentation on GitHub
               </span>
-              <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+              <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </a>
           </Button>
+        </div>
+
+        {/* Screen Reader Announcements */}
+        <div 
+          role="status" 
+          aria-live="polite" 
+          aria-atomic="true" 
+          className="sr-only"
+        >
+          {announcement}
         </div>
       </CardContent>
     </Card>
