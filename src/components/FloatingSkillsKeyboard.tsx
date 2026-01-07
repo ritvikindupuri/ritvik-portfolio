@@ -88,15 +88,19 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
       style={{ transformStyle: "preserve-3d" }}
       initial={{ opacity: 0, scale: 0.9, y: 0 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.03 }}
+      transition={{ 
+        duration: 0.2, 
+        delay: index * 0.03,
+        y: { type: "spring", stiffness: 400, damping: 15 }
+      }}
       whileHover={{ 
         y: -3, 
         transition: { duration: 0.1, ease: "easeOut" } 
       }}
       whileTap={{ 
-        y: 6,
-        scale: 0.95,
-        transition: { duration: 0.05, ease: "easeIn" } 
+        y: 8,
+        scale: 0.92,
+        transition: { duration: 0.04, ease: "easeIn" } 
       }}
       title={skill.name}
     >
