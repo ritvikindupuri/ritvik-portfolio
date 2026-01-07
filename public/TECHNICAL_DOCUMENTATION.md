@@ -72,7 +72,7 @@ This documentation covers the complete system architecture, data flows, implemen
 
 ```mermaid
 flowchart TB
-    subgraph Frontend["Frontend (React + Vite)"]
+    subgraph Frontend["Frontend React and Vite"]
         UI[Portfolio UI]
         VTP[VisitorTrackerProvider]
         TD[ThreatDetector]
@@ -91,7 +91,7 @@ flowchart TB
             EX[(experience)]
             PF[(profiles)]
         end
-        
+
         subgraph EdgeFunctions["Edge Functions"]
             SVA[send-visitor-alert]
             STA[send-threat-alert]
@@ -100,7 +100,7 @@ flowchart TB
             PCB[portfolio-chatbot]
             GMT[get-mapbox-token]
         end
-        
+
         subgraph Extensions["Extensions"]
             CRON[pg_cron]
             NET[pg_net]
@@ -117,23 +117,23 @@ flowchart TB
     UI --> VTP
     VTP -->|Track Actions| VA
     UI -->|Login Attempt| LA
-    
+
     TD -->|Analyze| LA
     TD -->|High Severity| STA
-    
+
     VD -->|Query| VA
     SCM -->|Query| LA
     SCM -->|Geolocate| GIP
-    
+
     CB -->|Query| PCB
     PCB -->|Embeddings| OAI
     PCB -->|Semantic Search| VEC
-    
-    VTP -->|5+ Actions| SVA
+
+    VTP -->|5 plus Actions| SVA
     SVA --> RS
     STA --> RS
     WD --> RS
-    
+
     CRON -->|Weekly| WD
     GIP -->|Coordinates| MB
     GMT -->|Token| SCM
@@ -405,18 +405,18 @@ flowchart LR
     subgraph Scheduler["pg_cron Scheduler"]
         CRON["Monday 9AM UTC"]
     end
-    
+
     subgraph EdgeFunction["weekly-digest Function"]
         FETCH["Fetch 7 days data"]
         AGG["Aggregate stats"]
         BUILD["Build HTML email"]
     end
-    
+
     subgraph Data["Data Sources"]
         VA[(visitor_activity)]
         LA[(login_attempts)]
     end
-    
+
     subgraph Email["Email Content"]
         VS["Visitor Stats"]
         TQ["Top Queries"]
@@ -424,7 +424,7 @@ flowchart LR
         TP["Top Projects"]
         SS["Security Stats"]
     end
-    
+
     CRON -->|HTTP POST| FETCH
     FETCH --> VA
     FETCH --> LA
@@ -436,7 +436,7 @@ flowchart LR
     BUILD --> TS
     BUILD --> TP
     BUILD --> SS
-    
+
     VS --> RS[Resend API]
     RS --> OWNER[Owner Inbox]
 ```
@@ -3021,44 +3021,44 @@ flowchart TD
         AUTH[Authentication Request]
         IP[Source IP Address]
     end
-    
+
     subgraph Lookup["Database Lookup"]
-        CHECK{IP in known_login_locations?}
+        CHECK{IP in known locations}
     end
-    
+
     subgraph Existing["Existing Location"]
         UPDATE[Increment times_seen]
         UPDATETS[Update last_seen_at]
-        THRESHOLD{times_seen >= 5?}
-        AUTOTRUST[Set is_trusted = true]
-        TRUSTED{is_trusted?}
+        THRESHOLD{times_seen at least 5}
+        AUTOTRUST[Set is_trusted true]
+        TRUSTED{is_trusted}
     end
-    
+
     subgraph New["New Location"]
         GEO[Geolocate IP]
-        CREATE[Create entry with is_trusted = false]
-        ALERT[Send New Location Alert Email]
+        CREATE[Create entry untrusted]
+        ALERT[Send New Location Alert]
     end
-    
+
     subgraph Result["Outcome"]
-        SILENT[Silent Login - No Alert]
+        SILENT[Silent Login]
         NOTIFY[Owner Notified]
     end
-    
+
     AUTH --> IP
     IP --> CHECK
-    
+
     CHECK -->|Yes| UPDATE
     UPDATE --> UPDATETS
     UPDATETS --> THRESHOLD
-    THRESHOLD -->|Yes, not trusted| AUTOTRUST
-    THRESHOLD -->|No (or already trusted)| TRUSTED
+    THRESHOLD -->|Yes not trusted| AUTOTRUST
+    THRESHOLD -->|No or already trusted| TRUSTED
     AUTOTRUST --> TRUSTED
-    
+
     TRUSTED -->|Yes| SILENT
     TRUSTED -->|No| ALERT
     ALERT --> NOTIFY
-    
+
     CHECK -->|No| GEO
     GEO --> CREATE
     CREATE --> ALERT
@@ -3223,25 +3223,25 @@ flowchart LR
     subgraph Query["User Query"]
         Q[Question Text]
     end
-    
+
     subgraph Embedding["Embedding Generation"]
         EMB[OpenAI Embeddings API]
     end
-    
+
     subgraph Search["Vector Search"]
         PGV[(pgvector)]
         MATCH[match_portfolio_content]
     end
-    
+
     subgraph Context["Context Assembly"]
         CTX[Relevant Chunks]
     end
-    
+
     subgraph Generation["Response Generation"]
         GPT[OpenAI GPT]
         RESP[Final Response]
     end
-    
+
     Q --> EMB
     EMB --> PGV
     PGV --> MATCH
