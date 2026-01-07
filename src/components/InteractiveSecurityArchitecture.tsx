@@ -3,12 +3,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Shield, Lock, Eye, Zap, Database, Server, 
   User, AlertTriangle, CheckCircle, XCircle,
-  ChevronRight, Globe, Key, FileText, Keyboard, ExternalLink, Play, Pause
+  ChevronRight, Globe, Key, FileText, Keyboard, ExternalLink, Play, Pause, Info
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SecurityLayer {
   id: string;
@@ -501,7 +507,19 @@ export const InteractiveSecurityArchitecture = () => {
                             
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2">Components</p>
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <p className="text-xs font-semibold text-muted-foreground">Components</p>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-[250px]">
+                                        <p className="text-xs">The specific security mechanisms and features that make up this layer. These are the actual code components and configurations that enforce security at this level.</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
                                 <div className="space-y-1">
                                   {layer.components.map((comp, i) => (
                                     <div key={i} className="flex items-center gap-2 text-xs">
@@ -512,7 +530,19 @@ export const InteractiveSecurityArchitecture = () => {
                                 </div>
                               </div>
                               <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-2">Threats Blocked</p>
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <p className="text-xs font-semibold text-muted-foreground">Threats Blocked</p>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-[250px]">
+                                        <p className="text-xs">The types of attacks and malicious activities that this security layer is specifically designed to detect and prevent.</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
                                 <div className="space-y-1">
                                   {layer.threats.map((threat, i) => (
                                     <div key={i} className="flex items-center gap-2 text-xs">

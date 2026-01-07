@@ -77,7 +77,7 @@ The architecture follows a three-tier design with clear separation of concerns:
 
 ```mermaid
 flowchart TB
-    subgraph Frontend["Frontend (React + Vite)"]
+    subgraph Frontend["Frontend React and Vite"]
         UI[Portfolio UI]
         VTP[VisitorTrackerProvider]
         TD[ThreatDetector]
@@ -85,7 +85,7 @@ flowchart TB
     end
 
     subgraph Supabase["Supabase Backend"]
-        DB[(PostgreSQL + pgvector)]
+        DB[(PostgreSQL and pgvector)]
         EF[Edge Functions]
         CRON[pg_cron Scheduler]
     end
