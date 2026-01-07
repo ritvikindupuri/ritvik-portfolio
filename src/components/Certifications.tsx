@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Award, Plus, Upload, X, GripVertical } from "lucide-react";
+import { Award, Plus, Upload, X, GripVertical, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -212,7 +212,7 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
               </h3>
               
               {cert.description && (
-                <p className="text-xs text-muted-foreground/80 px-2 line-clamp-2">
+                <p className="text-xs text-muted-foreground/80 px-2">
                   {cert.description}
                 </p>
               )}
@@ -298,6 +298,33 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
     description: "",
   });
   const [uploadedLogo, setUploadedLogo] = useState<string>("");
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+
+  const handleGenerateDescription = async () => {
+    if (!newCert.name) {
+      toast.error("Please enter a certification name first");
+      return;
+    }
+    
+    setIsGeneratingDesc(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-cert-description', {
+        body: { certName: newCert.name, issuer: "Certification Issuer" }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.description) {
+        setNewCert(prev => ({ ...prev, description: data.description }));
+        toast.success("Description generated!");
+      }
+    } catch (error) {
+      console.error('Error generating description:', error);
+      toast.error("Failed to generate description");
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -671,7 +698,24 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
                       </div>
                       
                       <div className="space-y-2 col-span-2">
-                        <label className="text-sm font-medium">Description (optional)</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">Description (optional)</label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleGenerateDescription}
+                            disabled={!newCert.name || isGeneratingDesc}
+                            className="h-7 text-xs gap-1"
+                          >
+                            {isGeneratingDesc ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3 h-3" />
+                            )}
+                            {isGeneratingDesc ? "Generating..." : "Generate with AI"}
+                          </Button>
+                        </div>
                         <Input
                           placeholder="Professional description of this certification..."
                           value={newCert.description}
