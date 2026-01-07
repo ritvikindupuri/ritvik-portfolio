@@ -72,13 +72,16 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
           <img 
             src={skill.icon} 
             alt={skill.name}
-            className="w-6 h-6 sm:w-7 sm:h-7 object-contain brightness-0 invert"
+            className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow-md"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
           />
-        ) : (
-          <span className="text-white font-bold text-xs">
-            {skill.name.slice(0, 2).toUpperCase()}
-          </span>
-        )}
+        ) : null}
+        <span className={`text-white font-bold text-xs ${skill.icon ? 'hidden' : ''}`}>
+          {skill.name.slice(0, 2).toUpperCase()}
+        </span>
       </div>
       
       {/* Tooltip */}
