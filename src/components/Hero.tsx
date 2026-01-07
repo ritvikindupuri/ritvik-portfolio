@@ -461,7 +461,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
               transition={{ delay: 0.5, duration: 0.8 }}
               className="hidden md:block"
             >
-              <FloatingSkillsKeyboard />
+              <FloatingSkillsKeyboard isOwner={isOwner} />
             </motion.div>
           </div>
 
@@ -472,7 +472,7 @@ export const Hero = ({ isOwner }: HeroProps) => {
             transition={{ delay: 0.7, duration: 0.8 }}
             className="md:hidden flex justify-center mt-8"
           >
-            <FloatingSkillsKeyboard />
+            <FloatingSkillsKeyboard isOwner={isOwner} />
           </motion.div>
 
           {/* Analytics Dashboard Button - Owner Only */}

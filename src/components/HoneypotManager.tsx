@@ -209,7 +209,10 @@ export const HoneypotManager = () => {
 
         {recentTriggerIps.length > 0 && (
           <div className="p-3 bg-secondary/20 rounded-lg">
-            <HoneypotMiniMap ipAddresses={recentTriggerIps} />
+            <HoneypotMiniMap 
+              ipAddresses={recentTriggerIps} 
+              triggers={triggers.map(t => ({ ip_address: t.ip_address, created_at: t.created_at }))}
+            />
           </div>
         )}
 

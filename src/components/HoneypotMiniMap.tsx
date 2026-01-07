@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Clock } from "lucide-react";
+import { format } from "date-fns";
 
 type IpLocation = {
   ip: string;
@@ -12,17 +15,31 @@ type IpLocation = {
   countryCode: string;
 };
 
+type TriggerWithLocation = {
+  ip: string;
+  city: string;
+  country: string;
+  countryCode: string;
+  timestamp: string;
+};
+
 function uniq<T>(arr: T[]) {
   return Array.from(new Set(arr));
 }
 
-export function HoneypotMiniMap({ ipAddresses }: { ipAddresses: string[] }) {
+interface HoneypotMiniMapProps {
+  ipAddresses: string[];
+  triggers?: Array<{ ip_address: string | null; created_at: string }>;
+}
+
+export function HoneypotMiniMap({ ipAddresses, triggers = [] }: HoneypotMiniMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
   const [token, setToken] = useState<string | null>(null);
   const [locations, setLocations] = useState<IpLocation[]>([]);
+  const [triggerLocations, setTriggerLocations] = useState<TriggerWithLocation[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const ips = useMemo(() => {
@@ -57,6 +74,7 @@ export function HoneypotMiniMap({ ipAddresses }: { ipAddresses: string[] }) {
     let cancelled = false;
     if (ips.length === 0) {
       setLocations([]);
+      setTriggerLocations([]);
       return;
     }
 
@@ -83,7 +101,25 @@ export function HoneypotMiniMap({ ipAddresses }: { ipAddresses: string[] }) {
             countryCode: v!.countryCode,
           }));
 
-        if (!cancelled) setLocations(next);
+        if (!cancelled) {
+          setLocations(next);
+          
+          // Build trigger locations with timestamps (last 5)
+          const recentTriggers = triggers
+            .filter((t) => t.ip_address && raw[t.ip_address])
+            .slice(0, 5)
+            .map((t) => {
+              const loc = raw[t.ip_address!]!;
+              return {
+                ip: t.ip_address!,
+                city: loc.city,
+                country: loc.country,
+                countryCode: loc.countryCode,
+                timestamp: t.created_at,
+              };
+            });
+          setTriggerLocations(recentTriggers);
+        }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to geolocate IPs");
       }
@@ -93,7 +129,7 @@ export function HoneypotMiniMap({ ipAddresses }: { ipAddresses: string[] }) {
     return () => {
       cancelled = true;
     };
-  }, [ips]);
+  }, [ips, triggers]);
 
   useEffect(() => {
     if (!token) return;
@@ -144,7 +180,7 @@ export function HoneypotMiniMap({ ipAddresses }: { ipAddresses: string[] }) {
 
     for (const loc of locations) {
       const el = document.createElement("div");
-      el.className = "h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background shadow";
+      el.className = "h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background shadow animate-pulse";
       el.title = `${loc.ip} • ${loc.city || loc.countryCode}`;
 
       const marker = new mapboxgl.Marker({ element: el })
@@ -163,9 +199,9 @@ export function HoneypotMiniMap({ ipAddresses }: { ipAddresses: string[] }) {
   if (ips.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="text-sm font-medium">Recent Trigger Locations</div>
-      <div className="relative h-44 w-full overflow-hidden rounded-lg border border-border/50 bg-card/30">
+      <div className="relative h-36 w-full overflow-hidden rounded-lg border border-border/50 bg-card/30">
         {error ? (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground px-4 text-center">
             {error}
@@ -175,9 +211,27 @@ export function HoneypotMiniMap({ ipAddresses }: { ipAddresses: string[] }) {
         )}
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent to-background/20" />
       </div>
-      <div className="text-xs text-muted-foreground">
-        Showing up to {Math.min(ips.length, 25)} unique IPs from recent honeypot triggers.
-      </div>
+      
+      {/* Location chips for last 5 triggers */}
+      {triggerLocations.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {triggerLocations.map((loc, i) => (
+            <Badge 
+              key={`${loc.ip}-${i}`}
+              variant="outline" 
+              className="text-xs bg-red-500/10 border-red-500/30 text-red-400 gap-1 py-1"
+            >
+              <MapPin className="w-3 h-3" />
+              <span className="font-medium">{loc.city || loc.countryCode}</span>
+              <span className="text-muted-foreground">•</span>
+              <Clock className="w-3 h-3" />
+              <span className="text-muted-foreground">
+                {format(new Date(loc.timestamp), "MMM d, h:mm a")}
+              </span>
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
