@@ -61,6 +61,7 @@ export type Database = {
           created_at: string | null
           credential_url: string | null
           date: string
+          description: string | null
           display_order: number | null
           expiration_date: string | null
           id: string
@@ -73,6 +74,7 @@ export type Database = {
           created_at?: string | null
           credential_url?: string | null
           date: string
+          description?: string | null
           display_order?: number | null
           expiration_date?: string | null
           id?: string
@@ -85,6 +87,7 @@ export type Database = {
           created_at?: string | null
           credential_url?: string | null
           date?: string
+          description?: string | null
           display_order?: number | null
           expiration_date?: string | null
           id?: string
