@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,80 +8,131 @@ interface Skill {
   icon: string | null;
 }
 
-// Lighter keycap colors for better icon visibility
-const getKeycapColor = (skillName: string): string => {
-  const name = skillName.toLowerCase();
+// Web Audio API for keycap sounds
+const createKeycapSound = () => {
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   
-  // Use lighter shades so icons are visible
-  if (name.includes('kali')) return 'bg-slate-700';
-  if (name.includes('crowdstrike')) return 'bg-slate-700';
-  if (name.includes('splunk')) return 'bg-slate-700';
-  if (name.includes('wireshark')) return 'bg-slate-700';
-  if (name.includes('nmap')) return 'bg-slate-700';
-  if (name.includes('burp')) return 'bg-slate-700';
-  if (name.includes('metasploit')) return 'bg-slate-700';
-  if (name.includes('hashcat') || name.includes('john')) return 'bg-slate-700';
-  if (name.includes('nessus')) return 'bg-slate-700';
-  if (name.includes('ghidra')) return 'bg-slate-700';
-  if (name.includes('ida')) return 'bg-slate-700';
-  if (name.includes('autopsy')) return 'bg-slate-700';
-  if (name.includes('volatility')) return 'bg-slate-700';
-  if (name.includes('snort') || name.includes('suricata')) return 'bg-slate-700';
-  if (name.includes('openvas')) return 'bg-slate-700';
-  if (name.includes('aircrack')) return 'bg-slate-700';
-  if (name.includes('hydra')) return 'bg-slate-700';
-  if (name.includes('nikto')) return 'bg-slate-700';
-  if (name.includes('sqlmap')) return 'bg-slate-700';
-  if (name.includes('elastic') || name.includes('kibana')) return 'bg-slate-700';
-  if (name.includes('sentinel')) return 'bg-slate-700';
-  
-  return 'bg-slate-700';
+  return {
+    playHover: () => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.05);
+      
+      gainNode.gain.setValueAtTime(0.03, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.05);
+    },
+    playClick: () => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.08);
+      
+      gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.08);
+    }
+  };
+};
+
+let keycapSound: ReturnType<typeof createKeycapSound> | null = null;
+const getKeycapSound = () => {
+  if (!keycapSound) {
+    keycapSound = createKeycapSound();
+  }
+  return keycapSound;
 };
 
 interface KeycapProps {
   skill: Skill;
   index: number;
   onClick: () => void;
+  totalCols: number;
+  colIndex: number;
 }
 
-const Keycap = ({ skill, index, onClick }: KeycapProps) => {
-  const bgColor = getKeycapColor(skill.name);
+const Keycap = ({ skill, index, onClick, totalCols, colIndex }: KeycapProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const handleHover = useCallback(() => {
+    setIsHovered(true);
+    try {
+      getKeycapSound().playHover();
+    } catch (e) {
+      // Audio context may not be available
+    }
+  }, []);
+  
+  const handleClick = useCallback(() => {
+    try {
+      getKeycapSound().playClick();
+    } catch (e) {
+      // Audio context may not be available
+    }
+    onClick();
+  }, [onClick]);
+
+  // Determine tooltip position based on column to prevent overflow
+  const isLeftEdge = colIndex === 0;
+  const isRightEdge = colIndex === totalCols - 1;
+  
+  let tooltipPosition = "left-1/2 -translate-x-1/2";
+  if (isLeftEdge) tooltipPosition = "left-0";
+  if (isRightEdge) tooltipPosition = "right-0";
   
   return (
     <motion.button
-      onClick={onClick}
+      onClick={handleClick}
+      onMouseEnter={handleHover}
+      onMouseLeave={() => setIsHovered(false)}
       className="relative focus:outline-none group"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2, delay: index * 0.03 }}
-      whileHover={{ y: -2, transition: { duration: 0.1 } }}
-      whileTap={{ y: 2 }}
+      whileHover={{ y: -3, transition: { duration: 0.08 } }}
+      whileTap={{ y: 1 }}
     >
-      {/* 3D Keycap with depth */}
+      {/* 3D Keycap with mechanical keyboard styling */}
       <div className="relative">
-        {/* Keycap shadow/base for 3D effect */}
-        <div className="absolute inset-0 bg-slate-900 rounded-md translate-y-1" />
+        {/* Deep shadow for 3D depth */}
+        <div className="absolute inset-0 bg-slate-950 rounded-[6px] translate-y-[4px]" />
         
-        {/* Main keycap surface */}
-        <div className={`
+        {/* Keycap side walls */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 rounded-[6px] translate-y-[2px]" />
+        
+        {/* Main keycap top surface */}
+        <div className="
           relative
           w-12 h-12 sm:w-14 sm:h-14
-          ${bgColor}
-          rounded-md
+          bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800
+          rounded-[6px]
           flex items-center justify-center
-          border-t border-l border-slate-600
-          border-b-2 border-r-2 border-b-slate-900 border-r-slate-800
-          group-hover:bg-slate-600
-          transition-colors duration-150
-        `}>
-          {/* Inner highlight for keycap look */}
-          <div className="absolute inset-1 rounded-sm bg-gradient-to-br from-slate-600/30 to-transparent pointer-events-none" />
+          border border-slate-500/30
+          group-hover:from-slate-500 group-hover:via-slate-600 group-hover:to-slate-700
+          transition-all duration-100
+          shadow-[inset_0_-2px_4px_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.1)]
+        ">
+          {/* Concave top surface effect */}
+          <div className="absolute inset-[3px] rounded-[4px] bg-gradient-to-br from-slate-500/20 via-transparent to-slate-900/20 pointer-events-none" />
           
           {skill.icon ? (
             <img 
               src={skill.icon} 
               alt={skill.name}
-              className="w-7 h-7 sm:w-8 sm:h-8 object-contain relative z-10"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain relative z-10 drop-shadow-sm"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 const fallback = e.currentTarget.nextElementSibling;
@@ -89,27 +140,29 @@ const Keycap = ({ skill, index, onClick }: KeycapProps) => {
               }}
             />
           ) : null}
-          <span className={`text-white font-bold text-sm relative z-10 ${skill.icon ? 'hidden' : ''}`}>
+          <span className={`text-slate-200 font-bold text-sm relative z-10 ${skill.icon ? 'hidden' : ''}`}>
             {skill.name.slice(0, 2).toUpperCase()}
           </span>
         </div>
       </div>
       
-      {/* Tooltip - positioned above with proper z-index */}
-      <div className="
-        absolute -top-10 left-1/2 -translate-x-1/2
-        opacity-0 group-hover:opacity-100
-        transition-opacity duration-150
-        whitespace-nowrap
-        bg-slate-900 text-white text-xs font-medium
-        px-3 py-1.5 rounded-md
-        shadow-lg border border-slate-700
-        z-[100] pointer-events-none
-      ">
+      {/* Tooltip - positioned above keyboard with smart positioning */}
+      <div 
+        className={`
+          absolute -top-12 ${tooltipPosition}
+          opacity-0 group-hover:opacity-100
+          transition-all duration-150
+          whitespace-nowrap
+          bg-slate-950 text-white text-xs font-medium
+          px-3 py-2 rounded-lg
+          shadow-xl border border-slate-700
+          z-[200] pointer-events-none
+        `}
+      >
         {skill.name}
         {/* Tooltip arrow */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
-          <div className="border-4 border-transparent border-t-slate-900" />
+        <div className={`absolute top-full ${isLeftEdge ? 'left-4' : isRightEdge ? 'right-4' : 'left-1/2 -translate-x-1/2'}`}>
+          <div className="border-[6px] border-transparent border-t-slate-950" />
         </div>
       </div>
     </motion.button>
@@ -153,7 +206,6 @@ export const FloatingSkillsKeyboard = () => {
   }, []);
 
   useEffect(() => {
-    // Enable mouse tracking after entrance animation completes
     if (!loading && skills.length > 0 && !hasAnimated) {
       const timer = setTimeout(() => setHasAnimated(true), 1000);
       return () => clearTimeout(timer);
@@ -203,7 +255,7 @@ export const FloatingSkillsKeyboard = () => {
   const cols = 4;
 
   return (
-    <div ref={containerRef} className="relative overflow-visible" style={{ perspective: "800px" }}>
+    <div ref={containerRef} className="relative pt-8" style={{ perspective: "800px" }}>
       <motion.div
         className="relative"
         style={{ 
@@ -222,12 +274,15 @@ export const FloatingSkillsKeyboard = () => {
         {/* Keyboard base with depth */}
         <div className="relative">
           {/* Keyboard shadow */}
-          <div className="absolute inset-0 bg-slate-950 rounded-xl translate-y-2 blur-sm" />
+          <div className="absolute inset-0 bg-slate-950 rounded-xl translate-y-3 blur-md opacity-60" />
           
-          {/* Main keyboard body */}
-          <div className="relative p-4 sm:p-5 rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700/50 shadow-2xl">
+          {/* Keyboard case */}
+          <div className="relative p-4 sm:p-5 rounded-xl bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 border border-slate-600/30 shadow-2xl">
+            {/* Inner bezel */}
+            <div className="absolute inset-2 rounded-lg border border-slate-700/50 pointer-events-none" />
+            
             <div 
-              className="grid gap-2 sm:gap-2.5"
+              className="grid gap-2 sm:gap-3"
               style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
             >
               {skills.map((skill, index) => (
@@ -236,6 +291,8 @@ export const FloatingSkillsKeyboard = () => {
                   skill={skill}
                   index={index}
                   onClick={() => handleKeycapClick(skill.id)}
+                  totalCols={cols}
+                  colIndex={index % cols}
                 />
               ))}
             </div>
