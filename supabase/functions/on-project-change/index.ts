@@ -70,8 +70,8 @@ Deno.serve(async (req: Request) => {
     const indexResult = await indexResponse.json();
     console.log('Index result:', indexResult);
 
-    // Also generate embedding for the project itself
-    const generateResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+    // Generate embedding for the project itself
+    const projectEmbeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -83,15 +83,32 @@ Deno.serve(async (req: Request) => {
       }),
     });
 
-    const generateResult = await generateResponse.json();
-    console.log('Embedding generation result:', generateResult);
+    const projectEmbeddingResult = await projectEmbeddingResponse.json();
+    console.log('Project embedding result:', projectEmbeddingResult);
+
+    // Also generate embedding for the indexed GitHub content
+    const githubEmbeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'generate_single',
+        table: 'github_content',
+        id: project.id, // source_id matches project.id
+      }),
+    });
+
+    const githubEmbeddingResult = await githubEmbeddingResponse.json();
+    console.log('GitHub content embedding result:', githubEmbeddingResult);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'GitHub content indexed and embedding generated',
+        message: 'GitHub content indexed and all embeddings generated automatically',
         indexResult,
-        generateResult,
+        projectEmbeddingResult,
+        githubEmbeddingResult,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
