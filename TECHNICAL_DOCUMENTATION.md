@@ -2269,9 +2269,9 @@ flowchart TD
     G --> H[Geolocate IP]
     H --> I[Update Honeypot Mini-Map]
     I --> J{Triggers from this IP}
-    J -->|< 3| K[Send honeypot alert email]
+    J -->|"less than 3"| K[Send honeypot alert email]
     K --> L[Return generic auth error]
-    J -->|>= 3| M[Auto-block IP (24h)]
+    J -->|"3 or more"| M[Auto-block IP (24h)]
     M --> N[Insert blocked_ips row]
     N --> O[Send IP-blocked alert email]
     O --> L
