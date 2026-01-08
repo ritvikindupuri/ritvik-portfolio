@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Download, Printer, FileText, ChevronUp } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { ArrowLeft, Download, Printer, FileText, ChevronUp, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import mermaid from "mermaid";
@@ -67,8 +68,116 @@ const TechnicalDocumentation = () => {
   const [markdown, setMarkdown] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{ title: string; id: string; preview: string }[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [diagramsRendered, setDiagramsRendered] = useState(false);
+
+  // Extract sections from markdown for search
+  const sections = useMemo(() => {
+    if (!markdown) return [];
+    const sectionRegex = /^(#{1,4})\s+(.+)$/gm;
+    const results: { level: number; title: string; id: string; content: string; startIndex: number }[] = [];
+    let match;
+    const matches: { level: number; title: string; startIndex: number }[] = [];
+    
+    while ((match = sectionRegex.exec(markdown)) !== null) {
+      matches.push({
+        level: match[1].length,
+        title: match[2],
+        startIndex: match.index
+      });
+    }
+    
+    for (let i = 0; i < matches.length; i++) {
+      const current = matches[i];
+      const next = matches[i + 1];
+      const endIndex = next ? next.startIndex : markdown.length;
+      const content = markdown.slice(current.startIndex, endIndex);
+      const id = current.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      results.push({
+        level: current.level,
+        title: current.title,
+        id,
+        content,
+        startIndex: current.startIndex
+      });
+    }
+    
+    return results;
+  }, [markdown]);
+
+  // Search functionality
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    const results = sections
+      .filter(section => 
+        section.title.toLowerCase().includes(query) || 
+        section.content.toLowerCase().includes(query)
+      )
+      .slice(0, 10)
+      .map(section => {
+        // Find a preview snippet around the match
+        const contentLower = section.content.toLowerCase();
+        const matchIndex = contentLower.indexOf(query);
+        let preview = "";
+        
+        if (matchIndex !== -1) {
+          const start = Math.max(0, matchIndex - 50);
+          const end = Math.min(section.content.length, matchIndex + query.length + 100);
+          preview = (start > 0 ? "..." : "") + 
+                    section.content.slice(start, end).replace(/\n/g, ' ').trim() + 
+                    (end < section.content.length ? "..." : "");
+        } else {
+          preview = section.content.slice(0, 150).replace(/\n/g, ' ').trim() + "...";
+        }
+        
+        return {
+          title: section.title,
+          id: section.id,
+          preview
+        };
+      });
+    
+    setSearchResults(results);
+  }, [searchQuery, sections]);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Highlight the section briefly
+      element.classList.add('bg-primary/20');
+      setTimeout(() => element.classList.remove('bg-primary/20'), 2000);
+    }
+    setIsSearchOpen(false);
+    setSearchQuery("");
+  };
+
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 100);
+      }
+      if (e.key === 'Escape') {
+        setIsSearchOpen(false);
+        setSearchQuery("");
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     // Fetch the markdown file
@@ -355,6 +464,73 @@ const TechnicalDocumentation = () => {
         }
       `}</style>
 
+      {/* Search Overlay */}
+      {isSearchOpen && (
+        <div className="no-print fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm" onClick={() => setIsSearchOpen(false)}>
+          <div className="container max-w-2xl px-4 pt-20" onClick={e => e.stopPropagation()}>
+            <Card className="shadow-2xl border-primary/20">
+              <CardContent className="p-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search documentation... (Ctrl+K)"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-10"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                
+                {searchResults.length > 0 && (
+                  <div className="mt-4 max-h-80 overflow-y-auto space-y-2">
+                    {searchResults.map((result, index) => (
+                      <button
+                        key={index}
+                        onClick={() => scrollToSection(result.id)}
+                        className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <div className="font-medium text-foreground">{result.title}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {result.preview}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                {searchQuery.length >= 2 && searchResults.length === 0 && (
+                  <div className="mt-4 text-center text-muted-foreground py-4">
+                    No results found for "{searchQuery}"
+                  </div>
+                )}
+                
+                {!searchQuery && (
+                  <div className="mt-4 text-sm text-muted-foreground">
+                    <p>Start typing to search through all sections...</p>
+                    <div className="mt-2 flex gap-2 flex-wrap">
+                      <Badge variant="outline" className="cursor-pointer" onClick={() => setSearchQuery("security")}>security</Badge>
+                      <Badge variant="outline" className="cursor-pointer" onClick={() => setSearchQuery("authentication")}>authentication</Badge>
+                      <Badge variant="outline" className="cursor-pointer" onClick={() => setSearchQuery("honeypot")}>honeypot</Badge>
+                      <Badge variant="outline" className="cursor-pointer" onClick={() => setSearchQuery("chatbot")}>chatbot</Badge>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
       {/* Header - Hidden in print */}
       <header className="no-print sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center px-4">
@@ -365,6 +541,21 @@ const TechnicalDocumentation = () => {
             </Button>
           </Link>
           <div className="ml-auto flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setIsSearchOpen(true);
+                setTimeout(() => searchInputRef.current?.focus(), 100);
+              }}
+              className="gap-2"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium">
+                ⌘K
+              </kbd>
+            </Button>
             <Button variant="outline" size="sm" onClick={handleDownloadMarkdown} className="gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Download .md</span>
