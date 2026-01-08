@@ -9,6 +9,18 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import mermaid from "mermaid";
+import Prism from "prismjs";
+import "prismjs/themes/prism-tomorrow.css";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-jsx";
+import "prismjs/components/prism-tsx";
+import "prismjs/components/prism-sql";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-markdown";
 
 // Initialize mermaid with dark theme settings
 mermaid.initialize({
@@ -207,23 +219,27 @@ const TechnicalDocumentation = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Render mermaid diagrams after content is loaded
+  // Render mermaid diagrams and syntax highlighting after content is loaded
   useEffect(() => {
     if (!loading && markdown && contentRef.current && !diagramsRendered) {
       const t = window.setTimeout(async () => {
         try {
+          // Render mermaid diagrams
           const nodes = Array.from(
             contentRef.current!.querySelectorAll<HTMLElement>(".mermaid")
           );
 
-          if (nodes.length === 0) {
-            setDiagramsRendered(true);
-            return;
+          if (nodes.length > 0) {
+            await mermaid.run({ nodes, suppressErrors: true });
           }
 
-          await mermaid.run({ nodes, suppressErrors: true });
+          // Apply Prism syntax highlighting
+          const codeBlocks = contentRef.current!.querySelectorAll('pre code[class*="language-"]');
+          codeBlocks.forEach((block) => {
+            Prism.highlightElement(block as HTMLElement);
+          });
         } catch (err) {
-          console.error("Mermaid rendering error:", err);
+          console.error("Rendering error:", err);
         } finally {
           setDiagramsRendered(true);
         }
@@ -369,8 +385,35 @@ const TechnicalDocumentation = () => {
       </div>`;
     });
     
-    // Convert other code blocks
-    html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="my-6 p-4 bg-muted rounded-lg overflow-x-auto border border-border"><code class="text-sm font-mono">$2</code></pre>');
+    // Convert other code blocks with language-specific classes for syntax highlighting
+    html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+      const languageMap: Record<string, string> = {
+        'ts': 'typescript',
+        'js': 'javascript',
+        'py': 'python',
+        'sh': 'bash',
+        'shell': 'bash',
+        'sql': 'sql',
+        'json': 'json',
+        'css': 'css',
+        'html': 'markup',
+        'md': 'markdown',
+        'tsx': 'tsx',
+        'jsx': 'jsx',
+        'typescript': 'typescript',
+        'javascript': 'javascript',
+        'python': 'python',
+        'bash': 'bash',
+      };
+      
+      const language = lang ? (languageMap[lang.toLowerCase()] || lang) : 'javascript';
+      const escapedCode = code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      
+      return `<pre class="my-6 p-4 bg-[#1d1f21] rounded-lg overflow-x-auto border border-border"><code class="language-${language} text-sm font-mono">${escapedCode}</code></pre>`;
+    });
 
     // Convert tables
     html = html.replace(/\|(.+)\|/g, (match) => {
