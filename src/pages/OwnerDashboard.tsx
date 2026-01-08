@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { GitHubIndexingStatus } from "@/components/GitHubIndexingStatus";
+import { RAGTestingPanel } from "@/components/RAGTestingPanel";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -105,14 +106,24 @@ const OwnerDashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-6xl space-y-6">
-        {/* GitHub Indexing Status */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <GitHubIndexingStatus />
-        </motion.div>
+        {/* GitHub Indexing & RAG Testing */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <GitHubIndexingStatus />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <RAGTestingPanel />
+          </motion.div>
+        </div>
 
         {/* Portfolio Analytics */}
         <motion.div
