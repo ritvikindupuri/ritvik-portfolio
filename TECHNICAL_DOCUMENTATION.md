@@ -2889,7 +2889,7 @@ The portfolio includes a comprehensive automated email notification system that 
 - MITRE ATT&CK technique details
 - Remediation steps for each technique
 
-### 3. Weekly Digest Email (`weekly-digest`)
+### 4. Weekly Digest Email (`weekly-digest`)
 
 **Trigger**: Automated via **pg_cron** job - runs every **Monday at 9:00 AM UTC**.
 
@@ -3352,7 +3352,7 @@ This section provides a quick reference to all figures in this documentation, or
 
 | Figure | Section | Description |
 |--------|---------|-------------|
-| Figure SYS-1 | System Architecture | Complete technical stack diagram showing frontend, backend, and external services |
+| Figure SA-1 | System Architecture | Complete technical stack diagram showing frontend, backend, and external services |
 | Figure DF-1 | Visitor Action to Email Alert Flow | Sequence diagram of visitor tracking to email notification |
 | Figure DF-2 | Threat Detection to Alert Flow | Sequence diagram of security threat detection and alerting |
 | Figure DF-3 | Weekly Digest Flow | Flowchart of automated weekly summary email generation |
@@ -3391,7 +3391,6 @@ This section provides a quick reference to all figures in this documentation, or
 |--------|---------|-------------|
 | Figure SS-1 | MITRE ATT&CK Threat Detection | Configurable detection thresholds settings |
 | Figure HP-1 | Honeypot Account System | Honeypot dashboard with mini map and trigger locations |
-| Figure HP-2 | IP Block List System | Combined Honeypot & IP Block management interface |
 | Figure GB-1 | Geographic Blocking Rules | Geographic blocking manager with country rules |
 | Figure KL-1 | Known Login Locations | Auto-trust decision flow diagram |
 | Figure KL-2 | Known Login Locations | Location management UI with trust controls |
