@@ -44,3 +44,9 @@ verify_jwt = false
 
 [functions.cleanup-expired-blocks]
 verify_jwt = false
+
+[functions.on-project-change]
+verify_jwt = false
+
+[functions.generate-cert-description]
+verify_jwt = false
