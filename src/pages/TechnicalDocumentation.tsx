@@ -7,12 +7,68 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
+import mermaid from "mermaid";
+
+// Initialize mermaid with dark theme settings
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#22d3ee',
+    primaryTextColor: '#f8fafc',
+    primaryBorderColor: '#22d3ee',
+    lineColor: '#64748b',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#0f172a',
+    background: '#0f172a',
+    mainBkg: '#1e293b',
+    secondBkg: '#0f172a',
+    nodeBorder: '#22d3ee',
+    clusterBkg: '#1e293b',
+    clusterBorder: '#334155',
+    defaultLinkColor: '#64748b',
+    titleColor: '#f8fafc',
+    edgeLabelBackground: '#1e293b',
+    nodeTextColor: '#f8fafc',
+    actorTextColor: '#f8fafc',
+    actorLineColor: '#64748b',
+    signalColor: '#22d3ee',
+    signalTextColor: '#f8fafc',
+    labelBoxBkgColor: '#1e293b',
+    labelBoxBorderColor: '#334155',
+    labelTextColor: '#f8fafc',
+    loopTextColor: '#f8fafc',
+    noteBorderColor: '#22d3ee',
+    noteBkgColor: '#1e293b',
+    noteTextColor: '#f8fafc',
+    activationBorderColor: '#22d3ee',
+    activationBkgColor: '#1e293b',
+    sequenceNumberColor: '#f8fafc',
+  },
+  flowchart: {
+    htmlLabels: true,
+    curve: 'basis',
+    padding: 15,
+  },
+  sequence: {
+    diagramMarginX: 50,
+    diagramMarginY: 10,
+    actorMargin: 50,
+    width: 150,
+    height: 65,
+    boxMargin: 10,
+    boxTextMargin: 5,
+    noteMargin: 10,
+    messageMargin: 35,
+  },
+});
 
 const TechnicalDocumentation = () => {
   const [markdown, setMarkdown] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [diagramsRendered, setDiagramsRendered] = useState(false);
 
   useEffect(() => {
     // Fetch the markdown file
@@ -41,6 +97,36 @@ const TechnicalDocumentation = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Render mermaid diagrams after content is loaded
+  useEffect(() => {
+    if (!loading && markdown && contentRef.current && !diagramsRendered) {
+      const renderDiagrams = async () => {
+        const diagrams = contentRef.current?.querySelectorAll('.mermaid-diagram');
+        if (diagrams) {
+          for (let i = 0; i < diagrams.length; i++) {
+            const diagram = diagrams[i] as HTMLElement;
+            const code = diagram.getAttribute('data-mermaid');
+            if (code) {
+              try {
+                const id = `mermaid-${i}-${Date.now()}`;
+                const { svg } = await mermaid.render(id, code);
+                diagram.innerHTML = svg;
+                diagram.classList.add('mermaid-rendered');
+              } catch (err) {
+                console.error('Mermaid rendering error:', err);
+                // Keep the fallback view
+              }
+            }
+          }
+        }
+        setDiagramsRendered(true);
+      };
+      
+      // Small delay to ensure DOM is ready
+      setTimeout(renderDiagrams, 100);
+    }
+  }, [loading, markdown, diagramsRendered]);
 
   const handlePrint = () => {
     window.print();
@@ -136,10 +222,25 @@ const TechnicalDocumentation = () => {
       return `<img src="${normalizedSrc}" alt="${alt}" class="my-4 max-w-full rounded-lg shadow-md" loading="lazy" />`;
     });
 
-    // Convert mermaid code blocks to styled diagram boxes with visual representation
+    // Convert mermaid code blocks to diagram containers
     html = html.replace(/```mermaid\n([\s\S]*?)```/g, (match, content) => {
-      // Parse the mermaid content to create a visual representation
-      const lines = content.trim().split('\n');
+      // Clean up the mermaid content - fix common syntax issues
+      let cleanContent = content.trim();
+      
+      // Fix "5 plus" -> "5+" and similar text issues in node labels
+      cleanContent = cleanContent.replace(/5 plus/g, '5+');
+      cleanContent = cleanContent.replace(/3 plus/g, '3+');
+      cleanContent = cleanContent.replace(/at least/g, '>=');
+      
+      // Escape HTML entities in the data attribute
+      const escapedContent = cleanContent
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      
+      // Parse the mermaid content to determine diagram type
+      const lines = cleanContent.split('\n');
       const isFlowchart = lines[0]?.includes('flowchart') || lines[0]?.includes('graph');
       const isSequence = lines[0]?.includes('sequenceDiagram');
       
@@ -153,51 +254,25 @@ const TechnicalDocumentation = () => {
         diagramIcon = '📋';
       }
 
-      // Extract subgraph names for flowcharts
-      const subgraphs: string[] = [];
-      const nodePattern = /\[([^\]]+)\]/g;
-      const nodes: string[] = [];
-      let nodeMatch;
-      while ((nodeMatch = nodePattern.exec(content)) !== null) {
-        if (nodeMatch[1] && !nodes.includes(nodeMatch[1]) && nodeMatch[1].length < 40) {
-          nodes.push(nodeMatch[1]);
-        }
-      }
-
-      const subgraphPattern = /subgraph\s+(\w+)\["([^"]+)"\]/g;
-      let subMatch;
-      while ((subMatch = subgraphPattern.exec(content)) !== null) {
-        if (subMatch[2]) subgraphs.push(subMatch[2]);
-      }
-
-      const componentsHtml = subgraphs.length > 0 
-        ? `<div class="mt-4 flex flex-wrap gap-2">
-            ${subgraphs.slice(0, 5).map(s => `<span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">${s}</span>`).join('')}
-          </div>`
-        : nodes.length > 0
-        ? `<div class="mt-4 flex flex-wrap gap-2">
-            ${nodes.slice(0, 6).map(n => `<span class="px-2 py-1 bg-muted text-muted-foreground rounded text-xs">${n}</span>`).join('')}
-          </div>`
-        : '';
-
       return `<div class="my-8 rounded-lg border border-border bg-gradient-to-br from-muted/30 to-muted/10 overflow-hidden">
         <div class="px-4 py-3 bg-muted/50 border-b border-border flex items-center gap-2">
           <span class="text-lg">${diagramIcon}</span>
           <span class="font-semibold text-sm">${diagramType}</span>
-          <span class="ml-auto text-xs text-muted-foreground">Mermaid Diagram</span>
+          <span class="ml-auto text-xs text-muted-foreground">Interactive Diagram</span>
         </div>
-        <div class="p-4">
-          <div class="text-xs text-muted-foreground mb-2">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">View on GitHub</a> for full interactive rendering
+        <div class="p-4 overflow-x-auto">
+          <div class="mermaid-diagram min-h-[200px] flex items-center justify-center" data-mermaid="${escapedContent}">
+            <div class="text-center text-muted-foreground">
+              <div class="animate-pulse">Loading diagram...</div>
+            </div>
           </div>
-          ${componentsHtml}
-          <details class="mt-4">
-            <summary class="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-              View diagram source code
-            </summary>
-            <pre class="mt-2 p-3 bg-background rounded border border-border overflow-x-auto"><code class="text-xs font-mono text-muted-foreground">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
-          </details>
         </div>
+        <details class="border-t border-border">
+          <summary class="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 bg-muted/30">
+            View diagram source code
+          </summary>
+          <pre class="p-3 bg-background overflow-x-auto"><code class="text-xs font-mono text-muted-foreground">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+        </details>
       </div>`;
     });
     

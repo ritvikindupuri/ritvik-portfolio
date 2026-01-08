@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Github, RefreshCw, CheckCircle2, AlertCircle, Clock } from "lucide-react";
-import { toast } from "sonner";
+import { Github, CheckCircle2, AlertCircle, Clock, Zap } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface IndexingStats {
@@ -17,7 +15,6 @@ interface IndexingStats {
 export const GitHubIndexingStatus = () => {
   const [stats, setStats] = useState<IndexingStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reindexing, setReindexing] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -61,38 +58,11 @@ export const GitHubIndexingStatus = () => {
     }
   };
 
-  const triggerReindex = async () => {
-    setReindexing(true);
-    try {
-      toast.info("Starting re-indexing of all content...", { duration: 5000 });
-
-      // Call generate-embeddings with regenerate flag
-      const { data, error } = await supabase.functions.invoke('generate-embeddings', {
-        body: { action: 'generate_all', regenerate: true }
-      });
-
-      if (error) throw error;
-
-      console.log('Re-indexing results:', data);
-      toast.success("Re-indexing complete! GitHub READMEs are being processed.", { duration: 5000 });
-      
-      // Refresh stats after a short delay to allow indexing to complete
-      setTimeout(() => {
-        fetchStats();
-      }, 3000);
-    } catch (error) {
-      console.error('Error triggering re-index:', error);
-      toast.error("Failed to trigger re-indexing");
-    } finally {
-      setReindexing(false);
-    }
-  };
-
   if (loading) {
     return (
       <Card className="bg-card/50 border-border/50">
         <CardContent className="py-8 flex items-center justify-center">
-          <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </CardContent>
       </Card>
     );
@@ -171,29 +141,13 @@ export const GitHubIndexingStatus = () => {
           </div>
         )}
 
-        {/* Re-index Button */}
-        <Button 
-          onClick={triggerReindex} 
-          disabled={reindexing}
-          className="w-full gap-2"
-          variant="outline"
-        >
-          {reindexing ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              Re-indexing All Content...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4" />
-              Re-index All GitHub READMEs
-            </>
-          )}
-        </Button>
-
-        <p className="text-xs text-muted-foreground text-center">
-          Re-indexing fetches latest README content from GitHub and generates embeddings for the RAG chatbot.
-        </p>
+        {/* Auto-indexing info */}
+        <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+          <Zap className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Auto-indexing enabled:</span> GitHub content is automatically re-indexed when projects are added or updated via database webhooks.
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

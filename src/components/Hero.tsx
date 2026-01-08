@@ -324,9 +324,10 @@ const NeuralNetworkBackground = () => {
 
 interface HeroProps {
   isOwner: boolean;
+  showKeyboard?: boolean;
 }
 
-export const Hero = ({ isOwner }: HeroProps) => {
+export const Hero = ({ isOwner, showKeyboard = true }: HeroProps) => {
   const navigate = useNavigate();
   const [profileImage, setProfileImage] = useState<string>("");
   const [tempImage, setTempImage] = useState<string>("");
@@ -534,26 +535,30 @@ export const Hero = ({ isOwner }: HeroProps) => {
               </div>
             </motion.div>
 
-            {/* Right Column - Skills Keyboard */}
+            {/* Right Column - Skills Keyboard - Only shows after access choice */}
+            {showKeyboard && (
+              <motion.div
+                initial={{ opacity: 0, x: 100, rotateY: -25 }}
+                animate={{ opacity: 1, x: 0, rotateY: 0 }}
+                transition={{ delay: 0.3, duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="hidden md:block"
+              >
+                <FloatingSkillsKeyboard isOwner={isOwner} />
+              </motion.div>
+            )}
+          </div>
+
+          {/* Mobile Keyboard - Only shows after access choice */}
+          {showKeyboard && (
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="hidden md:block"
+              className="md:hidden flex justify-center mt-8"
             >
               <FloatingSkillsKeyboard isOwner={isOwner} />
             </motion.div>
-          </div>
-
-          {/* Mobile Keyboard */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.8 }}
-            className="md:hidden flex justify-center mt-8"
-          >
-            <FloatingSkillsKeyboard isOwner={isOwner} />
-          </motion.div>
+          )}
 
           {/* Table of Contents */}
           <motion.div

@@ -35,6 +35,8 @@ const Index = () => {
   // CRITICAL: isOwner should ONLY be true when authenticated user has owner role
   // Defaults to false so chatbot is visible for guests
   const [isOwner, setIsOwner] = useState(false);
+  // Track if user has made their access choice (guest or owner login complete)
+  const [accessChoiceMade, setAccessChoiceMade] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation() as any;
@@ -125,6 +127,8 @@ const Index = () => {
 
     setIsOwner(ownerStatus);
     setShowAccessDialog(false);
+    // Mark that user has made their access choice - enables keyboard animation
+    setAccessChoiceMade(true);
   };
 
   return (
@@ -142,7 +146,7 @@ const Index = () => {
         <div className="relative">
           
           <div className="relative bg-background">
-            <Hero isOwner={isOwner} />
+            <Hero isOwner={isOwner} showKeyboard={accessChoiceMade} />
           
           <ResumeSection isOwner={isOwner} />
           
