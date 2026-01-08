@@ -101,30 +101,26 @@ const TechnicalDocumentation = () => {
   // Render mermaid diagrams after content is loaded
   useEffect(() => {
     if (!loading && markdown && contentRef.current && !diagramsRendered) {
-      const renderDiagrams = async () => {
-        const diagrams = contentRef.current?.querySelectorAll('.mermaid-diagram');
-        if (diagrams) {
-          for (let i = 0; i < diagrams.length; i++) {
-            const diagram = diagrams[i] as HTMLElement;
-            const code = diagram.getAttribute('data-mermaid');
-            if (code) {
-              try {
-                const id = `mermaid-${i}-${Date.now()}`;
-                const { svg } = await mermaid.render(id, code);
-                diagram.innerHTML = svg;
-                diagram.classList.add('mermaid-rendered');
-              } catch (err) {
-                console.error('Mermaid rendering error:', err);
-                // Keep the fallback view
-              }
-            }
+      const t = window.setTimeout(async () => {
+        try {
+          const nodes = Array.from(
+            contentRef.current!.querySelectorAll<HTMLElement>(".mermaid")
+          );
+
+          if (nodes.length === 0) {
+            setDiagramsRendered(true);
+            return;
           }
+
+          await mermaid.run({ nodes, suppressErrors: true });
+        } catch (err) {
+          console.error("Mermaid rendering error:", err);
+        } finally {
+          setDiagramsRendered(true);
         }
-        setDiagramsRendered(true);
-      };
-      
-      // Small delay to ensure DOM is ready
-      setTimeout(renderDiagrams, 100);
+      }, 0);
+
+      return () => window.clearTimeout(t);
     }
   }, [loading, markdown, diagramsRendered]);
 
@@ -224,34 +220,26 @@ const TechnicalDocumentation = () => {
 
     // Convert mermaid code blocks to diagram containers
     html = html.replace(/```mermaid\n([\s\S]*?)```/g, (match, content) => {
-      // Clean up the mermaid content - fix common syntax issues
-      let cleanContent = content.trim();
-      
-      // Fix "5 plus" -> "5+" and similar text issues in node labels
-      cleanContent = cleanContent.replace(/5 plus/g, '5+');
-      cleanContent = cleanContent.replace(/3 plus/g, '3+');
-      cleanContent = cleanContent.replace(/at least/g, '>=');
-      
-      // Escape HTML entities in the data attribute
-      const escapedContent = cleanContent
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-      
-      // Parse the mermaid content to determine diagram type
-      const lines = cleanContent.split('\n');
-      const isFlowchart = lines[0]?.includes('flowchart') || lines[0]?.includes('graph');
-      const isSequence = lines[0]?.includes('sequenceDiagram');
-      
-      let diagramType = 'Diagram';
-      let diagramIcon = '📊';
+      const cleanContent = content.trim();
+
+      // Escape for safe HTML injection; mermaid reads from textContent.
+      const escapedForHtml = cleanContent
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      const firstLine = cleanContent.split("\n")[0] ?? "";
+      const isFlowchart = firstLine.includes("flowchart") || firstLine.includes("graph");
+      const isSequence = firstLine.includes("sequenceDiagram");
+
+      let diagramType = "Diagram";
+      let diagramIcon = "📊";
       if (isFlowchart) {
-        diagramType = 'Architecture Flowchart';
-        diagramIcon = '🔀';
+        diagramType = "Architecture Flowchart";
+        diagramIcon = "🔀";
       } else if (isSequence) {
-        diagramType = 'Sequence Diagram';
-        diagramIcon = '📋';
+        diagramType = "Sequence Diagram";
+        diagramIcon = "📋";
       }
 
       return `<div class="my-8 rounded-lg border border-border bg-gradient-to-br from-muted/30 to-muted/10 overflow-hidden">
@@ -261,17 +249,13 @@ const TechnicalDocumentation = () => {
           <span class="ml-auto text-xs text-muted-foreground">Interactive Diagram</span>
         </div>
         <div class="p-4 overflow-x-auto">
-          <div class="mermaid-diagram min-h-[200px] flex items-center justify-center" data-mermaid="${escapedContent}">
-            <div class="text-center text-muted-foreground">
-              <div class="animate-pulse">Loading diagram...</div>
-            </div>
-          </div>
+          <pre class="mermaid m-0">${escapedForHtml}</pre>
         </div>
         <details class="border-t border-border">
           <summary class="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 bg-muted/30">
             View diagram source code
           </summary>
-          <pre class="p-3 bg-background overflow-x-auto"><code class="text-xs font-mono text-muted-foreground">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+          <pre class="p-3 bg-background overflow-x-auto"><code class="text-xs font-mono text-muted-foreground">${escapedForHtml}</code></pre>
         </details>
       </div>`;
     });
