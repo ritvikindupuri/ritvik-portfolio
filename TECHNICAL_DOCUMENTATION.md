@@ -2232,52 +2232,9 @@ When attackers repeatedly trigger honeypots, the IP Block List system automatica
 
 The IP Block List system works alongside the Honeypot Account System to automatically block malicious IP addresses after they trigger honeypot accounts multiple times. This creates a layered defense that first detects attackers (honeypots) and then prevents further access (IP blocking).
 
-<p align="center">
-  <img src="/images/honeypot-ip-blocking.png" alt="Honeypot & IP Block Management Interface" width="800"/>
-</p>
-
-**Figure HP-2: Honeypot & IP Block Management Interface** - The combined security management interface showing both deception and blocking capabilities:
-
-**Honeypot Accounts Section (Left Panel):**
-- **Statistics Dashboard**: Displays total honeypot accounts, active count, and cumulative trigger count
-- **Account List**: Each honeypot email shows its active status (toggle switch), description, and trigger count
-- **Add New Honeypot**: Form to create custom honeypot emails with optional descriptions
-- **MITRE ATT&CK Badge**: T1078.001 indicator showing framework alignment
-
-**IP Block List Section (Right Panel):**
-- **Block Statistics**: Shows total blocked IPs, active blocks, and auto-blocked count
-- **IP Block Table**: Lists all blocked IPs with:
-  - IP address and blocking reason
-  - Block status (active/inactive toggle)
-  - Honeypot trigger count that led to the block
-  - Expiration time for auto-blocks
-- **Manual Block Input**: Add IPs manually with custom reason
-- **Real-time Updates**: Changes sync immediately via Supabase Realtime
-
 ### Automatic IP Blocking Workflow
 
-The following diagram illustrates the complete flow from honeypot trigger to automatic IP blocking:
-
-```mermaid
-flowchart TD
-    A[Login Attempt] --> B{IP blocked?}
-    B -->|Yes| C[Reject request]
-    B -->|No| D{Honeypot email?}
-    D -->|No| E[Continue normal auth flow]
-    D -->|Yes| F[Insert honeypot_triggers row]
-    F --> G[Increment times_triggered]
-    G --> H[Geolocate IP]
-    H --> I[Update Honeypot Mini-Map]
-    I --> J{Triggers from this IP}
-    J -->|"less than 3"| K[Send honeypot alert email]
-    K --> L[Return generic auth error]
-    J -->|"3 or more"| M[Auto-block IP (24h)]
-    M --> N[Insert blocked_ips row]
-    N --> O[Send IP-blocked alert email]
-    O --> L
-```
-
-**Workflow Steps:**
+The automatic IP blocking system follows a sequential decision process when processing login attempts:
 
 1. **Login Attempt Received**: The `log-auth-attempt` edge function intercepts every login attempt before authentication.
 
