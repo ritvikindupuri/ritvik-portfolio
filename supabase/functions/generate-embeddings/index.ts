@@ -112,6 +112,8 @@ function generateTextForContent(type: string, item: any): string {
       return `LLM Project: ${item.title}. Type: ${item.project_type || 'N/A'}. Provider: ${item.llm_provider || 'N/A'}. Use Case: ${item.use_case || 'N/A'}. ${item.description}`;
     case 'certifications':
       return `Certification: ${item.name} by ${item.issuer}. Date: ${item.date}`;
+    case 'github_content':
+      return `GitHub Repository (${item.repo_name || 'Repository'}): ${item.content_text || ''}. URL: ${item.github_url}`;
     default:
       return JSON.stringify(item);
   }
@@ -131,7 +133,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === 'generate_all') {
       // Generate embeddings for all content
-      const tables = ['documentation', 'projects', 'skills', 'experience', 'ml_models', 'llm_projects', 'certifications'];
+      const tables = ['documentation', 'projects', 'skills', 'experience', 'ml_models', 'llm_projects', 'certifications', 'github_content'];
       const results: Record<string, { processed: number; skipped: number; errors: number }> = {};
 
       for (const tableName of tables) {

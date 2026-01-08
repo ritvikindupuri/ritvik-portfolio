@@ -63,6 +63,7 @@ export type Database = {
           date: string
           description: string | null
           display_order: number | null
+          embedding: string | null
           expiration_date: string | null
           id: string
           image_url: string | null
@@ -76,6 +77,7 @@ export type Database = {
           date: string
           description?: string | null
           display_order?: number | null
+          embedding?: string | null
           expiration_date?: string | null
           id?: string
           image_url?: string | null
@@ -89,6 +91,7 @@ export type Database = {
           date?: string
           description?: string | null
           display_order?: number | null
+          embedding?: string | null
           expiration_date?: string | null
           id?: string
           image_url?: string | null
@@ -104,6 +107,7 @@ export type Database = {
           created_at: string | null
           description: string
           display_order: number | null
+          embedding: string | null
           id: string
           title: string
           url: string
@@ -114,6 +118,7 @@ export type Database = {
           created_at?: string | null
           description: string
           display_order?: number | null
+          embedding?: string | null
           id?: string
           title: string
           url: string
@@ -124,6 +129,7 @@ export type Database = {
           created_at?: string | null
           description?: string
           display_order?: number | null
+          embedding?: string | null
           id?: string
           title?: string
           url?: string
@@ -137,6 +143,7 @@ export type Database = {
           created_at: string
           description: string[] | null
           display_order: number | null
+          embedding: string | null
           end_date: string | null
           id: string
           is_current: boolean | null
@@ -151,6 +158,7 @@ export type Database = {
           created_at?: string
           description?: string[] | null
           display_order?: number | null
+          embedding?: string | null
           end_date?: string | null
           id?: string
           is_current?: boolean | null
@@ -165,6 +173,7 @@ export type Database = {
           created_at?: string
           description?: string[] | null
           display_order?: number | null
+          embedding?: string | null
           end_date?: string | null
           id?: string
           is_current?: boolean | null
@@ -377,6 +386,7 @@ export type Database = {
           description: string
           display_order: number | null
           documentation_url: string | null
+          embedding: string | null
           github_url: string | null
           id: string
           llm_provider: string | null
@@ -392,6 +402,7 @@ export type Database = {
           description: string
           display_order?: number | null
           documentation_url?: string | null
+          embedding?: string | null
           github_url?: string | null
           id?: string
           llm_provider?: string | null
@@ -407,6 +418,7 @@ export type Database = {
           description?: string
           display_order?: number | null
           documentation_url?: string | null
+          embedding?: string | null
           github_url?: string | null
           id?: string
           llm_provider?: string | null
@@ -455,6 +467,7 @@ export type Database = {
           demo_url: string | null
           description: string
           display_order: number | null
+          embedding: string | null
           framework: string | null
           github_url: string | null
           id: string
@@ -472,6 +485,7 @@ export type Database = {
           demo_url?: string | null
           description: string
           display_order?: number | null
+          embedding?: string | null
           framework?: string | null
           github_url?: string | null
           id?: string
@@ -489,6 +503,7 @@ export type Database = {
           demo_url?: string | null
           description?: string
           display_order?: number | null
+          embedding?: string | null
           framework?: string | null
           github_url?: string | null
           id?: string
@@ -559,6 +574,7 @@ export type Database = {
           created_at: string | null
           description: string
           display_order: number | null
+          embedding: string | null
           end_date: string | null
           github_url: string | null
           id: string
@@ -576,6 +592,7 @@ export type Database = {
           created_at?: string | null
           description: string
           display_order?: number | null
+          embedding?: string | null
           end_date?: string | null
           github_url?: string | null
           id?: string
@@ -593,6 +610,7 @@ export type Database = {
           created_at?: string | null
           description?: string
           display_order?: number | null
+          embedding?: string | null
           end_date?: string | null
           github_url?: string | null
           id?: string
@@ -715,6 +733,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           display_order: number | null
+          embedding: string | null
           icon: string | null
           id: string
           level: string | null
@@ -728,6 +747,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           display_order?: number | null
+          embedding?: string | null
           icon?: string | null
           id?: string
           level?: string | null
@@ -741,6 +761,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           display_order?: number | null
+          embedding?: string | null
           icon?: string | null
           id?: string
           level?: string | null
