@@ -1,13 +1,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { 
+  getCorsHeaders, 
+  handleCorsPreFlight, 
+  getClientIP, 
+  checkRateLimit as checkGeneralRateLimit, 
+  rateLimitExceededResponse,
+  logRateLimitEvent,
+  RATE_LIMIT_CONFIGS 
+} from "../_shared/cors-rate-limit.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface AuthAttemptRequest {
   email: string;
@@ -16,10 +20,10 @@ interface AuthAttemptRequest {
   userAgent?: string;
 }
 
-// Rate limiting configuration
-const RATE_LIMIT_WINDOW = 900000; // 15 minutes
+// Auth-specific rate limiting for failed attempts (uses shared general rate limit too)
+const AUTH_RATE_LIMIT_WINDOW = 900000; // 15 minutes
 const MAX_FAILED_ATTEMPTS = 5;
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const authRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 // Auto-block configuration
 const HONEYPOT_BLOCK_THRESHOLD = 3; // Block IP after 3 honeypot triggers
@@ -337,15 +341,15 @@ async function sendSuspiciousActivityAlert(email: string, ipAddress: string, use
   }
 }
 
-function checkRateLimit(key: string, success: boolean): { blocked: boolean; count: number } {
+function checkAuthRateLimit(key: string, success: boolean): { blocked: boolean; count: number } {
   const now = Date.now();
-  const entry = rateLimitMap.get(key);
+  const entry = authRateLimitMap.get(key);
 
   // Clean up expired entries
   if (Math.random() < 0.1) {
-    for (const [k, v] of rateLimitMap.entries()) {
+    for (const [k, v] of authRateLimitMap.entries()) {
       if (now > v.resetTime) {
-        rateLimitMap.delete(k);
+        authRateLimitMap.delete(k);
       }
     }
   }
@@ -353,12 +357,12 @@ function checkRateLimit(key: string, success: boolean): { blocked: boolean; coun
   // Only track failed attempts for rate limiting
   if (success) {
     // Reset on successful login
-    rateLimitMap.delete(key);
+    authRateLimitMap.delete(key);
     return { blocked: false, count: 0 };
   }
 
   if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    authRateLimitMap.set(key, { count: 1, resetTime: now + AUTH_RATE_LIMIT_WINDOW });
     return { blocked: false, count: 1 };
   }
 
@@ -747,18 +751,18 @@ async function sendHoneypotAlert(
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Handle CORS preflight
+  const preflightResponse = handleCorsPreFlight(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
     const { email, success, failureReason, userAgent }: AuthAttemptRequest = await req.json();
     
-    // Get IP from headers
-    const forwardedFor = req.headers.get("x-forwarded-for");
-    const realIp = req.headers.get("x-real-ip");
-    const cfConnectingIp = req.headers.get("cf-connecting-ip");
-    const ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || cfConnectingIp || "unknown";
+    // Get IP from headers using shared utility
+    const ipAddress = getClientIP(req);
 
     // Create Supabase client with service role for inserting
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -845,7 +849,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check rate limit
     const rateLimitKey = `${email}:${ipAddress}`;
-    const rateLimit = checkRateLimit(rateLimitKey, success);
+    const rateLimit = checkAuthRateLimit(rateLimitKey, success);
 
     if (rateLimit.blocked) {
       console.warn(`Rate limit exceeded for ${email} from ${ipAddress}`);

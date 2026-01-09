@@ -1,61 +1,20 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { 
+  getCorsHeaders, 
+  handleCorsPreFlight, 
+  getClientIP, 
+  checkRateLimit, 
+  rateLimitExceededResponse,
+  logRateLimitEvent,
+  RATE_LIMIT_CONFIGS 
+} from "../_shared/cors-rate-limit.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Content-Security-Policy": "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'self';",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-};
 
 interface ContactEmailRequest {
   name: string;
   email: string;
   message: string;
-}
-
-// Simple in-memory rate limiter
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 3600000; // 1 hour in milliseconds
-const MAX_REQUESTS_PER_HOUR = 5;
-
-function getRateLimitKey(req: Request): string {
-  // Try to get real IP from various headers (for proxies/CDNs)
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  const realIp = req.headers.get("x-real-ip");
-  const cfConnectingIp = req.headers.get("cf-connecting-ip");
-  
-  return forwardedFor?.split(',')[0] || realIp || cfConnectingIp || "unknown";
-}
-
-function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-
-  // Clean up expired entries periodically
-  if (Math.random() < 0.1) {
-    for (const [k, v] of rateLimitMap.entries()) {
-      if (now > v.resetTime) {
-        rateLimitMap.delete(k);
-      }
-    }
-  }
-
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return { allowed: true, remaining: MAX_REQUESTS_PER_HOUR - 1 };
-  }
-
-  if (entry.count >= MAX_REQUESTS_PER_HOUR) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  entry.count++;
-  return { allowed: true, remaining: MAX_REQUESTS_PER_HOUR - entry.count };
 }
 
 function sanitizeHtml(text: string): string {
@@ -97,31 +56,22 @@ function validateInput(data: ContactEmailRequest): { valid: boolean; error?: str
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Handle CORS preflight
+  const preflightResponse = handleCorsPreFlight(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
-    // Check rate limit
-    const rateLimitKey = getRateLimitKey(req);
-    const rateLimit = checkRateLimit(rateLimitKey);
+    // Check rate limit using shared utility
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS.contact);
+    logRateLimitEvent(clientIP, 'contact', rateLimit.allowed, rateLimit.remaining);
     
     if (!rateLimit.allowed) {
-      console.warn(`Rate limit exceeded for IP: ${rateLimitKey}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "Too many requests. Please try again later.",
-          retryAfter: "1 hour"
-        }),
-        {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "X-RateLimit-Remaining": "0",
-            ...corsHeaders,
-          },
-        }
-      );
+      console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+      return rateLimitExceededResponse(origin, rateLimit.resetIn);
     }
 
     const requestData: ContactEmailRequest = await req.json();
