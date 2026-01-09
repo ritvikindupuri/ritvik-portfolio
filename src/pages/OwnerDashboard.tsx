@@ -6,6 +6,7 @@ import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { GitHubIndexingStatus } from "@/components/GitHubIndexingStatus";
 import { RAGTestingPanel } from "@/components/RAGTestingPanel";
+import { RateLimitViolationsManager } from "@/components/RateLimitViolationsManager";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -125,11 +126,20 @@ const OwnerDashboard = () => {
           </motion.div>
         </div>
 
+        {/* Rate Limit Violations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+        >
+          <RateLimitViolationsManager />
+        </motion.div>
+
         {/* Portfolio Analytics */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
           <PortfolioAnalytics />
         </motion.div>
