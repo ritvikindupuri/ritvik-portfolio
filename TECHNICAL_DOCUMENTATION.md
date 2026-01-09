@@ -1716,19 +1716,129 @@ const getVisitorType = () => {
    - Session duration ≥3 minutes: +10 points
    - 3+ chatbot queries: +10 points
 
-6. **Classification Thresholds**:
+6. **Signal 5 - Contact Intent Detection** (NEW):
+   - Clicked any contact link (email, LinkedIn, GitHub): +15 points
+   - Asked about availability/contact in chatbot: +15 points
+   - Availability keywords include: "available", "availability", "when can", "start date", "notice period", "hire", "interview", "schedule"
+
+7. **Classification Thresholds**:
+   - Score ≥70: "Very Likely Recruiter" (high confidence, triggers immediate alert)
    - Score ≥50: "Likely Recruiter" (strong multi-signal match)
    - Score ≥30: "Potential Recruiter" (moderate signals)
    - Fallback to engagement-based labels (Engaged Visitor, Project Explorer, Active Browser, New Visitor)
 
 | Visitor Type | Trigger Condition | Score Range |
 |-------------|-------------------|-------------|
-| **Likely Recruiter** | Multiple strong signals | ≥50 points |
+| **Very Likely Recruiter** | High confidence signals + contact intent | ≥70 points |
+| **Likely Recruiter** | Multiple strong signals | 50-69 points |
 | **Potential Recruiter** | Some recruiter signals | 30-49 points |
 | **Engaged Visitor** | 3+ chatbot queries | N/A (fallback) |
 | **Project Explorer** | Clicked 3+ projects | N/A (fallback) |
 | **Active Browser** | Viewed 4+ sections | N/A (fallback) |
 | **New Visitor** | Default | N/A (default) |
+
+### Contact Intent Detection
+
+The system tracks contact intent through two mechanisms:
+
+1. **Contact Link Clicks**: When visitors click on email links, LinkedIn profile, GitHub, or open the contact form, this is tracked as a strong signal of intent to reach out.
+
+2. **Availability Queries**: Chatbot queries containing availability-related keywords are detected:
+   - "available", "availability", "when can", "start date"
+   - "notice period", "open to", "looking for"
+   - "hire", "hiring", "interview", "schedule", "meet"
+
+**Implementation** (`src/components/VisitorTrackerProvider.tsx`):
+
+```typescript
+// Availability/contact intent keywords
+const AVAILABILITY_KEYWORDS = [
+  'available', 'availability', 'when can', 'start date', 'notice period',
+  'open to', 'looking for', 'interested in', 'hire', 'hiring', 'reach out',
+  'contact', 'email', 'phone', 'call', 'interview', 'schedule', 'meet'
+];
+
+// Track contact link clicks
+const trackContactClick = useCallback((contactType: string, contactValue?: string) => {
+  contactClicksRef.current.push(contactType);
+  trackActivity('contact_click', { contact_type: contactType, value: contactValue });
+}, [trackActivity]);
+
+// Check if visitor has contact intent
+const hasContactIntent = useCallback(() => {
+  if (contactClicksRef.current.length > 0) return true;
+  const availabilityQueries = chatbotQueriesRef.current.filter(q => 
+    AVAILABILITY_KEYWORDS.some(kw => q.toLowerCase().includes(kw))
+  );
+  return availabilityQueries.length > 0;
+}, []);
+```
+
+**UI Display**: Sessions with contact intent are marked with a "Contact Intent" badge in the Potential Recruiters section.
+
+### Potential Recruiters Dashboard Section
+
+The `PotentialRecruiters.tsx` component displays a dedicated section in the Visitors tab showing high-scoring sessions (score ≥30):
+
+**Features**:
+- **Session Cards**: Each potential recruiter session displays score, badge, and time
+- **Score Breakdown Tooltip**: Hover to see exactly how points were earned
+- **Contact Intent Badge**: Emerald badge appears when contact intent is detected
+- **Activity Summary**: Resume downloads, views, chatbot queries, and total actions
+- **Sections Viewed**: Professional sections highlighted with primary color
+- **Sample Queries**: Up to 2 chatbot queries shown for context
+
+**Score Thresholds**:
+- 🟢 **70+ Very Likely**: Green badge, highest confidence
+- 🟡 **50-69 Likely**: Amber badge, strong signals
+- 🔵 **30-49 Possible**: Blue badge, moderate interest
+
+**Code Location**: `src/components/PotentialRecruiters.tsx`
+
+### High-Confidence Recruiter Alerts
+
+When a session reaches 70+ points (Very Likely Recruiter), a separate high-confidence alert is triggered:
+
+**Alert Features**:
+- Different email subject with double 🎯🎯 emoji for visibility
+- Green gradient header (vs orange for standard alerts)
+- "HIGH CONFIDENCE RECRUITER" badge
+- Contact intent indicator in subject line
+- All confidence signals listed with checkmarks
+
+**Implementation** (`src/components/VisitorTrackerProvider.tsx`):
+
+```typescript
+// Send recruiter-specific alert
+const sendRecruiterAlert = useCallback(async (isHighScore: boolean = false) => {
+  if (isHighScore) {
+    if (highScoreAlertSentRef.current || isOwner) return;
+    highScoreAlertSentRef.current = true;
+  } else {
+    if (recruiterAlertSentRef.current || isOwner) return;
+    recruiterAlertSentRef.current = true;
+  }
+  
+  const score = calculateRecruiterScore();
+  if (!isHighScore && score < 50) return;
+  if (isHighScore && score < 70) return;
+  
+  // Send alert with contact intent data
+  await supabase.functions.invoke('send-recruiter-alert', {
+    body: {
+      // ... other fields
+      contact_clicks: contactClicksRef.current,
+      has_contact_intent: hasContactIntent(),
+      is_high_confidence: isHighScore
+    }
+  });
+}, [isOwner, calculateRecruiterScore, hasContactIntent]);
+```
+
+**Dual Alert System**:
+- Standard alert at 50+ points (sent once per session)
+- High-confidence alert at 70+ points (separate flag, can trigger alongside standard)
+- Both use different ref flags to allow both alerts for the same session
 
 ### Session Timeline
 

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   UserCheck, Download, Eye, MessageCircle, Clock, 
-  MapPin, TrendingUp, Star, ChevronRight
+  MapPin, TrendingUp, Star, ChevronRight, Mail, Phone
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -28,6 +28,13 @@ const RECRUITER_KEYWORDS = [
   'hire', 'job', 'position', 'role', 'team', 'available', 'salary', 'rate'
 ];
 
+// Availability/contact intent keywords
+const AVAILABILITY_KEYWORDS = [
+  'available', 'availability', 'when can', 'start date', 'notice period',
+  'open to', 'looking for', 'interested in', 'hire', 'hiring', 'reach out',
+  'contact', 'email', 'phone', 'call', 'interview', 'schedule', 'meet'
+];
+
 const PROFESSIONAL_SECTIONS = ['experience', 'skills', 'certifications', 'about', 'contact'];
 
 interface RecruiterSession {
@@ -40,6 +47,8 @@ interface RecruiterSession {
     professionalSections: number;
     sessionDuration: number;
     chatbotInteractions: number;
+    contactClicks: number;
+    availabilityQueries: number;
   };
   activities: VisitorActivity[];
   firstActivity: Date;
@@ -48,6 +57,8 @@ interface RecruiterSession {
   resumeViews: number;
   chatbotQueries: string[];
   sectionsViewed: string[];
+  contactClicks: string[];
+  hasContactIntent: boolean;
   ip_address: string | null;
   email: string | null;
 }
@@ -84,6 +95,18 @@ export const PotentialRecruiters = ({ activities }: PotentialRecruitersProps) =>
           .map(a => a.activity_data?.section || '')
           .filter(Boolean)
       )];
+      
+      // Track contact clicks
+      const contactClicks = sessionActivities
+        .filter(a => a.activity_type === 'contact_click')
+        .map(a => a.activity_data?.contact_type || '');
+      
+      // Check for availability queries
+      const availabilityQueries = chatbotQueries.filter(q => 
+        AVAILABILITY_KEYWORDS.some(kw => q.toLowerCase().includes(kw))
+      );
+      
+      const hasContactIntent = contactClicks.length > 0 || availabilityQueries.length > 0;
 
       // Calculate score breakdown
       const scoreBreakdown = {
@@ -102,7 +125,9 @@ export const PotentialRecruiters = ({ activities }: PotentialRecruitersProps) =>
           20
         ),
         sessionDuration: sessionDurationMinutes >= 3 ? 10 : 0,
-        chatbotInteractions: chatbotQueries.length >= 3 ? 10 : 0
+        chatbotInteractions: chatbotQueries.length >= 3 ? 10 : 0,
+        contactClicks: contactClicks.length > 0 ? 15 : 0,
+        availabilityQueries: availabilityQueries.length > 0 ? 15 : 0
       };
 
       const totalScore = Object.values(scoreBreakdown).reduce((sum, v) => sum + v, 0);
@@ -122,6 +147,8 @@ export const PotentialRecruiters = ({ activities }: PotentialRecruitersProps) =>
         resumeViews,
         chatbotQueries,
         sectionsViewed,
+        contactClicks,
+        hasContactIntent,
         ip_address,
         email
       };
@@ -252,6 +279,18 @@ export const PotentialRecruiters = ({ activities }: PotentialRecruitersProps) =>
                               <span className="text-green-400">+{session.scoreBreakdown.chatbotInteractions}</span>
                             </div>
                           )}
+                          {session.scoreBreakdown.contactClicks > 0 && (
+                            <div className="flex justify-between">
+                              <span>Contact Link Click</span>
+                              <span className="text-green-400">+{session.scoreBreakdown.contactClicks}</span>
+                            </div>
+                          )}
+                          {session.scoreBreakdown.availabilityQueries > 0 && (
+                            <div className="flex justify-between">
+                              <span>Availability Query</span>
+                              <span className="text-green-400">+{session.scoreBreakdown.availabilityQueries}</span>
+                            </div>
+                          )}
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -260,6 +299,13 @@ export const PotentialRecruiters = ({ activities }: PotentialRecruitersProps) =>
                   <span className="text-xs text-muted-foreground">
                     {formatTimeAgo(session.lastActivity)}
                   </span>
+                  
+                  {session.hasContactIntent && (
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 border text-xs">
+                      <Mail className="w-3 h-3 mr-1" />
+                      Contact Intent
+                    </Badge>
+                  )}
                   
                   {session.email && (
                     <Badge variant="outline" className="text-xs">

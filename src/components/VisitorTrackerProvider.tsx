@@ -15,6 +15,7 @@ interface VisitorTrackerContextType {
   trackProjectView: (projectName: string) => void;
   trackProjectClick: (projectName: string, projectUrl?: string) => void;
   trackSectionView: (sectionName: string) => void;
+  trackContactClick: (contactType: string, contactValue?: string) => void;
 }
 
 const VisitorTrackerContext = createContext<VisitorTrackerContextType | null>(null);
@@ -33,6 +34,13 @@ const getSessionId = (): string => {
 const RECRUITER_KEYWORDS = [
   'experience', 'resume', 'skills', 'work', 'projects', 'contact', 
   'hire', 'job', 'position', 'role', 'team', 'available', 'salary', 'rate'
+];
+
+// Availability/contact intent keywords
+const AVAILABILITY_KEYWORDS = [
+  'available', 'availability', 'when can', 'start date', 'notice period',
+  'open to', 'looking for', 'interested in', 'hire', 'hiring', 'reach out',
+  'contact', 'email', 'phone', 'call', 'interview', 'schedule', 'meet'
 ];
 
 // Professional sections that indicate recruiter interest
@@ -56,6 +64,8 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
   const resumeViewsRef = useRef<number>(0);
   const resumeDownloadsRef = useRef<number>(0);
   const sectionsViewedRef = useRef<string[]>([]);
+  const contactClicksRef = useRef<string[]>([]);
+  const highScoreAlertSentRef = useRef<boolean>(false);
 
   // Calculate recruiter likelihood score
   const calculateRecruiterScore = useCallback(() => {
@@ -86,17 +96,44 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
     // Signal 5: Multiple chatbot interactions
     if (chatbotQueriesRef.current.length >= 3) score += 10;
     
+    // Signal 6: Contact intent - clicked contact links (+15) or asked about availability (+15)
+    if (contactClicksRef.current.length > 0) score += 15;
+    const availabilityQueries = chatbotQueriesRef.current.filter(q => 
+      AVAILABILITY_KEYWORDS.some(kw => q.toLowerCase().includes(kw))
+    );
+    if (availabilityQueries.length > 0) score += 15;
+    
     return score;
+  }, []);
+  
+  // Check if visitor has contact intent
+  const hasContactIntent = useCallback(() => {
+    // Check if they clicked any contact links
+    if (contactClicksRef.current.length > 0) return true;
+    
+    // Check if they asked about availability/contact in chatbot
+    const availabilityQueries = chatbotQueriesRef.current.filter(q => 
+      AVAILABILITY_KEYWORDS.some(kw => q.toLowerCase().includes(kw))
+    );
+    return availabilityQueries.length > 0;
   }, []);
 
   // Send recruiter-specific alert
-  const sendRecruiterAlert = useCallback(async () => {
-    if (recruiterAlertSentRef.current || isOwner) return;
+  const sendRecruiterAlert = useCallback(async (isHighScore: boolean = false) => {
+    // For high score (70+), use separate flag to allow both alerts
+    if (isHighScore) {
+      if (highScoreAlertSentRef.current || isOwner) return;
+      highScoreAlertSentRef.current = true;
+    } else {
+      if (recruiterAlertSentRef.current || isOwner) return;
+      recruiterAlertSentRef.current = true;
+    }
     
     const score = calculateRecruiterScore();
-    if (score < 50) return; // Only alert for likely recruiters
     
-    recruiterAlertSentRef.current = true;
+    // For standard alerts, require 50+; for high score alerts, require 70+
+    if (!isHighScore && score < 50) return;
+    if (isHighScore && score < 70) return;
     
     const sessionDuration = Math.round((new Date().getTime() - sessionStartRef.current.getTime()) / 1000 / 60);
     
@@ -110,21 +147,32 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
           sections_viewed: sectionsViewedRef.current,
           resume_views: resumeViewsRef.current,
           resume_downloads: resumeDownloadsRef.current,
-          session_duration_minutes: sessionDuration
+          session_duration_minutes: sessionDuration,
+          contact_clicks: contactClicksRef.current,
+          has_contact_intent: hasContactIntent(),
+          is_high_confidence: isHighScore
         }
       });
 
       if (error) {
         console.error('Error sending recruiter alert:', error);
-        recruiterAlertSentRef.current = false;
+        if (isHighScore) {
+          highScoreAlertSentRef.current = false;
+        } else {
+          recruiterAlertSentRef.current = false;
+        }
       } else {
-        console.log('Recruiter alert sent for score:', score);
+        console.log(`Recruiter alert sent for score: ${score} (high confidence: ${isHighScore})`);
       }
     } catch (e) {
       console.error('Failed to send recruiter alert:', e);
-      recruiterAlertSentRef.current = false;
+      if (isHighScore) {
+        highScoreAlertSentRef.current = false;
+      } else {
+        recruiterAlertSentRef.current = false;
+      }
     }
-  }, [isOwner, calculateRecruiterScore]);
+  }, [isOwner, calculateRecruiterScore, hasContactIntent]);
 
   // Send visitor alert email - defined before trackActivity to avoid circular dependency
   const sendVisitorAlert = useCallback(async () => {
@@ -188,7 +236,11 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
     // Check for recruiter alert after each activity
     const score = calculateRecruiterScore();
     if (score >= 50 && !recruiterAlertSentRef.current) {
-      sendRecruiterAlert();
+      sendRecruiterAlert(false);
+    }
+    // Also check for high-confidence recruiter (70+) - sends separate alert
+    if (score >= 70 && !highScoreAlertSentRef.current) {
+      sendRecruiterAlert(true);
     }
   }, [isOwner, calculateRecruiterScore, sendRecruiterAlert, sendVisitorAlert]);
 
@@ -226,6 +278,12 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
       sectionsViewedRef.current.push(sectionName);
     }
     trackActivity('section_view', { section: sectionName });
+  }, [trackActivity]);
+  
+  // Track contact link clicks (email, LinkedIn, GitHub, etc.)
+  const trackContactClick = useCallback((contactType: string, contactValue?: string) => {
+    contactClicksRef.current.push(contactType);
+    trackActivity('contact_click', { contact_type: contactType, value: contactValue });
   }, [trackActivity]);
 
   // Track initial page view
@@ -274,7 +332,8 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
       trackResumeDownload,
       trackProjectView,
       trackProjectClick,
-      trackSectionView
+      trackSectionView,
+      trackContactClick
     }}>
       {children}
     </VisitorTrackerContext.Provider>
@@ -292,7 +351,8 @@ export const useVisitorTracker = () => {
       trackResumeDownload: () => {},
       trackProjectView: () => {},
       trackProjectClick: () => {},
-      trackSectionView: () => {}
+      trackSectionView: () => {},
+      trackContactClick: () => {}
     };
   }
   return context;

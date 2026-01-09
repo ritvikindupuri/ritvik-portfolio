@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
 
 const contactFormSchema = z.object({
   name: z.string()
@@ -33,6 +34,7 @@ export const Contact = () => {
     message: "",
   });
   const [isSending, setIsSending] = useState(false);
+  const { trackContactClick } = useVisitorTracker();
 
   const contactInfo = [
     {
@@ -134,6 +136,7 @@ export const Contact = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
+                onClick={() => trackContactClick(item.label, item.value)}
                 className="group relative bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-primary/50 hover:shadow-elegant transition-all duration-300"
               >
                 <div className="flex items-start gap-4">
@@ -169,7 +172,10 @@ export const Contact = () => {
           </p>
           
           <div className="flex flex-wrap justify-center gap-4">
-            <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+            <Dialog open={isEmailDialogOpen} onOpenChange={(open) => {
+              setIsEmailDialogOpen(open);
+              if (open) trackContactClick('Email Form', 'send-email-dialog');
+            }}>
               <DialogTrigger asChild>
                 <Button size="lg" className="gap-2">
                   <Mail className="w-4 h-4" />
@@ -245,7 +251,12 @@ export const Contact = () => {
               size="lg"
               className="gap-2"
             >
-              <a href="https://www.linkedin.com/in/ritvik-indupuri-4b6037288/" target="_blank" rel="noopener noreferrer">
+              <a 
+                href="https://www.linkedin.com/in/ritvik-indupuri-4b6037288/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => trackContactClick('LinkedIn Button', 'linkedin-connect')}
+              >
                 <Linkedin className="w-4 h-4" />
                 Connect on LinkedIn
               </a>

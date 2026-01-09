@@ -22,6 +22,9 @@ interface RecruiterAlertRequest {
   resume_views: number;
   resume_downloads: number;
   session_duration_minutes: number;
+  contact_clicks?: string[];
+  has_contact_intent?: boolean;
+  is_high_confidence?: boolean;
 }
 
 function sanitizeHtml(text: string): string {
@@ -48,8 +51,8 @@ async function getLocationFromIP(ip: string): Promise<{ city: string; country: s
   }
 }
 
-function getRecruiterBadge(score: number): { label: string; color: string; bgColor: string } {
-  if (score >= 70) return { label: 'HIGH CONFIDENCE', color: '#22c55e', bgColor: '#22c55e20' };
+function getRecruiterBadge(score: number, isHighConfidence: boolean): { label: string; color: string; bgColor: string } {
+  if (isHighConfidence || score >= 70) return { label: '🎯 HIGH CONFIDENCE RECRUITER', color: '#22c55e', bgColor: '#22c55e20' };
   if (score >= 50) return { label: 'LIKELY RECRUITER', color: '#f97316', bgColor: '#f9731620' };
   return { label: 'POTENTIAL RECRUITER', color: '#eab308', bgColor: '#eab30820' };
 }
@@ -76,7 +79,10 @@ const handler = async (req: Request): Promise<Response> => {
       sections_viewed,
       resume_views,
       resume_downloads,
-      session_duration_minutes
+      session_duration_minutes,
+      contact_clicks = [],
+      has_contact_intent = false,
+      is_high_confidence = false
     }: RecruiterAlertRequest = await req.json();
 
     // Get actual IP from request headers
@@ -95,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
-    const badge = getRecruiterBadge(recruiter_score);
+    const badge = getRecruiterBadge(recruiter_score, is_high_confidence);
     
     // Identify which recruiter signals were triggered
     const signals: string[] = [];
@@ -103,6 +109,10 @@ const handler = async (req: Request): Promise<Response> => {
     if (resume_views > 0) signals.push(`👁️ Viewed resume ${resume_views}x`);
     if (sections_viewed.length > 3) signals.push(`📋 Viewed ${sections_viewed.length} professional sections`);
     if (session_duration_minutes >= 3) signals.push(`⏱️ ${session_duration_minutes}+ min session`);
+    
+    // Contact intent signals
+    if (contact_clicks.length > 0) signals.push(`📧 Clicked ${contact_clicks.length} contact link(s): ${contact_clicks.join(', ')}`);
+    if (has_contact_intent) signals.push(`💬 Showed contact/availability intent in chat`);
     
     // Find recruiter-related queries
     const recruiterKeywords = ['experience', 'resume', 'skills', 'work', 'projects', 'contact', 'hire', 'job', 'position', 'role', 'team', 'available', 'salary', 'rate'];
@@ -194,12 +204,12 @@ const handler = async (req: Request): Promise<Response> => {
           <div style="max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
             
             <!-- Header with Recruiter Badge -->
-            <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 32px; text-align: center;">
+            <div style="background: linear-gradient(135deg, ${is_high_confidence ? '#22c55e' : '#f97316'} 0%, ${is_high_confidence ? '#16a34a' : '#ea580c'} 100%); padding: 32px; text-align: center;">
               <div style="background: ${badge.bgColor}; border: 2px solid ${badge.color}; display: inline-block; padding: 6px 16px; border-radius: 999px; margin-bottom: 16px;">
                 <span style="color: ${badge.color}; font-size: 12px; font-weight: 700; letter-spacing: 0.05em;">${badge.label}</span>
               </div>
-              <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 24px; font-weight: 600;">🎯 Recruiter Detected!</h1>
-              <p style="color: #fed7aa; margin: 0; font-size: 14px;">Score: ${recruiter_score}/100 points</p>
+              <h1 style="color: #ffffff; margin: 0 0 8px 0; font-size: 24px; font-weight: 600;">${is_high_confidence ? '🎯 High-Confidence Recruiter!' : '🎯 Recruiter Detected!'}</h1>
+              <p style="color: ${is_high_confidence ? '#bbf7d0' : '#fed7aa'}; margin: 0; font-size: 14px;">Score: ${recruiter_score}/130 points${has_contact_intent ? ' • Shows Contact Intent' : ''}</p>
             </div>
 
             <!-- Score Breakdown -->
@@ -281,7 +291,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "Portfolio Alert <onboarding@resend.dev>",
         to: ["ritvik.indupuri@gmail.com"],
-        subject: `🎯 Likely Recruiter Detected! (Score: ${recruiter_score}) - ${locationStr}`,
+        subject: `${is_high_confidence ? '🎯🎯' : '🎯'} ${is_high_confidence ? 'HIGH CONFIDENCE' : 'Likely'} Recruiter Detected! (Score: ${recruiter_score})${has_contact_intent ? ' 📧 Contact Intent' : ''} - ${locationStr}`,
         html,
       }),
     });
