@@ -28,6 +28,7 @@ import { AIVisitorInsights } from "@/components/AIVisitorInsights";
 import { VisitorJourneyFlow } from "@/components/VisitorJourneyFlow";
 import { VisitorSankeyDiagram } from "@/components/VisitorSankeyDiagram";
 import { RecruiterFunnel } from "@/components/RecruiterFunnel";
+import { PotentialRecruiters } from "@/components/PotentialRecruiters";
 
 interface VisitorActivity {
   id: string;
@@ -836,6 +837,9 @@ export const VisitorDashboard = () => {
 
       {/* Sankey Flow & Drop-off Analysis */}
       <VisitorSankeyDiagram />
+
+      {/* Potential Recruiters Section */}
+      <PotentialRecruiters activities={activities} />
 
       {/* Recent Sessions with High Engagement Filter */}
       <Card className="bg-card/50 backdrop-blur-sm border-border/50">
