@@ -126,6 +126,34 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
     }
   }, [isOwner, calculateRecruiterScore]);
 
+  // Send visitor alert email - defined before trackActivity to avoid circular dependency
+  const sendVisitorAlert = useCallback(async () => {
+    if (alertSentRef.current || isOwner) return;
+    alertSentRef.current = true;
+
+    try {
+      console.log('[VisitorTracker] Sending visitor alert for session:', sessionIdRef.current);
+      const { error } = await supabase.functions.invoke('send-visitor-alert', {
+        body: {
+          session_id: sessionIdRef.current,
+          ip_address: 'Captured server-side',
+          activities: activitiesRef.current,
+          chatbot_queries: chatbotQueriesRef.current
+        }
+      });
+
+      if (error) {
+        console.error('[VisitorTracker] Error sending visitor alert:', error);
+        alertSentRef.current = false;
+      } else {
+        console.log('[VisitorTracker] Visitor alert sent successfully');
+      }
+    } catch (e) {
+      console.error('[VisitorTracker] Failed to send visitor alert:', e);
+      alertSentRef.current = false;
+    }
+  }, [isOwner]);
+
   // Track activity (only for guests)
   const trackActivity = useCallback((type: string, data: any = {}) => {
     if (isOwner) return; // Don't track owner activity
@@ -151,8 +179,9 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
         if (error) console.error('Error logging activity:', error);
       });
 
-    // Send general alert after significant activity (5+ actions)
-    if (activityCountRef.current >= 5 && !alertSentRef.current) {
+    // Send general alert after just 2 meaningful activities (more responsive)
+    // This ensures visitors get tracked even for short sessions
+    if (activityCountRef.current >= 2 && !alertSentRef.current) {
       sendVisitorAlert();
     }
     
@@ -161,7 +190,7 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
     if (score >= 50 && !recruiterAlertSentRef.current) {
       sendRecruiterAlert();
     }
-  }, [isOwner, calculateRecruiterScore, sendRecruiterAlert]);
+  }, [isOwner, calculateRecruiterScore, sendRecruiterAlert, sendVisitorAlert]);
 
   // Track chatbot query
   const trackChatbotQuery = useCallback((query: string) => {
@@ -199,31 +228,6 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
     trackActivity('section_view', { section: sectionName });
   }, [trackActivity]);
 
-  // Send visitor alert email
-  const sendVisitorAlert = async () => {
-    if (alertSentRef.current || isOwner) return;
-    alertSentRef.current = true;
-
-    try {
-      const { error } = await supabase.functions.invoke('send-visitor-alert', {
-        body: {
-          session_id: sessionIdRef.current,
-          ip_address: 'Captured server-side',
-          activities: activitiesRef.current,
-          chatbot_queries: chatbotQueriesRef.current
-        }
-      });
-
-      if (error) {
-        console.error('Error sending visitor alert:', error);
-        alertSentRef.current = false;
-      }
-    } catch (e) {
-      console.error('Failed to send visitor alert:', e);
-      alertSentRef.current = false;
-    }
-  };
-
   // Track initial page view
   useEffect(() => {
     if (!isOwner) {
@@ -231,12 +235,13 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
     }
   }, [isOwner, trackActivity]);
 
-  // Send alert when user leaves (if they had significant activity)
+  // Send alert when user leaves (if they had any activity and alert wasn't sent)
   useEffect(() => {
     if (isOwner) return;
 
     const handleBeforeUnload = () => {
-      if (activitiesRef.current.length >= 3 && !alertSentRef.current) {
+      // Lower threshold - send if ANY activity and alert wasn't sent
+      if (activitiesRef.current.length >= 1 && !alertSentRef.current) {
         // Use sendBeacon for reliability on page unload
         const data = JSON.stringify({
           session_id: sessionIdRef.current,
@@ -246,7 +251,14 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
         });
         
         const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-visitor-alert`;
+        const headers = {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || ''
+        };
+        
+        // Create FormData with proper headers for sendBeacon
         navigator.sendBeacon(url, new Blob([data], { type: 'application/json' }));
+        console.log('[VisitorTracker] Sent beacon alert on page unload');
       }
     };
 

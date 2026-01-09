@@ -173,10 +173,22 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
   const detectedThreats = useMemo(() => {
     const threats: DetectedThreat[] = [];
     const now = new Date();
+    
+    // CRITICAL: Only analyze login attempts from last 24 hours to prevent false positives
+    // from old historical data being re-analyzed on every page load
+    const recentCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const recentLoginAttempts = loginAttempts.filter(a => 
+      new Date(a.created_at) > recentCutoff
+    );
+    
+    // If no recent attempts, don't analyze at all
+    if (recentLoginAttempts.length === 0) {
+      return [];
+    }
 
-    // Group attempts by IP
+    // Group recent attempts by IP (using filtered data)
     const ipAttempts: Record<string, LoginAttempt[]> = {};
-    loginAttempts.forEach(attempt => {
+    recentLoginAttempts.forEach(attempt => {
       if (attempt.ip_address) {
         if (!ipAttempts[attempt.ip_address]) {
           ipAttempts[attempt.ip_address] = [];
@@ -299,8 +311,8 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
       }
     });
 
-    // Detect Default Accounts (T1078.001) - attempts using common default usernames
-    const defaultAccountAttempts = loginAttempts.filter(a => {
+    // Detect Default Accounts (T1078.001) - attempts using common default usernames (use recent data)
+    const defaultAccountAttempts = recentLoginAttempts.filter(a => {
       const emailPrefix = a.email.split('@')[0].toLowerCase();
       return DEFAULT_ACCOUNT_PATTERNS.some(pattern => 
         emailPrefix === pattern || 
@@ -332,8 +344,8 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
       });
     }
 
-    // Detect unusual login patterns (T1078)
-    const successfulLogins = loginAttempts.filter(a => a.success);
+    // Detect unusual login patterns (T1078) - use recent data
+    const successfulLogins = recentLoginAttempts.filter(a => a.success);
     const uniqueSuccessIps = [...new Set(successfulLogins.map(a => a.ip_address).filter(Boolean))];
     if (uniqueSuccessIps.length >= settings.valid_accounts_min_locations) {
       threats.push({
@@ -353,20 +365,31 @@ export const ThreatDetector = ({ loginAttempts }: ThreatDetectorProps) => {
   }, [loginAttempts, settings]);
 
   // Send threat alert email when high-severity threats detected
+  // Include timestamp in alert key to prevent re-alerting on old threats
   useEffect(() => {
     const highSeverityThreats = detectedThreats.filter(t => t.technique.severity === 'high' && t.confidence >= 0.6);
     
     if (highSeverityThreats.length === 0) return;
 
-    // Create unique key for this threat combination
-    const threatKey = highSeverityThreats.map(t => `${t.technique.id}-${t.affectedIps.join(',')}`).join('|');
+    // Create unique key including date to avoid re-alerting on historical threats
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const threatKey = `${today}|${highSeverityThreats.map(t => `${t.technique.id}-${t.affectedIps.join(',')}`).join('|')}`;
     
-    if (alertSentRef.current.has(threatKey)) return;
+    // Check sessionStorage for already-sent alerts this session
+    const sentAlerts = JSON.parse(sessionStorage.getItem('threat_alerts_sent') || '[]') as string[];
+    if (sentAlerts.includes(threatKey) || alertSentRef.current.has(threatKey)) return;
+    
     alertSentRef.current.add(threatKey);
+    sessionStorage.setItem('threat_alerts_sent', JSON.stringify([...sentAlerts, threatKey]));
 
     // Get attacker info from first threat
     const attackerIp = highSeverityThreats[0]?.affectedIps[0] || 'Unknown';
-    const attackerAttempts = loginAttempts.filter(a => a.ip_address === attackerIp);
+    
+    // Only use recent attempts for context
+    const recentCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const attackerAttempts = loginAttempts.filter(a => 
+      a.ip_address === attackerIp && new Date(a.created_at) > recentCutoff
+    );
     const attackerEmail = attackerAttempts[0]?.email || 'Unknown';
 
     // Send threat alert
