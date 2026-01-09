@@ -67,7 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Check rate limit using shared utility
     const clientIP = getClientIP(req);
     const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS.contact);
-    logRateLimitEvent(clientIP, 'contact', rateLimit.allowed, rateLimit.remaining);
+    await logRateLimitEvent(clientIP, 'contact', rateLimit.allowed, rateLimit.remaining, req);
     
     if (!rateLimit.allowed) {
       console.warn(`Rate limit exceeded for IP: ${clientIP}`);

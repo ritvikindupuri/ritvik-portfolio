@@ -20,7 +20,7 @@ serve(async (req: Request) => {
   // Check rate limit
   const clientIP = getClientIP(req);
   const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS.geolocate);
-  logRateLimitEvent(clientIP, 'geolocate', rateLimit.allowed, rateLimit.remaining);
+  await logRateLimitEvent(clientIP, 'geolocate', rateLimit.allowed, rateLimit.remaining, req);
   
   if (!rateLimit.allowed) {
     return rateLimitExceededResponse(origin, rateLimit.resetIn);

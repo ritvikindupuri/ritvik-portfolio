@@ -25,6 +25,16 @@ const ALLOWED_ORIGINS = [
 // Rate limit storage: Map<endpoint:ip, { count, resetTime }>
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
+// Rate limit violation tracking for alerting: Map<endpoint:ip, { violations, lastAlertTime }>
+const rateLimitViolations = new Map<string, { violations: number; lastAlertTime: number; windowStart: number }>();
+
+// Alert configuration
+const ALERT_CONFIG = {
+  minViolationsForAlert: 3,        // Minimum violations before sending alert
+  alertCooldownMs: 3600000,        // 1 hour cooldown between alerts for same IP/endpoint
+  violationWindowMs: 3600000,      // 1 hour window to count violations
+};
+
 // Default rate limit configuration
 export interface RateLimitConfig {
   windowMs: number;      // Time window in milliseconds
@@ -228,17 +238,110 @@ export function addRateLimitHeaders(
 }
 
 /**
- * Log rate limit event for monitoring
+ * Log rate limit event for monitoring and trigger alerts if needed
  */
-export function logRateLimitEvent(
+export async function logRateLimitEvent(
   ip: string,
   endpoint: string,
   allowed: boolean,
-  remaining: number
-): void {
+  remaining: number,
+  req?: Request
+): Promise<void> {
   if (!allowed) {
     console.warn(`[RATE_LIMIT] IP ${ip} exceeded limit for ${endpoint}`);
+    
+    // Track violations and potentially send alert
+    await trackViolationAndAlert(ip, endpoint, req);
   } else if (remaining <= 5) {
     console.log(`[RATE_LIMIT] IP ${ip} approaching limit for ${endpoint}: ${remaining} remaining`);
   }
+}
+
+/**
+ * Track rate limit violations and send alerts when threshold is reached
+ */
+async function trackViolationAndAlert(
+  ip: string,
+  endpoint: string,
+  req?: Request
+): Promise<void> {
+  const now = Date.now();
+  const key = `${endpoint}:${ip}`;
+  
+  let record = rateLimitViolations.get(key);
+  
+  // Create new record or reset if window expired
+  if (!record || now > record.windowStart + ALERT_CONFIG.violationWindowMs) {
+    record = {
+      violations: 1,
+      lastAlertTime: 0,
+      windowStart: now,
+    };
+    rateLimitViolations.set(key, record);
+    return;
+  }
+  
+  // Increment violations
+  record.violations++;
+  
+  // Check if we should send an alert
+  const shouldAlert = 
+    record.violations >= ALERT_CONFIG.minViolationsForAlert &&
+    (now - record.lastAlertTime) > ALERT_CONFIG.alertCooldownMs;
+  
+  if (shouldAlert) {
+    record.lastAlertTime = now;
+    
+    // Get location info if possible
+    let location: { city?: string; country?: string } | undefined;
+    try {
+      const geoResponse = await fetch(`http://ip-api.com/json/${ip}?fields=city,country`);
+      if (geoResponse.ok) {
+        location = await geoResponse.json();
+      }
+    } catch (e) {
+      console.log('[RATE_LIMIT] Could not fetch geolocation for alert');
+    }
+    
+    // Send alert via edge function
+    try {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+      const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
+      
+      await fetch(`${SUPABASE_URL}/functions/v1/send-rate-limit-alert`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          ipAddress: ip,
+          endpoint: endpoint,
+          rateLimitCount: record.violations,
+          windowMinutes: Math.round(ALERT_CONFIG.violationWindowMs / 60000),
+          userAgent: req?.headers.get('user-agent') || undefined,
+          location: location,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      
+      console.log(`[RATE_LIMIT_ALERT] Alert sent for IP ${ip} (${record.violations} violations on ${endpoint})`);
+    } catch (error) {
+      console.error('[RATE_LIMIT_ALERT] Failed to send alert:', error);
+    }
+  }
+}
+
+/**
+ * Get current violation count for an IP/endpoint (for monitoring)
+ */
+export function getViolationCount(ip: string, endpoint: string): number {
+  const key = `${endpoint}:${ip}`;
+  const record = rateLimitViolations.get(key);
+  
+  if (!record || Date.now() > record.windowStart + ALERT_CONFIG.violationWindowMs) {
+    return 0;
+  }
+  
+  return record.violations;
 }

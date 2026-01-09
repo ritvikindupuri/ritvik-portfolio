@@ -546,7 +546,7 @@ Deno.serve(async (req: Request) => {
     // Check rate limit using shared utility
     const clientIP = getClientIP(req);
     const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS.chatbot);
-    logRateLimitEvent(clientIP, 'chatbot', rateLimit.allowed, rateLimit.remaining);
+    await logRateLimitEvent(clientIP, 'chatbot', rateLimit.allowed, rateLimit.remaining, req);
     
     if (!rateLimit.allowed) {
       console.warn(`Chatbot rate limit exceeded for IP: ${clientIP}`);
