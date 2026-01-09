@@ -625,6 +625,57 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_violations: {
+        Row: {
+          alert_sent_at: string | null
+          city: string | null
+          country: string | null
+          country_code: string | null
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: string
+          is_blocked: boolean
+          last_violation_at: string
+          updated_at: string
+          user_agent: string | null
+          violation_count: number
+          window_start: string
+        }
+        Insert: {
+          alert_sent_at?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address: string
+          is_blocked?: boolean
+          last_violation_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          violation_count?: number
+          window_start?: string
+        }
+        Update: {
+          alert_sent_at?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: string
+          is_blocked?: boolean
+          last_violation_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          violation_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       resume_analytics: {
         Row: {
           created_at: string

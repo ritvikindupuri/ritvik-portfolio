@@ -259,6 +259,7 @@ export async function logRateLimitEvent(
 
 /**
  * Track rate limit violations and send alerts when threshold is reached
+ * Also persists violations to database for dashboard visibility
  */
 async function trackViolationAndAlert(
   ip: string,
@@ -278,11 +279,17 @@ async function trackViolationAndAlert(
       windowStart: now,
     };
     rateLimitViolations.set(key, record);
+    
+    // Persist first violation to database
+    await persistViolationToDatabase(ip, endpoint, 1, req);
     return;
   }
   
   // Increment violations
   record.violations++;
+  
+  // Persist updated violation count to database
+  await persistViolationToDatabase(ip, endpoint, record.violations, req);
   
   // Check if we should send an alert
   const shouldAlert = 
@@ -293,15 +300,18 @@ async function trackViolationAndAlert(
     record.lastAlertTime = now;
     
     // Get location info if possible
-    let location: { city?: string; country?: string } | undefined;
+    let location: { city?: string; country?: string; countryCode?: string } | undefined;
     try {
-      const geoResponse = await fetch(`http://ip-api.com/json/${ip}?fields=city,country`);
+      const geoResponse = await fetch(`http://ip-api.com/json/${ip}?fields=city,country,countryCode`);
       if (geoResponse.ok) {
         location = await geoResponse.json();
       }
     } catch (e) {
       console.log('[RATE_LIMIT] Could not fetch geolocation for alert');
     }
+    
+    // Update database with location and alert timestamp
+    await updateViolationWithAlert(ip, endpoint, location);
     
     // Send alert via edge function
     try {
@@ -329,6 +339,99 @@ async function trackViolationAndAlert(
     } catch (error) {
       console.error('[RATE_LIMIT_ALERT] Failed to send alert:', error);
     }
+  }
+}
+
+/**
+ * Persist violation to database for dashboard visibility
+ */
+async function persistViolationToDatabase(
+  ip: string,
+  endpoint: string,
+  violationCount: number,
+  req?: Request
+): Promise<void> {
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('[RATE_LIMIT] Missing Supabase credentials for persistence');
+      return;
+    }
+
+    const userAgent = req?.headers.get('user-agent') || null;
+    const now = new Date().toISOString();
+
+    // Upsert violation record
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rate_limit_violations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        ip_address: ip,
+        endpoint: endpoint,
+        violation_count: violationCount,
+        last_violation_at: now,
+        user_agent: userAgent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[RATE_LIMIT] Failed to persist violation:', await response.text());
+    }
+  } catch (error) {
+    console.error('[RATE_LIMIT] Error persisting violation:', error);
+  }
+}
+
+/**
+ * Update violation record with location and alert timestamp
+ */
+async function updateViolationWithAlert(
+  ip: string,
+  endpoint: string,
+  location?: { city?: string; country?: string; countryCode?: string }
+): Promise<void> {
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+
+    const updateData: Record<string, any> = {
+      alert_sent_at: new Date().toISOString(),
+    };
+
+    if (location) {
+      if (location.city) updateData.city = location.city;
+      if (location.country) updateData.country = location.country;
+      if (location.countryCode) updateData.country_code = location.countryCode;
+    }
+
+    // Update the existing record
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/rate_limit_violations?ip_address=eq.${encodeURIComponent(ip)}&endpoint=eq.${encodeURIComponent(endpoint)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        },
+        body: JSON.stringify(updateData),
+      }
+    );
+
+    if (!response.ok) {
+      console.error('[RATE_LIMIT] Failed to update violation with alert:', await response.text());
+    }
+  } catch (error) {
+    console.error('[RATE_LIMIT] Error updating violation with alert:', error);
   }
 }
 
