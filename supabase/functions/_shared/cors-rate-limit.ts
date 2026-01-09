@@ -57,9 +57,16 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
  * Get strict CORS headers that validate origin
  */
 export function getCorsHeaders(requestOrigin: string | null): Record<string, string> {
-  const origin = requestOrigin && ALLOWED_ORIGINS.some(allowed => 
-    requestOrigin === allowed || requestOrigin.endsWith('.lovable.app')
-  ) ? requestOrigin : ALLOWED_ORIGINS[0];
+  const origin =
+    requestOrigin &&
+    ALLOWED_ORIGINS.some(
+      (allowed) =>
+        requestOrigin === allowed ||
+        requestOrigin.endsWith('.lovable.app') ||
+        requestOrigin.endsWith('.lovableproject.com')
+    )
+      ? requestOrigin
+      : ALLOWED_ORIGINS[0];
 
   return {
     'Access-Control-Allow-Origin': origin,
@@ -79,8 +86,9 @@ export function getCorsHeaders(requestOrigin: string | null): Record<string, str
  */
 export function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
-  return ALLOWED_ORIGINS.some(allowed => 
-    origin === allowed || origin.endsWith('.lovable.app')
+  return ALLOWED_ORIGINS.some(
+    (allowed) =>
+      origin === allowed || origin.endsWith('.lovable.app') || origin.endsWith('.lovableproject.com')
   );
 }
 
