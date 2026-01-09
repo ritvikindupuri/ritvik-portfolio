@@ -80,9 +80,11 @@ export function HoneypotMiniMap({ ipAddresses, triggers = [] }: HoneypotMiniMapP
 
     async function geolocate() {
       try {
+        console.log("[HoneypotMiniMap] Calling geolocate-ip with", ips);
         const { data, error } = await supabase.functions.invoke("geolocate-ip", {
           body: { ip_addresses: ips },
         });
+        console.log("[HoneypotMiniMap] geolocate-ip response:", { data, error });
         if (error) throw error;
 
         const raw: Record<
@@ -100,6 +102,7 @@ export function HoneypotMiniMap({ ipAddresses, triggers = [] }: HoneypotMiniMapP
             country: v!.country,
             countryCode: v!.countryCode,
           }));
+        console.log("[HoneypotMiniMap] Parsed locations:", next);
 
         if (!cancelled) {
           setLocations(next);

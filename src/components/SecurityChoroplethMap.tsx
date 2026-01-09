@@ -202,9 +202,11 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         return;
       }
 
+      console.log("[SecurityChoroplethMap] Calling geolocate-ip with", uniqueIps.length, "IPs");
       const { data: geoData, error: geoError } = await supabase.functions.invoke('geolocate-ip', {
         body: { ip_addresses: uniqueIps }
       });
+      console.log("[SecurityChoroplethMap] geolocate-ip response:", { geoData, geoError });
 
       if (geoError) throw geoError;
 
@@ -274,6 +276,8 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
         }
       });
 
+      console.log("[SecurityChoroplethMap] successLocations:", Object.values(successLocationMap).length);
+      console.log("[SecurityChoroplethMap] securityLocations:", Object.values(securityLocationMap).length);
       setSuccessLocations(Object.values(successLocationMap));
       setSecurityLocations(Object.values(securityLocationMap));
     } catch (err) {
