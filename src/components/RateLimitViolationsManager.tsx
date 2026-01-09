@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,6 +63,37 @@ export function RateLimitViolationsManager() {
       return data as RateLimitViolation[];
     },
   });
+
+  // Real-time subscription for rate limit violations
+  useEffect(() => {
+    const channel = supabase
+      .channel('rate-limit-violations-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rate_limit_violations',
+        },
+        (payload) => {
+          console.log('Rate limit violation change:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            toast.warning(`New rate limit violation from ${(payload.new as RateLimitViolation).ip_address}`);
+          } else if (payload.eventType === 'UPDATE' && (payload.new as RateLimitViolation).is_blocked) {
+            toast.info(`IP ${(payload.new as RateLimitViolation).ip_address} has been blocked`);
+          }
+          
+          // Invalidate query to refresh data
+          queryClient.invalidateQueries({ queryKey: ['rate-limit-violations'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const blockIPMutation = useMutation({
     mutationFn: async (violation: RateLimitViolation) => {
