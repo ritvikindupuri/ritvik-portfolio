@@ -152,8 +152,8 @@ export function HoneypotMiniMap({ ipAddresses, triggers = [] }: HoneypotMiniMapP
 
     mapRef.current.on("style.load", () => {
       mapRef.current?.setFog({
-        color: "hsl(0 0% 0% / 0)",
-        "high-color": "hsl(0 0% 0% / 0)",
+        color: "rgb(20, 20, 30)",
+        "high-color": "rgb(40, 40, 60)",
         "horizon-blend": 0.2,
       });
     });
