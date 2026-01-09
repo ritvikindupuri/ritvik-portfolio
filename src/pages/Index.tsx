@@ -309,6 +309,13 @@ const Index = () => {
                   </a>
                 </div>
               </div>
+              {/* Privacy Notice */}
+              <div className="mt-4 pt-4 border-t border-border/30 text-center">
+                <p className="text-xs text-muted-foreground/70">
+                  🔒 This site collects IP addresses and visitor activity for security monitoring purposes. 
+                  No personal data is shared with third parties except for IP geolocation services.
+                </p>
+              </div>
             </div>
           </footer>
           </div>
