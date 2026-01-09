@@ -73,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Check rate limit
     const clientIP = getClientIP(req);
     const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS['visitor-alert']);
-    logRateLimitEvent(clientIP, 'visitor-alert', rateLimit.allowed, rateLimit.remaining);
+    await logRateLimitEvent(clientIP, 'visitor-alert', rateLimit.allowed, rateLimit.remaining, req);
     
     if (!rateLimit.allowed) {
       return rateLimitExceededResponse(origin, rateLimit.resetIn);

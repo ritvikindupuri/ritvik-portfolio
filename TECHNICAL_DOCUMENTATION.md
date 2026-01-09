@@ -2951,8 +2951,8 @@ The portfolio includes a comprehensive automated email notification system that 
 
 - **XSS Prevention**: `DOMPurify` sanitizes all user-facing HTML
 - **Input Validation**: Zod schema validation for all forms
-- **Rate Limiting**: Chatbot and contact form rate limits
-- **CORS**: Restricted to verified domains
+- **Rate Limiting**: Endpoint-specific rate limits with automatic alerting
+- **CORS**: Strict origin validation against allowlist
 - **Leaked Password Protection**: Supabase checks against breach databases
 - **Prompt Injection Defense**: Detects manipulation attempts in chatbot
 - **JWT Authentication**: Secure token-based auth via Supabase
@@ -2962,7 +2962,366 @@ The portfolio includes a comprehensive automated email notification system that 
 - **Known Location Tracking**: Maintains a database of trusted login locations with auto-trust capabilities
 - **Auto-Trust System**: Automatically trusts locations after 5+ successful logins from the same IP
 
-The following section provides detailed documentation of the Known Login Locations System's architecture and implementation.
+The following sections provide detailed documentation of the CORS policies, rate limiting implementation, and rate limit alerting system.
+
+---
+
+## CORS Policy & Rate Limiting System
+
+The portfolio implements enterprise-grade CORS policies and rate limiting to protect against abuse, denial of service attacks, and unauthorized API access.
+
+### Architecture Overview
+
+```mermaid
+flowchart TD
+    subgraph Request["Incoming Request"]
+        REQ[HTTP Request]
+        ORIGIN[Origin Header]
+        IP[Client IP]
+    end
+
+    subgraph CORS["CORS Validation"]
+        CHECK_ORIGIN{Origin in Allowlist?}
+        CORS_PASS[Set CORS Headers]
+        CORS_BLOCK[403 Forbidden]
+    end
+
+    subgraph RateLimit["Rate Limiting"]
+        CHECK_LIMIT{Under Limit?}
+        INCREMENT[Increment Counter]
+        RATE_BLOCK[429 Too Many Requests]
+    end
+
+    subgraph Alerting["Violation Alerting"]
+        TRACK_VIOLATION[Track Violation]
+        CHECK_THRESHOLD{Violations >= 3?}
+        CHECK_COOLDOWN{Cooldown Expired?}
+        SEND_ALERT[Send Email Alert]
+    end
+
+    subgraph Process["Request Processing"]
+        HANDLER[Edge Function Handler]
+        RESPONSE[Response with Headers]
+    end
+
+    REQ --> ORIGIN
+    REQ --> IP
+    ORIGIN --> CHECK_ORIGIN
+    
+    CHECK_ORIGIN -->|Yes| CORS_PASS
+    CHECK_ORIGIN -->|No| CORS_BLOCK
+    
+    CORS_PASS --> CHECK_LIMIT
+    IP --> CHECK_LIMIT
+    
+    CHECK_LIMIT -->|Yes| INCREMENT
+    CHECK_LIMIT -->|No| RATE_BLOCK
+    
+    RATE_BLOCK --> TRACK_VIOLATION
+    TRACK_VIOLATION --> CHECK_THRESHOLD
+    CHECK_THRESHOLD -->|Yes| CHECK_COOLDOWN
+    CHECK_THRESHOLD -->|No| RESPONSE
+    CHECK_COOLDOWN -->|Yes| SEND_ALERT
+    CHECK_COOLDOWN -->|No| RESPONSE
+    
+    INCREMENT --> HANDLER
+    HANDLER --> RESPONSE
+```
+
+**Figure CRL-1: CORS & Rate Limiting Flow** - Request processing flow showing origin validation, rate limit checking, and automatic alerting for repeat offenders.
+
+### CORS Configuration
+
+The portfolio uses strict CORS policies that only allow requests from verified domains:
+
+```typescript
+// Allowed origins - only the portfolio domain and local development
+const ALLOWED_ORIGINS = [
+  'https://ritvik-portfolio.lovable.app',
+  'https://ritvikindupuri.com',
+  'https://www.ritvikindupuri.com',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://localhost:3000',
+];
+```
+
+**CORS Headers Applied:**
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `Access-Control-Allow-Origin` | Validated origin | Restricts which domains can access the API |
+| `Access-Control-Allow-Headers` | `authorization, x-client-info, apikey, content-type` | Specifies allowed request headers |
+| `Access-Control-Allow-Methods` | `GET, POST, PUT, DELETE, OPTIONS` | Specifies allowed HTTP methods |
+| `Access-Control-Allow-Credentials` | `true` | Allows credentials in cross-origin requests |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'none'; object-src 'none'` | Prevents XSS in API responses |
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME-type sniffing |
+| `X-Frame-Options` | `DENY` | Prevents clickjacking |
+| `X-XSS-Protection` | `1; mode=block` | Legacy XSS protection |
+
+### Rate Limit Configuration
+
+Different endpoints have tailored rate limits based on expected usage patterns:
+
+| Endpoint | Limit | Window | Rationale |
+|----------|-------|--------|-----------|
+| `chatbot` | 30 requests | 1 hour | Prevents AI abuse while allowing normal conversation |
+| `contact` | 5 requests | 1 hour | Prevents spam form submissions |
+| `auth` | 10 requests | 15 minutes | Balances security with user convenience |
+| `general` | 100 requests | 1 minute | Default limit for misc endpoints |
+| `geolocate` | 45 requests | 1 minute | Respects ip-api.com's free tier limit |
+| `visitor-alert` | 30 requests | 1 minute | Prevents alert flooding |
+| `embeddings` | 50 requests | 1 minute | Balances AI costs with functionality |
+
+**Rate Limit Configuration Code:**
+
+```typescript
+export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
+  'chatbot': { windowMs: 3600000, maxRequests: 30, endpoint: 'chatbot' },
+  'contact': { windowMs: 3600000, maxRequests: 5, endpoint: 'contact' },
+  'auth': { windowMs: 900000, maxRequests: 10, endpoint: 'auth' },
+  'general': { windowMs: 60000, maxRequests: 100, endpoint: 'general' },
+  'geolocate': { windowMs: 60000, maxRequests: 45, endpoint: 'geolocate' },
+  'visitor-alert': { windowMs: 60000, maxRequests: 30, endpoint: 'visitor' },
+  'embeddings': { windowMs: 60000, maxRequests: 50, endpoint: 'embeddings' },
+};
+```
+
+### IP Address Extraction
+
+The system extracts client IP addresses from various proxy headers to ensure accurate rate limiting:
+
+```typescript
+export function getClientIP(req: Request): string {
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  const realIp = req.headers.get('x-real-ip');
+  const cfConnectingIp = req.headers.get('cf-connecting-ip');
+  
+  // x-forwarded-for can contain multiple IPs, take the first (original client)
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  
+  return realIp || cfConnectingIp || 'unknown';
+}
+```
+
+**Supported Headers:**
+- `x-forwarded-for`: Standard proxy header (uses first IP in chain)
+- `x-real-ip`: Nginx reverse proxy header
+- `cf-connecting-ip`: Cloudflare connecting IP
+
+### Rate Limit Response
+
+When a client exceeds the rate limit, they receive a `429 Too Many Requests` response:
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "message": "Too many requests. Please try again later.",
+  "retryAfter": "45 seconds"
+}
+```
+
+**Response Headers:**
+- `Retry-After`: Seconds until the rate limit resets
+- `X-RateLimit-Remaining`: Number of requests remaining (0 when exceeded)
+
+---
+
+## Rate Limit Alerting System
+
+The portfolio includes automatic alerting when IP addresses repeatedly hit rate limits, indicating potential abuse or attack attempts.
+
+### Alert Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant EF as Edge Function
+    participant RL as Rate Limiter
+    participant VT as Violation Tracker
+    participant ALERT as Alert Function
+    participant RS as Resend API
+    participant O as Owner Email
+
+    Note over C,O: Rate Limit Violation Alerting Flow
+
+    C->>EF: Request #1 (exceeds limit)
+    EF->>RL: Check rate limit
+    RL-->>EF: Denied (429)
+    EF->>VT: Track violation (count: 1)
+    EF-->>C: 429 Too Many Requests
+
+    C->>EF: Request #2 (exceeds limit)
+    EF->>RL: Check rate limit
+    RL-->>EF: Denied (429)
+    EF->>VT: Track violation (count: 2)
+    EF-->>C: 429 Too Many Requests
+
+    C->>EF: Request #3 (exceeds limit)
+    EF->>RL: Check rate limit
+    RL-->>EF: Denied (429)
+    EF->>VT: Track violation (count: 3)
+    
+    Note over VT: Threshold reached!
+    
+    VT->>ALERT: Send alert request
+    ALERT->>ALERT: Build HTML email
+    ALERT->>RS: POST /emails
+    RS->>O: Rate Limit Alert Email
+    VT->>VT: Set cooldown (1 hour)
+    EF-->>C: 429 Too Many Requests
+```
+
+**Figure RLA-1: Rate Limit Alert Sequence** - Shows how repeated rate limit violations trigger automatic email alerts with cooldown to prevent alert fatigue.
+
+### Alert Configuration
+
+```typescript
+const ALERT_CONFIG = {
+  minViolationsForAlert: 3,        // Minimum violations before sending alert
+  alertCooldownMs: 3600000,        // 1 hour cooldown between alerts for same IP/endpoint
+  violationWindowMs: 3600000,      // 1 hour window to count violations
+};
+```
+
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| `minViolationsForAlert` | 3 | Prevents false positives from occasional limit hits |
+| `alertCooldownMs` | 1 hour | Prevents alert flooding for persistent attackers |
+| `violationWindowMs` | 1 hour | Resets violation count after window expires |
+
+### Alert Email Contents
+
+When triggered, the rate limit alert email contains:
+
+**Header Section:**
+- 🚦 Rate Limit Alert title
+- Severity badge (LOW/MEDIUM/HIGH based on violation count)
+
+**Alert Details:**
+- **IP Address**: The offending IP address
+- **Endpoint**: Which endpoint was being targeted (chatbot, contact, auth, etc.)
+- **Location**: Geographic location of the IP (city, country)
+- **Times Limited**: Number of rate limit violations in the window
+- **Timestamp**: When the alert was triggered
+- **User Agent**: Browser/client information
+
+**Threat Analysis:**
+- Automated Bot Activity indicator
+- Denial of Service Attempt classification
+- API Abuse detection
+- Misconfigured Client possibility
+
+**Recommended Actions:**
+1. Monitor for continued rate limit hits
+2. Review edge function logs for patterns
+3. Consider blocking the IP (if HIGH severity)
+4. Add to IP blocklist via Owner Dashboard
+
+### Severity Levels
+
+| Level | Violation Count | Badge Color | Actions |
+|-------|-----------------|-------------|---------|
+| LOW | 3-4 violations | 🔵 Blue | Monitor |
+| MEDIUM | 5-9 violations | 🟡 Yellow | Review logs |
+| HIGH | 10+ violations | 🔴 Red | Consider blocking |
+
+### Alert Email Example
+
+```html
+Subject: 🟡 MEDIUM Rate Limit Alert: 192.168.1.100 on chatbot
+
+┌─────────────────────────────────────────────────┐
+│  🚦 Rate Limit Alert                            │
+│  [MEDIUM SEVERITY]                              │
+├─────────────────────────────────────────────────┤
+│  An IP address has been rate limited 7 times    │
+│  within the last 60 minutes on your portfolio.  │
+│                                                 │
+│  📋 Alert Details                               │
+│  ─────────────────                              │
+│  IP Address:    192.168.1.100                   │
+│  Endpoint:      chatbot                         │
+│  Location:      📍 San Francisco, United States │
+│  Times Limited: 7x in 60 min                    │
+│  Timestamp:     Fri, Jan 10, 2:30 PM PST        │
+│                                                 │
+│  🔍 Threat Analysis                             │
+│  ─────────────────                              │
+│  • Automated Bot Activity                       │
+│  • Denial of Service Attempt                    │
+│  • API Abuse                                    │
+│                                                 │
+│  ✅ Recommended Actions                         │
+│  ─────────────────────                          │
+│  1. Monitor for continued rate limit hits       │
+│  2. Review edge function logs                   │
+│  3. Block if needed via Owner Dashboard         │
+└─────────────────────────────────────────────────┘
+```
+
+### Edge Function: send-rate-limit-alert
+
+The alerting is handled by a dedicated edge function:
+
+**Endpoint:** `POST /functions/v1/send-rate-limit-alert`
+
+**Request Body:**
+```json
+{
+  "ipAddress": "192.168.1.100",
+  "endpoint": "chatbot",
+  "rateLimitCount": 7,
+  "windowMinutes": 60,
+  "userAgent": "Mozilla/5.0...",
+  "location": {
+    "city": "San Francisco",
+    "country": "United States"
+  },
+  "timestamp": "2025-01-10T14:30:00Z"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "messageId": "msg_abc123",
+  "message": "Rate limit alert sent successfully"
+}
+```
+
+### Integration with Edge Functions
+
+Each edge function that uses rate limiting automatically integrates with the alerting system:
+
+```typescript
+import { 
+  checkRateLimit, 
+  logRateLimitEvent,
+  RATE_LIMIT_CONFIGS 
+} from "../_shared/cors-rate-limit.ts";
+
+// In the handler function:
+const clientIP = getClientIP(req);
+const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS.chatbot);
+
+// This function now tracks violations and sends alerts automatically
+await logRateLimitEvent(clientIP, 'chatbot', rateLimit.allowed, rateLimit.remaining, req);
+
+if (!rateLimit.allowed) {
+  return rateLimitExceededResponse(origin, rateLimit.resetIn);
+}
+```
+
+The `logRateLimitEvent` function handles:
+1. Logging the rate limit event to console
+2. Tracking violations per IP/endpoint
+3. Checking if alert threshold is met
+4. Sending email alert if conditions are met
+5. Managing alert cooldown to prevent spam
 
 ---
 
