@@ -98,23 +98,24 @@ const securityLayers: SecurityLayer[] = [
   },
   {
     id: "rate-limiting",
-    name: "Rate Limiting",
+    name: "CORS & Rate Limiting",
     icon: Zap,
     color: "text-green-400",
     bgColor: "bg-green-500/10",
-    description: "IP-based request throttling prevents abuse",
+    description: "Origin validation and IP-based request throttling prevents abuse",
     components: [
+      { name: "Strict CORS", tooltip: "Only requests from ritvik-portfolio.lovable.app and ritvikindupuri.com are allowed. All other origins are rejected with 403 Forbidden. Prevents cross-site request forgery and unauthorized API access." },
+      { name: "100/min General", tooltip: "General API endpoints allow 100 requests per minute per IP. Prevents abuse while allowing normal usage. Uses in-memory rate limiting with automatic cleanup." },
       { name: "30/hr Chatbot", tooltip: "The AI chatbot allows 30 queries per IP per hour. Prevents abuse of the LLM API and protects against prompt injection attacks at scale." },
       { name: "5/hr Contact", tooltip: "Contact form submissions are limited to 5 per IP per hour. Prevents spam campaigns and email bombing through the contact form." },
-      { name: "Session Limits", tooltip: "Login attempts are tracked per session. Configurable threshold (default: 5 failures in 1 hour) triggers brute force detection and alerts." },
     ],
     threats: [
+      { name: "CORS Bypass", tooltip: "Attackers attempting to make API requests from malicious websites are blocked at the origin validation layer. Only whitelisted domains can access the API." },
       { name: "DDoS", tooltip: "Distributed Denial of Service attempts to overwhelm the application. Rate limiting caps requests per IP, reducing single-source attack effectiveness." },
-      { name: "Spam", tooltip: "Automated spam submissions through contact forms or chatbot. Limits prevent bulk spam campaigns from a single source." },
-      { name: "Brute force", tooltip: "Rapid password guessing attempts. After the threshold is exceeded, the attack is classified as T1110 (Brute Force) and an alert is sent." },
+      { name: "API Abuse", tooltip: "Automated scripts attempting to scrape data or abuse API endpoints. Rate limits per endpoint type prevent resource exhaustion." },
     ],
-    passedExplanation: "The IP has not exceeded the rate limit thresholds. Login attempts from this IP in the past hour are below the brute force detection threshold. The request frequency is within acceptable bounds and proceeds to authentication.",
-    blockedExplanation: "The IP exceeded the rate limit. Too many requests in a short period triggered the brute force detection (5+ failed attempts in 1 hour = T1110 Brute Force). The request is throttled and the owner receives a MITRE ATT&CK-mapped threat alert.",
+    passedExplanation: "The request originated from an allowed domain (CORS check passed) and the IP has not exceeded the rate limit thresholds. The request frequency is within acceptable bounds and proceeds to authentication.",
+    blockedExplanation: "The request was blocked due to CORS policy violation (unauthorized origin) or rate limit exceeded. Too many requests from this IP triggered the throttle. Response includes Retry-After header indicating when to retry.",
   },
   {
     id: "auth",
@@ -166,6 +167,34 @@ interface AttackSimulation {
 }
 
 const attackSimulations: AttackSimulation[] = [
+  {
+    id: "cors-attack",
+    name: "Cross-Origin Request Attack",
+    description: "Malicious site attempts API request from unauthorized origin",
+    blockedAt: "rate-limiting",
+    steps: [
+      { layer: "geographic", status: "passed" },
+      { layer: "ip-blocking", status: "passed" },
+      { layer: "honeypot", status: "passed" },
+      { layer: "rate-limiting", status: "blocked" },
+      { layer: "auth", status: "pending" },
+      { layer: "database", status: "pending" },
+    ],
+  },
+  {
+    id: "rate-limit-bypass",
+    name: "Rate Limit Exhaustion Attack",
+    description: "Attacker sends 100+ requests/minute to exhaust API limits",
+    blockedAt: "rate-limiting",
+    steps: [
+      { layer: "geographic", status: "passed" },
+      { layer: "ip-blocking", status: "passed" },
+      { layer: "honeypot", status: "passed" },
+      { layer: "rate-limiting", status: "blocked" },
+      { layer: "auth", status: "pending" },
+      { layer: "database", status: "pending" },
+    ],
+  },
   {
     id: "geo-block",
     name: "Attack from Blocked Country",

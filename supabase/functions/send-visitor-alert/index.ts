@@ -1,13 +1,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { 
+  getCorsHeaders, 
+  handleCorsPreFlight, 
+  getClientIP, 
+  checkRateLimit, 
+  rateLimitExceededResponse,
+  logRateLimitEvent,
+  RATE_LIMIT_CONFIGS 
+} from "../_shared/cors-rate-limit.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface VisitorAlertRequest {
   session_id: string;
@@ -58,21 +62,29 @@ function formatActivityType(type: string): string {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Handle CORS preflight
+  const preflightResponse = handleCorsPreFlight(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
+    // Check rate limit
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS['visitor-alert']);
+    logRateLimitEvent(clientIP, 'visitor-alert', rateLimit.allowed, rateLimit.remaining);
+    
+    if (!rateLimit.allowed) {
+      return rateLimitExceededResponse(origin, rateLimit.resetIn);
+    }
+
     const { session_id, email, activities, chatbot_queries }: VisitorAlertRequest = await req.json();
 
-    // Get actual IP from request headers
-    const forwardedFor = req.headers.get("x-forwarded-for");
-    const realIp = req.headers.get("x-real-ip");
-    const cfConnectingIp = req.headers.get("cf-connecting-ip");
-    const ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || cfConnectingIp || "unknown";
+    // Get actual IP from request headers (use shared utility)
+    const ipAddress = clientIP;
 
     console.log("Sending visitor alert for session:", session_id, "IP:", ipAddress);
-
     // Get location from IP
     const location = await getLocationFromIP(ipAddress);
     const locationStr = location ? `${location.city}, ${location.country}` : 'Unknown Location';

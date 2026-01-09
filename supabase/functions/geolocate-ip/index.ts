@@ -1,13 +1,29 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { 
+  getCorsHeaders, 
+  handleCorsPreFlight, 
+  getClientIP, 
+  checkRateLimit, 
+  rateLimitExceededResponse,
+  logRateLimitEvent,
+  RATE_LIMIT_CONFIGS 
+} from "../_shared/cors-rate-limit.ts";
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  // Handle CORS preflight
+  const preflightResponse = handleCorsPreFlight(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
+  // Check rate limit
+  const clientIP = getClientIP(req);
+  const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS.geolocate);
+  logRateLimitEvent(clientIP, 'geolocate', rateLimit.allowed, rateLimit.remaining);
+  
+  if (!rateLimit.allowed) {
+    return rateLimitExceededResponse(origin, rateLimit.resetIn);
   }
 
   try {
