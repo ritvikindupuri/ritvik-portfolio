@@ -102,31 +102,31 @@ export const IPLocationMap = () => {
       // Get unique IPs (limit to avoid too many API calls)
       const uniqueIps = Object.keys(ipCounts).slice(0, 20);
 
-      // Fetch geolocation for each IP using free API
-      const locationPromises = uniqueIps.map(async (ip) => {
-        try {
-          // Using ip-api.com (free, no API key needed)
-          const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,city`);
-          const geoData = await response.json();
-          
-          if (geoData.status === 'success') {
-            return {
-              ip,
-              country: geoData.country,
-              countryCode: geoData.countryCode,
-              city: geoData.city,
-              count: ipCounts[ip].count,
-              failedCount: ipCounts[ip].failedCount,
-            };
-          }
-          return null;
-        } catch {
-          return null;
+      // Fetch geolocation using edge function (avoids mixed content issues)
+      const { data: geoData, error: geoError } = await supabase.functions.invoke('geolocate-ip', {
+        body: { ip_addresses: uniqueIps }
+      });
+
+      if (geoError) throw geoError;
+
+      const geoLocations = geoData?.locations || {};
+      const results: IPLocation[] = [];
+
+      uniqueIps.forEach((ip) => {
+        const geo = geoLocations[ip];
+        if (geo) {
+          results.push({
+            ip,
+            country: geo.country,
+            countryCode: geo.countryCode,
+            city: geo.city,
+            count: ipCounts[ip].count,
+            failedCount: ipCounts[ip].failedCount,
+          });
         }
       });
 
-      const results = await Promise.all(locationPromises);
-      setLocations(results.filter((r): r is IPLocation => r !== null));
+      setLocations(results);
     } catch (err) {
       console.error('Error fetching IP locations:', err);
       setError('Failed to load location data');
