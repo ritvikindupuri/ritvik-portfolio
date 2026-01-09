@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Shield, Users, MapPin, Settings, Bug, Globe } from "lucide-react";
+import { BarChart3, Shield, Users, MapPin, Settings, Bug, Globe, Trash2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { ResumeAnalytics } from "@/components/ResumeAnalytics";
 import { SecurityChoroplethMap } from "@/components/SecurityChoroplethMap";
 import { ThreatDetector } from "@/components/ThreatDetector";
@@ -14,6 +15,8 @@ import { HoneypotManager } from "@/components/HoneypotManager";
 import { BlockedIPsManager } from "@/components/BlockedIPsManager";
 import { GeographicBlockingManager } from "@/components/GeographicBlockingManager";
 import { GeoBlockingStats } from "@/components/GeoBlockingStats";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface LoginAttempt {
   id: string;
@@ -37,6 +40,42 @@ const MITRE_TECHNIQUES = {
 export const PortfolioAnalytics = () => {
   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
   const [activeTab, setActiveTab] = useState("visitors");
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+
+  // Clear old login attempts (older than 30 days)
+  const handleClearOldAttempts = async () => {
+    setIsCleaningUp(true);
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      // First count how many will be deleted
+      const { count } = await supabase
+        .from('login_attempts')
+        .select('*', { count: 'exact', head: true })
+        .lt('created_at', thirtyDaysAgo.toISOString());
+      
+      // Then delete them
+      const { error } = await supabase
+        .from('login_attempts')
+        .delete()
+        .lt('created_at', thirtyDaysAgo.toISOString());
+      
+      if (error) throw error;
+      
+      toast.success(`Cleared ${count || 0} old login attempts`, {
+        description: 'Login attempts older than 30 days have been removed.'
+      });
+      
+      // Refresh the data by triggering a re-render
+      setLoginAttempts(prev => prev.filter(a => new Date(a.created_at) >= thirtyDaysAgo));
+    } catch (err) {
+      console.error('Error clearing old attempts:', err);
+      toast.error('Failed to clear old attempts');
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
 
   // Detect threats for AI analysis (simplified version matching ThreatDetector logic)
   const detectedThreats = useMemo(() => {
@@ -129,6 +168,24 @@ export const PortfolioAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6">
+          {/* Maintenance Actions */}
+          <div className="flex justify-end">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleClearOldAttempts}
+              disabled={isCleaningUp}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              {isCleaningUp ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Clear Old Attempts (30+ days)
+            </Button>
+          </div>
+          
           {/* AI Risk Score */}
           <AIRiskScore loginAttempts={loginAttempts} detectedThreats={detectedThreats} />
           
