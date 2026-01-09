@@ -3322,6 +3322,139 @@ The `logRateLimitEvent` function handles:
 3. Checking if alert threshold is met
 4. Sending email alert if conditions are met
 5. Managing alert cooldown to prevent spam
+6. Persisting violations to database for dashboard visibility
+
+### Real-Time Dashboard Updates
+
+The Rate Limit Violations dashboard uses Supabase Realtime subscriptions to automatically update when new violations occur or existing ones are modified.
+
+#### Realtime Architecture
+
+```mermaid
+flowchart LR
+    subgraph Edge["Edge Function"]
+        EF[Rate Limited Request]
+        DB_INSERT[Insert/Update Violation]
+    end
+
+    subgraph Supabase["Supabase Realtime"]
+        PUB[supabase_realtime Publication]
+        CHANNEL[rate_limit_violations Channel]
+    end
+
+    subgraph Dashboard["Owner Dashboard"]
+        SUB[Realtime Subscription]
+        QUERY[React Query Invalidation]
+        UI[UI Update + Toast]
+    end
+
+    EF --> DB_INSERT
+    DB_INSERT --> PUB
+    PUB --> CHANNEL
+    CHANNEL --> SUB
+    SUB --> QUERY
+    QUERY --> UI
+```
+
+**Figure RL-2: Realtime Updates Flow** - Shows how database changes propagate to the dashboard in real-time.
+
+#### Realtime Implementation
+
+The dashboard subscribes to postgres_changes on the `rate_limit_violations` table:
+
+```typescript
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+
+// Inside component
+const queryClient = useQueryClient();
+
+useEffect(() => {
+  const channel = supabase
+    .channel('rate-limit-violations-realtime')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',  // Listen to INSERT, UPDATE, DELETE
+        schema: 'public',
+        table: 'rate_limit_violations',
+      },
+      (payload) => {
+        console.log('Rate limit violation change:', payload);
+        
+        if (payload.eventType === 'INSERT') {
+          toast.warning(`New rate limit violation from ${payload.new.ip_address}`);
+        } else if (payload.eventType === 'UPDATE' && payload.new.is_blocked) {
+          toast.info(`IP ${payload.new.ip_address} has been blocked`);
+        }
+        
+        // Invalidate query to refresh data
+        queryClient.invalidateQueries({ queryKey: ['rate-limit-violations'] });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [queryClient]);
+```
+
+#### Database Configuration
+
+Realtime is enabled via a migration that adds the table to the `supabase_realtime` publication:
+
+```sql
+-- Enable realtime for rate_limit_violations table
+ALTER PUBLICATION supabase_realtime ADD TABLE public.rate_limit_violations;
+```
+
+#### User Experience
+
+When realtime updates occur:
+- **New Violation**: Warning toast appears with IP address
+- **IP Blocked**: Info toast confirms the block
+- **Any Change**: Dashboard data refreshes automatically without manual refresh
+
+### Automatic Cleanup Job
+
+The `cleanup-expired-blocks` edge function runs periodic cleanup to maintain database hygiene.
+
+#### Cleanup Schedule
+
+| Data Type | Retention Period | Action |
+|-----------|-----------------|--------|
+| Rate Limit Violations | 30 days | Delete |
+| Expired IP Blocks | Past expiration | Deactivate |
+| Login Attempts | 90 days | Delete |
+| Visitor Activity | 60 days | Delete |
+
+#### Cleanup Edge Function
+
+**Endpoint:** `POST /functions/v1/cleanup-expired-blocks`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Cleanup completed successfully",
+  "summary": {
+    "expiredBlocksDeactivated": 3,
+    "rateLimitViolationsDeleted": 45,
+    "oldLoginAttemptsDeleted": 120,
+    "oldVisitorActivityDeleted": 500,
+    "cleanupTime": "2025-01-10T00:00:00Z"
+  }
+}
+```
+
+#### Scheduling Cleanup
+
+The cleanup function can be scheduled via:
+1. **Supabase Cron**: Set up a pg_cron job to call the function daily
+2. **External Scheduler**: Use a service like cron-job.org
+3. **Manual Trigger**: Call via Owner Dashboard when needed
 
 ---
 

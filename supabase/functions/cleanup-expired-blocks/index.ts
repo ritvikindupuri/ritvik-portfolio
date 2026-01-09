@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,66 +15,93 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Starting expired IP blocks cleanup...');
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // Find expired blocks
-    const now = new Date().toISOString();
-    const { data: expiredBlocks, error: fetchError } = await supabase
+    console.log(`Running cleanup job at ${now.toISOString()}`);
+    console.log(`Cleaning up records older than ${thirtyDaysAgo.toISOString()}`);
+
+    // Deactivate expired IP blocks
+    const { data: expiredBlocks, error: blocksError } = await supabase
       .from('blocked_ips')
-      .select('id, ip_address, expires_at, reason')
+      .update({ is_active: false, updated_at: now.toISOString() })
       .eq('is_active', true)
       .not('expires_at', 'is', null)
-      .lt('expires_at', now);
+      .lt('expires_at', now.toISOString())
+      .select('id, ip_address');
 
-    if (fetchError) {
-      console.error('Error fetching expired blocks:', fetchError);
-      throw fetchError;
+    if (blocksError) {
+      console.error('Error deactivating expired blocks:', blocksError);
     }
 
-    if (!expiredBlocks || expiredBlocks.length === 0) {
-      console.log('No expired IP blocks found');
-      return new Response(
-        JSON.stringify({ message: 'No expired blocks to clean up', count: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Delete rate limit violations older than 30 days
+    const { data: deletedViolations, error: violationsError } = await supabase
+      .from('rate_limit_violations')
+      .delete()
+      .lt('last_violation_at', thirtyDaysAgo.toISOString())
+      .select('id');
+
+    if (violationsError) {
+      console.error('Error deleting rate limit violations:', violationsError);
     }
 
-    console.log(`Found ${expiredBlocks.length} expired IP blocks to deactivate`);
+    // Delete old login attempts older than 90 days
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const { data: deletedAttempts, error: attemptsError } = await supabase
+      .from('login_attempts')
+      .delete()
+      .lt('created_at', ninetyDaysAgo.toISOString())
+      .select('id');
 
-    // Deactivate expired blocks
-    const expiredIds = expiredBlocks.map(b => b.id);
-    const { error: updateError } = await supabase
-      .from('blocked_ips')
-      .update({ is_active: false, updated_at: now })
-      .in('id', expiredIds);
-
-    if (updateError) {
-      console.error('Error deactivating expired blocks:', updateError);
-      throw updateError;
+    if (attemptsError) {
+      console.error('Error deleting old login attempts:', attemptsError);
     }
 
-    console.log(`Successfully deactivated ${expiredBlocks.length} expired IP blocks`);
-    
-    // Log the cleaned up IPs
-    expiredBlocks.forEach(block => {
-      console.log(`Deactivated: ${block.ip_address} (expired: ${block.expires_at}, reason: ${block.reason})`);
-    });
+    // Delete old visitor activity older than 60 days
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const { data: deletedActivity, error: activityError } = await supabase
+      .from('visitor_activity')
+      .delete()
+      .lt('created_at', sixtyDaysAgo.toISOString())
+      .select('id');
+
+    if (activityError) {
+      console.error('Error deleting old visitor activity:', activityError);
+    }
+
+    const summary = {
+      expiredBlocksDeactivated: expiredBlocks?.length || 0,
+      rateLimitViolationsDeleted: deletedViolations?.length || 0,
+      oldLoginAttemptsDeleted: deletedAttempts?.length || 0,
+      oldVisitorActivityDeleted: deletedActivity?.length || 0,
+      cleanupTime: now.toISOString(),
+    };
+
+    console.log('Cleanup summary:', summary);
 
     return new Response(
-      JSON.stringify({ 
-        message: 'Cleanup completed successfully', 
-        count: expiredBlocks.length,
-        deactivated: expiredBlocks.map(b => b.ip_address)
+      JSON.stringify({
+        success: true,
+        message: 'Cleanup completed successfully',
+        summary,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
     );
-
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Cleanup error:', message);
+    console.error('Cleanup job failed:', message);
     return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        success: false,
+        error: message,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
     );
   }
 });
