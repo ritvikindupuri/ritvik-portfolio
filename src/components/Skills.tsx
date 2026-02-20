@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server, MoreVertical, Brain } from "lucide-react";
+import { Code, Monitor, Globe, Cloud, Lock, Plus, Upload, X, ExternalLink, GripVertical, Server, MoreVertical, Brain, Workflow } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +74,12 @@ const initialSkillCategories = [
     id: "ai",
     label: "AI Systems",
     icon: Brain,
+    skills: [] as Skill[],
+  },
+  {
+    id: "automation",
+    label: "Automation & Orchestration",
+    icon: Workflow,
     skills: [] as Skill[],
   },
 ];
