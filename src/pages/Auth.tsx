@@ -18,12 +18,17 @@ const logAuthAttempt = async (email: string, success: boolean, failureReason?: s
       userAgent: navigator.userAgent,
     };
 
-    // WAF inspection on auth attempts
-    const { wafInspect } = await import('@/lib/waf-proxy');
-    const wafResult = await wafInspect('log-auth-attempt', 'POST', body);
+    // WAF-protected call (supports preflight & full proxy modes)
+    const { smartInvoke, getWafMode } = await import('@/lib/waf-proxy');
+    const wafResult = await smartInvoke('log-auth-attempt', body);
     if (wafResult.blocked) {
-      console.warn('[WAF] Auth attempt blocked:', wafResult.reason);
+      console.warn('[WAF] Auth attempt blocked:', wafResult.error?.message);
       return;
+    }
+
+    // In full_proxy mode, WAF already called the edge function
+    if (getWafMode() === 'full_proxy' && wafResult.data) {
+      return; // Already sent
     }
 
     await supabase.functions.invoke('log-auth-attempt', { body });
