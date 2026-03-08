@@ -71,6 +71,15 @@ export const Contact = () => {
       // Validate form data
       const validatedData = contactFormSchema.parse(formData);
 
+      // WAF inspection before sending
+      const { wafInspect } = await import('@/lib/waf-proxy');
+      const wafResult = await wafInspect('send-contact-email', 'POST', validatedData);
+      if (wafResult.blocked) {
+        toast.error("Your message was flagged by our security system. Please remove any special characters and try again.");
+        setIsSending(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('send-contact-email', {
         body: validatedData,
       });
