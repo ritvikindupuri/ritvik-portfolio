@@ -2617,6 +2617,7 @@ Client Request → Deflectra WAF Proxy → Edge Function → Response
 ```typescript
 const DEFLECTRA_PROXY = "https://[project].supabase.co/functions/v1/waf-proxy";
 const SITE_ID = "[site-id]";
+const WAF_MODE: WafMode = 'full_proxy'; // 'preflight' | 'full_proxy'
 const WAF_PROTECTED_FUNCTIONS = [
   'send-contact-email',
   'portfolio-chatbot', 
@@ -2625,6 +2626,46 @@ const WAF_PROTECTED_FUNCTIONS = [
   'send-recruiter-alert',
 ];
 ```
+
+#### Routing Modes
+
+The WAF supports two routing modes configured via `WAF_MODE`:
+
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| `preflight` | Inspects payload at WAF, then calls edge function directly from client | Lower latency, WAF only validates |
+| `full_proxy` | Routes entire request through WAF proxy, which forwards clean requests to the origin edge function | Full protection, single request path |
+
+**Current mode: `full_proxy`** — All protected edge function traffic flows through Deflectra. The WAF inspects the payload and, if clean, forwards the request to the portfolio's Supabase backend (`nvgfgoykyeouwrksszpb.supabase.co/functions/v1/*`). Blocked requests never reach the backend.
+
+#### WAF Event Logging (`waf_events` table)
+
+Every WAF inspection (allowed or blocked) is logged to the `waf_events` database table for analytics:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `function_name` | text | Edge function that was called |
+| `blocked` | boolean | Whether the request was blocked |
+| `reason` | text | Block reason (null if allowed) |
+| `waf_mode` | text | Mode used (`preflight` or `full_proxy`) |
+| `created_at` | timestamptz | Event timestamp |
+
+RLS policies ensure only owners can view/delete events; anonymous inserts are allowed for logging.
+
+#### WAF Analytics Dashboard (`WafStats` component)
+
+The owner dashboard includes a dedicated WAF Analytics section (`src/components/WafStats.tsx`) that visualizes:
+
+- **Summary cards**: Total requests, allowed, blocked, block rate percentage
+- **7-day trend chart**: Bar chart showing daily allowed vs. blocked traffic
+- **Block ratio pie chart**: Visual breakdown of allowed vs. blocked
+- **Per-endpoint breakdown**: Table showing which edge functions see the most WAF activity
+- **Recent blocked requests**: List of recently blocked requests with reasons and timestamps
+
+#### Fail-Open Design
+
+If the Deflectra WAF proxy is unreachable (network error, timeout), the system **fails open** — requests are forwarded directly to the edge function to ensure site availability. These fallback events are logged with reason `proxy_fallback` or `proxy_unreachable`.
 
 With security systems in place to block threats, the portfolio keeps the owner informed through a comprehensive automated email notification system.
 
