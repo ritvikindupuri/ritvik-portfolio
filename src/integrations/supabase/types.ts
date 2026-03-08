@@ -916,6 +916,33 @@ export type Database = {
         }
         Relationships: []
       }
+      waf_events: {
+        Row: {
+          blocked: boolean
+          created_at: string
+          function_name: string
+          id: string
+          reason: string | null
+          waf_mode: string
+        }
+        Insert: {
+          blocked?: boolean
+          created_at?: string
+          function_name: string
+          id?: string
+          reason?: string | null
+          waf_mode?: string
+        }
+        Update: {
+          blocked?: boolean
+          created_at?: string
+          function_name?: string
+          id?: string
+          reason?: string | null
+          waf_mode?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

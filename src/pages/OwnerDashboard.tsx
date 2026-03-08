@@ -6,6 +6,7 @@ import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { GitHubIndexingStatus } from "@/components/GitHubIndexingStatus";
 import { RAGTestingPanel } from "@/components/RAGTestingPanel";
+import { WafStats } from "@/components/WafStats";
 import { RateLimitViolationsManager } from "@/components/RateLimitViolationsManager";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, LogOut } from "lucide-react";
@@ -126,11 +127,20 @@ const OwnerDashboard = () => {
           </motion.div>
         </div>
 
-        {/* Rate Limit Violations */}
+        {/* WAF Analytics */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.15 }}
+        >
+          <WafStats />
+        </motion.div>
+
+        {/* Rate Limit Violations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
         >
           <RateLimitViolationsManager />
         </motion.div>
