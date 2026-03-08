@@ -75,78 +75,38 @@ This documentation covers the complete system architecture, data flows, implemen
 
 ---
 
-## System Architecture
+## Architecture Breakdown
 
-```mermaid
-flowchart TB
-    subgraph Frontend["Frontend React and Vite"]
-        UI[Portfolio UI]
-        VTP[VisitorTrackerProvider]
-        TD[ThreatDetector]
-        VD[VisitorDashboard]
-        SCM[SecurityChoroplethMap]
-        CB[AI Chatbot]
-    end
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Entry Point** | Cloudflare Workers | Routes traffic through WAF proxy |
+| **WAF Engine** | Supabase Edge Function | 6-stage inspection: API Shield, Rate Limiting, Regex Rules, AI Analysis, Logging, Block/Forward |
+| **AI Model** | Google Gemini 3 Flash | Classifies requests with confidence scores and geo-estimation |
+| **Frontend** | React 18 + Vite + TypeScript + Tailwind CSS | Dashboard with real-time monitoring |
+| **Database** | PostgreSQL with Row-Level Security | Multi-tenant data isolation |
+| **Real-Time** | Supabase Realtime (WebSocket) | Instant block notifications |
+| **Visualization** | Mapbox GL JS | 3D globe showing attack sources |
 
-    subgraph Supabase["Supabase Backend"]
-        subgraph Database["PostgreSQL Database"]
-            VA[(visitor_activity)]
-            LA[(login_attempts)]
-            KLL[(known_login_locations)]
-            PR[(projects)]
-            SK[(skills)]
-            EX[(experience)]
-            PF[(profiles)]
-        end
+## Tech Stack
 
-        subgraph EdgeFunctions["Edge Functions"]
-            SVA[send-visitor-alert]
-            STA[send-threat-alert]
-            WD[weekly-digest]
-            GIP[geolocate-ip]
-            PCB[portfolio-chatbot]
-            GMT[get-mapbox-token]
-        end
+**Frontend:**
+- React 18
+- Vite
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Recharts
+- Mapbox GL JS
+- Framer Motion
 
-        subgraph Extensions["Extensions"]
-            CRON[pg_cron]
-            NET[pg_net]
-            VEC[pgvector]
-        end
-    end
-
-    subgraph External["External Services"]
-        RS[Resend Email API]
-        MB[Mapbox GL]
-        OAI[OpenAI API]
-    end
-
-    UI --> VTP
-    VTP -->|Track Actions| VA
-    UI -->|Login Attempt| LA
-
-    TD -->|Analyze| LA
-    TD -->|High Severity| STA
-
-    VD -->|Query| VA
-    SCM -->|Query| LA
-    SCM -->|Geolocate| GIP
-
-    CB -->|Query| PCB
-    PCB -->|Embeddings| OAI
-    PCB -->|Semantic Search| VEC
-
-    VTP -->|5 plus Actions| SVA
-    SVA --> RS
-    STA --> RS
-    WD --> RS
-
-    CRON -->|Weekly| WD
-    GIP -->|Coordinates| MB
-    GMT -->|Token| SCM
-```
-
-**Figure SA-1: System Architecture Diagram** - Complete technical stack showing the React frontend components, Supabase backend with PostgreSQL database, Edge Functions, and external service integrations for email, mapping, and AI.
+**Backend:**
+- Supabase (PostgreSQL, Edge Functions, Auth, Realtime)
+- pgvector (for RAG embeddings)
+- pg_cron (scheduled tasks)
+- pg_net (HTTP requests)
+- Google Gemini 3 Flash (AI analysis)
+- Cloudflare Workers
+- Resend API (email notifications)
 
 ### System Architecture Diagram Explanation
 
