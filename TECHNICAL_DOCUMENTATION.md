@@ -2640,6 +2640,7 @@ The portfolio application consists of three core components that work together u
 
 | Component | Security Responsibilities |
 |-----------|--------------------------|
+| **WAF (Deflectra)** | AI-powered payload inspection, SQLi/XSS blocking at proxy layer |
 | **Frontend (React + Supabase Auth)** | User sessions, secure authentication, input validation |
 | **Backend (Supabase)** | Row-Level Security (RLS), Role-Based Access Control (RBAC), database triggers |
 | **AI Chatbot** | Data isolation, sanitization, request throttling via DOMPurify |
