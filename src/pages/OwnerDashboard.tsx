@@ -6,6 +6,7 @@ import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { GitHubIndexingStatus } from "@/components/GitHubIndexingStatus";
 import { RAGTestingPanel } from "@/components/RAGTestingPanel";
+import { WafStats } from "@/components/WafStats";
 import { RateLimitViolationsManager } from "@/components/RateLimitViolationsManager";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, LogOut } from "lucide-react";
