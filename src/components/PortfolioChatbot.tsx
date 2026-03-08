@@ -75,12 +75,10 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
         content: m.content
       }));
 
-      // WAF inspection before sending to chatbot
-      const { wafInspect } = await import('@/lib/waf-proxy');
-      const wafResult = await wafInspect('portfolio-chatbot', 'POST', { 
-        message: userMessage.content, 
-        conversationHistory 
-      });
+      // WAF-protected edge function call (supports preflight & full proxy modes)
+      const chatBody = { message: userMessage.content, conversationHistory };
+      const { smartInvoke, getWafMode } = await import('@/lib/waf-proxy');
+      const wafResult = await smartInvoke('portfolio-chatbot', chatBody);
       if (wafResult.blocked) {
         const blockedMessage: Message = {
           role: 'assistant',
@@ -92,12 +90,18 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('portfolio-chatbot', {
-        body: { 
-          message: userMessage.content,
-          conversationHistory 
-        }
-      });
+      // In full_proxy mode, WAF already called the edge function
+      let data, error;
+      if (getWafMode() === 'full_proxy' && wafResult.data) {
+        data = wafResult.data;
+        error = wafResult.error;
+      } else {
+        const result = await supabase.functions.invoke('portfolio-chatbot', {
+          body: chatBody
+        });
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) {
         throw error;
