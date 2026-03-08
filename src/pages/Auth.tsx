@@ -11,14 +11,22 @@ import { Loader2, ShieldCheck, User } from "lucide-react";
 // Log auth attempt to edge function
 const logAuthAttempt = async (email: string, success: boolean, failureReason?: string) => {
   try {
-    await supabase.functions.invoke('log-auth-attempt', {
-      body: {
-        email,
-        success,
-        failureReason,
-        userAgent: navigator.userAgent,
-      },
-    });
+    const body = {
+      email,
+      success,
+      failureReason,
+      userAgent: navigator.userAgent,
+    };
+
+    // WAF inspection on auth attempts
+    const { wafInspect } = await import('@/lib/waf-proxy');
+    const wafResult = await wafInspect('log-auth-attempt', 'POST', body);
+    if (wafResult.blocked) {
+      console.warn('[WAF] Auth attempt blocked:', wafResult.reason);
+      return;
+    }
+
+    await supabase.functions.invoke('log-auth-attempt', { body });
   } catch (error) {
     console.error('Failed to log auth attempt:', error);
   }

@@ -2510,16 +2510,22 @@ The Geographic Blocking system works in concert with the Honeypot and IP Block s
 
 ```mermaid
 flowchart LR
+    subgraph Layer0["Layer 0: WAF (Deflectra)"]
+        Z[Incoming Request] --> Z1{Payload clean?}
+        Z1 -->|No: SQLi/XSS| Z2[Block at proxy]
+        Z1 -->|Yes| A[Continue to Layer 1]
+    end
+
     subgraph Layer1["Layer 1: Geographic Filtering"]
-        A[Login Attempt] --> B{Country blocked?}
+        A --> B{Country blocked?}
         B -->|Yes| C[Reject by country]
-        B -->|No or flagged| D[Continue to layer 2]
+        B -->|No or flagged| D[Continue to Layer 2]
     end
 
     subgraph Layer2["Layer 2: IP Blocking"]
         D --> E{IP blocked?}
         E -->|Yes| F[Reject by IP]
-        E -->|No| G[Continue to layer 3]
+        E -->|No| G[Continue to Layer 3]
     end
 
     subgraph Layer3["Layer 3: Honeypot Detection"]
@@ -2533,12 +2539,18 @@ flowchart LR
 
 **How the Layers Work Together:**
 
-1. **Geographic Layer (First Check)**: 
+0. **WAF Layer (First Check - Deflectra)**:
+   - All public-facing edge function requests (contact form, chatbot, auth logging) are first routed through the Deflectra WAF proxy
+   - AI-powered inspection detects SQL injection, XSS, and command injection patterns in request bodies
+   - Malicious payloads are blocked with a 403 response before reaching any edge function
+   - Fails open: if the WAF proxy is unreachable, requests proceed normally to ensure availability
+
+1. **Geographic Layer (Second Check)**: 
    - Fastest rejection path - stops attacks from entire countries before any processing
    - Flagged countries still proceed but generate alerts
    - Reduces load on honeypot and IP blocking systems
 
-2. **IP Block Layer (Second Check)**:
+2. **IP Block Layer (Third Check)**:
    - Catches individual bad actors that may use VPNs to bypass geographic blocks
    - Includes both manually blocked IPs and auto-blocked honeypot offenders
    - 24-hour auto-blocks provide temporary relief from persistent attackers
@@ -2552,6 +2564,7 @@ flowchart LR
 
 | Source System | Data Generated | Consuming System |
 |---------------|----------------|------------------|
+| WAF (Deflectra) | Blocked injection attempts | Security event logging |
 | Geographic Blocking | Country-based threat patterns | Threat Detector analytics |
 | Honeypot Accounts | IP addresses of attackers | IP Block List (auto-block) |
 | IP Block List | Blocked attacker IPs | Login rejection layer |
@@ -2559,13 +2572,59 @@ flowchart LR
 
 **Example Attack Scenario:**
 
-1. Attacker from Russia (RU) attempts login with `admin@portfolio.dev`
-2. **Layer 1**: If RU is set to "Block" → Immediate rejection
-3. **Layer 1**: If RU is set to "Flag" → Alert sent, continues to Layer 2
-4. **Layer 2**: If attacker's IP is already blocked → Rejection
-5. **Layer 3**: Email matches honeypot → Trigger logged, location mapped
-6. After 3 triggers from same IP → Auto-blocked for 24 hours
-7. Future attempts rejected at Layer 2 (IP Block) before reaching Layer 3
+1. Attacker submits `' OR 1=1 --` in the contact form
+2. **Layer 0 (WAF)**: Deflectra detects SQLi pattern → Blocked at proxy with 403
+3. If payload is clean, attacker from Russia (RU) attempts login with `admin@portfolio.dev`
+4. **Layer 1**: If RU is set to "Block" → Immediate rejection
+5. **Layer 1**: If RU is set to "Flag" → Alert sent, continues to Layer 2
+6. **Layer 2**: If attacker's IP is already blocked → Rejection
+7. **Layer 3**: Email matches honeypot → Trigger logged, location mapped
+8. After 3 triggers from same IP → Auto-blocked for 24 hours
+9. Future attempts rejected at Layer 2 (IP Block) before reaching Layer 3
+
+### Deflectra WAF Integration
+
+The portfolio integrates with **Deflectra**, a custom-built AI-powered Web Application Firewall, as the outermost security layer.
+
+#### Architecture
+
+```
+Client Request → Deflectra WAF Proxy → Edge Function → Response
+                    ↓ (if malicious)
+               403 Blocked
+```
+
+#### Protected Endpoints
+
+| Edge Function | Protection | Threat Mitigated |
+|--------------|------------|------------------|
+| `send-contact-email` | Body inspection | SQLi, XSS in form fields |
+| `portfolio-chatbot` | Message inspection | Prompt injection, XSS |
+| `log-auth-attempt` | Payload inspection | SQLi in email/credentials |
+| `send-visitor-alert` | Body inspection | Malformed payloads |
+| `send-recruiter-alert` | Body inspection | Malformed payloads |
+
+#### Implementation Details
+
+- **Proxy URL**: Routes through `waf-proxy` edge function on separate Supabase project
+- **Site ID**: Registered site identifier for the portfolio
+- **Fail-Open Design**: If the WAF proxy is unreachable, requests proceed to edge functions directly to ensure availability
+- **Dynamic Import**: WAF module is lazy-loaded via `import()` to minimize bundle impact
+- **User Feedback**: Blocked requests show clear error messages (contact form toast, chatbot inline message)
+
+#### Configuration (`src/lib/waf-proxy.ts`)
+
+```typescript
+const DEFLECTRA_PROXY = "https://[project].supabase.co/functions/v1/waf-proxy";
+const SITE_ID = "[site-id]";
+const WAF_PROTECTED_FUNCTIONS = [
+  'send-contact-email',
+  'portfolio-chatbot', 
+  'log-auth-attempt',
+  'send-visitor-alert',
+  'send-recruiter-alert',
+];
+```
 
 With security systems in place to block threats, the portfolio keeps the owner informed through a comprehensive automated email notification system.
 
@@ -2581,6 +2640,7 @@ The portfolio application consists of three core components that work together u
 
 | Component | Security Responsibilities |
 |-----------|--------------------------|
+| **WAF (Deflectra)** | AI-powered payload inspection, SQLi/XSS blocking at proxy layer |
 | **Frontend (React + Supabase Auth)** | User sessions, secure authentication, input validation |
 | **Backend (Supabase)** | Row-Level Security (RLS), Role-Based Access Control (RBAC), database triggers |
 | **AI Chatbot** | Data isolation, sanitization, request throttling via DOMPurify |

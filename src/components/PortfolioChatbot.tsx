@@ -75,6 +75,23 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
         content: m.content
       }));
 
+      // WAF inspection before sending to chatbot
+      const { wafInspect } = await import('@/lib/waf-proxy');
+      const wafResult = await wafInspect('portfolio-chatbot', 'POST', { 
+        message: userMessage.content, 
+        conversationHistory 
+      });
+      if (wafResult.blocked) {
+        const blockedMessage: Message = {
+          role: 'assistant',
+          content: '⚠️ Your message was flagged by our security system. Please rephrase and try again.',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, blockedMessage]);
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('portfolio-chatbot', {
         body: { 
           message: userMessage.content,
