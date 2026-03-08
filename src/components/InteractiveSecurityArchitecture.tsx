@@ -188,11 +188,42 @@ interface AttackSimulation {
 
 const attackSimulations: AttackSimulation[] = [
   {
+    id: "sqli-waf",
+    name: "SQL Injection via Contact Form",
+    description: "Attacker submits ' OR 1=1 -- in the contact form message field",
+    blockedAt: "waf",
+    steps: [
+      { layer: "waf", status: "blocked" },
+      { layer: "geographic", status: "pending" },
+      { layer: "ip-blocking", status: "pending" },
+      { layer: "honeypot", status: "pending" },
+      { layer: "rate-limiting", status: "pending" },
+      { layer: "auth", status: "pending" },
+      { layer: "database", status: "pending" },
+    ],
+  },
+  {
+    id: "xss-waf",
+    name: "XSS Attack via Chatbot",
+    description: "Attacker sends <script>alert(document.cookie)</script> to chatbot",
+    blockedAt: "waf",
+    steps: [
+      { layer: "waf", status: "blocked" },
+      { layer: "geographic", status: "pending" },
+      { layer: "ip-blocking", status: "pending" },
+      { layer: "honeypot", status: "pending" },
+      { layer: "rate-limiting", status: "pending" },
+      { layer: "auth", status: "pending" },
+      { layer: "database", status: "pending" },
+    ],
+  },
+  {
     id: "cors-attack",
     name: "Cross-Origin Request Attack",
     description: "Malicious site attempts API request from unauthorized origin",
     blockedAt: "rate-limiting",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "passed" },
       { layer: "honeypot", status: "passed" },
@@ -207,6 +238,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Attacker sends 100+ requests/minute to exhaust API limits",
     blockedAt: "rate-limiting",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "passed" },
       { layer: "honeypot", status: "passed" },
@@ -221,6 +253,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Attacker from geo-blocked region (e.g., sanctioned country) attempts login",
     blockedAt: "geographic",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "blocked" },
       { layer: "ip-blocking", status: "pending" },
       { layer: "honeypot", status: "pending" },
@@ -235,6 +268,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Attacker tries admin@portfolio.dev honeypot account",
     blockedAt: "honeypot",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "passed" },
       { layer: "honeypot", status: "blocked" },
@@ -249,6 +283,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Previously flagged IP (3+ honeypot triggers) returns",
     blockedAt: "ip-blocking",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "blocked" },
       { layer: "honeypot", status: "pending" },
@@ -263,6 +298,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Rapid password guessing from single IP exceeds threshold",
     blockedAt: "rate-limiting",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "passed" },
       { layer: "honeypot", status: "passed" },
@@ -277,6 +313,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Same password tried across multiple accounts slowly",
     blockedAt: "rate-limiting",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "passed" },
       { layer: "honeypot", status: "passed" },
@@ -291,6 +328,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Leaked credentials from breached sites tested",
     blockedAt: "auth",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "passed" },
       { layer: "honeypot", status: "passed" },
@@ -303,14 +341,15 @@ const attackSimulations: AttackSimulation[] = [
     id: "sql-injection",
     name: "SQL Injection Attempt (T1190)",
     description: "Malicious SQL in login form: ' OR 1=1 --",
-    blockedAt: "database",
+    blockedAt: "waf",
     steps: [
-      { layer: "geographic", status: "passed" },
-      { layer: "ip-blocking", status: "passed" },
-      { layer: "honeypot", status: "passed" },
-      { layer: "rate-limiting", status: "passed" },
-      { layer: "auth", status: "passed" },
-      { layer: "database", status: "blocked" },
+      { layer: "waf", status: "blocked" },
+      { layer: "geographic", status: "pending" },
+      { layer: "ip-blocking", status: "pending" },
+      { layer: "honeypot", status: "pending" },
+      { layer: "rate-limiting", status: "pending" },
+      { layer: "auth", status: "pending" },
+      { layer: "database", status: "pending" },
     ],
   },
   {
@@ -319,6 +358,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Viewer account attempts to access owner-only data",
     blockedAt: "database",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "passed" },
       { layer: "honeypot", status: "passed" },
@@ -333,6 +373,7 @@ const attackSimulations: AttackSimulation[] = [
     description: "Valid owner with correct credentials from trusted location",
     blockedAt: "",
     steps: [
+      { layer: "waf", status: "passed" },
       { layer: "geographic", status: "passed" },
       { layer: "ip-blocking", status: "passed" },
       { layer: "honeypot", status: "passed" },
