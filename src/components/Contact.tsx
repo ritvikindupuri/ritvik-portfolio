@@ -138,7 +138,15 @@ export const Contact = () => {
         toast.error(error.errors[0].message);
       } else {
         console.error('Error sending email:', error);
-        toast.error("Failed to send message. Please email me directly at ritvik.indupuri@gmail.com");
+
+        const message = (error as any)?.message ? String((error as any).message) : '';
+        if (message.toLowerCase().includes('failed to fetch')) {
+          toast.error(
+            "Request blocked or unreachable (often triggered by SQL/XSS-like test payloads). Try a normal message, or wait and retry if your IP was temporarily blocked."
+          );
+        } else {
+          toast.error("Failed to send message. Please email me directly at ritvik.indupuri@gmail.com");
+        }
       }
     } finally {
       setIsSending(false);
