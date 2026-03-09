@@ -23,6 +23,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<OwnerDashboard />} />
+          <Route path="/waf-testing" element={<WafTesting />} />
           <Route path="/rag-documentation" element={<RAGDocumentation />} />
           <Route path="/technical-documentation" element={<TechnicalDocumentation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
