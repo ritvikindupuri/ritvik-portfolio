@@ -74,13 +74,10 @@ This documentation covers the complete system architecture, data flows, implemen
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| **Entry Point** | Cloudflare Workers | Routes traffic through WAF proxy |
-| **WAF Engine** | Supabase Edge Function | 6-stage inspection: API Shield, Rate Limiting, Regex Rules, AI Analysis, Logging, Block/Forward |
-| **AI Model** | Google Gemini 3 Flash | Classifies requests with confidence scores and geo-estimation |
 | **Frontend** | React 18 + Vite + TypeScript + Tailwind CSS | Dashboard with real-time monitoring |
 | **Database** | PostgreSQL with Row-Level Security | Multi-tenant data isolation |
 | **Real-Time** | Supabase Realtime (WebSocket) | Instant block notifications |
-| **Visualization** | Mapbox GL JS | 3D globe showing attack sources |
+| **Visualization** | Mapbox GL JS | 3D globe showing visitor/threat sources |
 
 ## Tech Stack
 
