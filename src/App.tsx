@@ -8,7 +8,6 @@ import Auth from "./pages/Auth";
 import RAGDocumentation from "./pages/RAGDocumentation";
 import TechnicalDocumentation from "./pages/TechnicalDocumentation";
 import OwnerDashboard from "./pages/OwnerDashboard";
-import WafTesting from "./pages/WafTesting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +22,6 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<OwnerDashboard />} />
-          <Route path="/waf-testing" element={<WafTesting />} />
           <Route path="/rag-documentation" element={<RAGDocumentation />} />
           <Route path="/technical-documentation" element={<TechnicalDocumentation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

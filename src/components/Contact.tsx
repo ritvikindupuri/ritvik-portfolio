@@ -26,21 +26,6 @@ const contactFormSchema = z.object({
     .max(2000, "Message must be less than 2000 characters"),
 });
 
-// Prevent sending obvious attack payloads from the browser.
-// These payloads can trigger upstream security blocks that surface as "TypeError: Failed to fetch".
-function looksLikeAttackPayload(text: string): boolean {
-  const t = text.toLowerCase();
-  return (
-    /\bunion\s+select\b/.test(t) ||
-    /\bor\b\s*\d+\s*=\s*\d+/.test(t) ||
-    /\b1\s*=\s*1\b/.test(t) ||
-    /<\s*script\b/.test(t) ||
-    /onerror\s*=/.test(t) ||
-    /onload\s*=/.test(t) ||
-    /<\s*svg\b/.test(t)
-  );
-}
-
 export const Contact = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -86,47 +71,9 @@ export const Contact = () => {
       // Validate form data
       const validatedData = contactFormSchema.parse(formData);
 
-      // Client-side guard: don't send obvious attack payloads (can trigger upstream blocks)
-      if (looksLikeAttackPayload(validatedData.message) || looksLikeAttackPayload(validatedData.name)) {
-        toast.error(
-          "Blocked by security: please remove SQL/XSS-like patterns. (Use the WAF test suite for attack payload testing.)"
-        );
-        return;
-      }
-
-      // WAF-protected edge function call (supports preflight & full proxy modes)
-      const { smartInvoke, getWafMode } = await import('@/lib/waf-proxy');
-      const wafMode = getWafMode();
-
-      let data: any;
-      let error: any;
-
-      if (wafMode === 'full_proxy') {
-        // In full_proxy mode, the WAF proxy forwards to the backend function.
-        const wafResult = await smartInvoke('send-contact-email', validatedData);
-        if (wafResult.blocked) {
-          toast.error(
-            "Your message was flagged by our security system. Please remove any special characters and try again."
-          );
-          return;
-        }
-        data = wafResult.data;
-        error = wafResult.error;
-      } else {
-        // In preflight mode, we only inspect; the actual call happens directly if allowed.
-        const wafResult = await smartInvoke('send-contact-email', validatedData);
-        if (wafResult.blocked) {
-          toast.error(
-            "Your message was flagged by our security system. Please remove any special characters and try again."
-          );
-          return;
-        }
-        const result = await supabase.functions.invoke('send-contact-email', {
-          body: validatedData,
-        });
-        data = result.data;
-        error = result.error;
-      }
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: validatedData,
+      });
 
       if (error) throw error;
 
@@ -138,15 +85,7 @@ export const Contact = () => {
         toast.error(error.errors[0].message);
       } else {
         console.error('Error sending email:', error);
-
-        const message = (error as any)?.message ? String((error as any).message) : '';
-        if (message.toLowerCase().includes('failed to fetch')) {
-          toast.error(
-            "Request blocked or unreachable (often triggered by SQL/XSS-like test payloads). Try a normal message, or wait and retry if your IP was temporarily blocked."
-          );
-        } else {
-          toast.error("Failed to send message. Please email me directly at ritvik.indupuri@gmail.com");
-        }
+        toast.error("Failed to send message. Please email me directly at ritvik.indupuri@gmail.com");
       }
     } finally {
       setIsSending(false);
