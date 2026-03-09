@@ -19,6 +19,9 @@ function makeReq(
     headers: {
       "content-type": "application/json",
       origin,
+      // Simulate the extra headers the web client may send
+      "x-supabase-client-platform": "web",
+      "x-supabase-client-platform-version": "2.75.0",
       "x-forwarded-for": ip,
       "user-agent": "waf-test-suite/1.0",
     },
@@ -31,6 +34,10 @@ Deno.test("send-contact-email: OPTIONS preflight returns 204", async () => {
   await res.text();
   assertEquals(res.status, 204);
   assertEquals(res.headers.has("Access-Control-Allow-Origin"), true);
+  assertMatch(
+    res.headers.get("Access-Control-Allow-Headers") ?? "",
+    /x-supabase-client-platform/i,
+  );
 });
 
 Deno.test("send-contact-email: invalid email returns 400", async () => {
