@@ -61,6 +61,9 @@ This documentation covers the complete system architecture, data flows, implemen
 ### AI & Chatbot
 - [RAG Chatbot Architecture](#rag-chatbot-architecture)
 
+### External Security Tools
+- [External Security Tools Reference](#external-security-tools-reference)
+
 ### Technical Reference
 - [Database Architecture](#database-architecture)
 - [Edge Functions](#edge-functions)
@@ -3303,6 +3306,68 @@ The codebase serves as both a professional portfolio and a reference implementat
 
 ---
 
+## External Security Tools Reference
+
+This section documents external Web Application Firewall (WAF) services that were evaluated during the security architecture design phase. While not currently implemented in this portfolio, these screenshots provide reference for enterprise-grade WAF capabilities that could be integrated in production environments.
+
+### Deflectra Adaptive Web Shield
+
+Deflectra is a cloud-based WAF service that provides real-time threat detection, rate limiting, and AI-powered attack analysis. The following screenshots demonstrate the key features of their platform:
+
+![Deflectra Dashboard Overview](images/deflectra-dashboard.png)
+
+**Figure EXT-1: Deflectra Dashboard Overview** - Main dashboard showing threat statistics, active protection status, and AI engine configuration. The interface displays real-time metrics including 25 threats blocked, 9 active threats, and geographic threat distribution.
+
+![Deflectra Threat Map](images/deflectra-threat-map.png)
+
+**Figure EXT-2: Deflectra 3D Threat Map** - Interactive threat visualization showing geographic distribution of attack sources. The map provides live threat monitoring with recent attack details including JWT inspection, AI detection, and schema validation events.
+
+![Deflectra Protected Sites](images/deflectra-protected-sites.png)
+
+**Figure EXT-3: Deflectra Protected Sites Management** - Site configuration interface showing protected endpoints, WAF proxy configuration, and how Deflectra integrates with existing applications through proxy endpoints.
+
+![Deflectra Rule Engine](images/deflectra-rule-engine.png)
+
+**Figure EXT-4: Deflectra Security Rule Engine** - Advanced rule configuration for client-side script injection protection, React/SPA XSS protection, and other security policies. Shows severity levels and action types (BLOCK, etc.).
+
+![Deflectra API Shield](images/deflectra-api-shield.png)
+
+**Figure EXT-5: Deflectra API Protection Dashboard** - Detailed view of protected endpoints with request statistics, blocking metrics, and test results. Includes SQL injection attack testing and JWT token validation.
+
+![Deflectra Rate Limiting](images/deflectra-rate-limiting.png)
+
+**Figure EXT-6: Deflectra Rate Limiting Configuration** - Comprehensive rate limiting rules including main entry points, static assets, global site limits, and API protection. Shows configurable thresholds and actions.
+
+![Deflectra Attack Simulation](images/deflectra-attack-simulation.png)
+
+**Figure EXT-7: Deflectra AI-Powered Attack Simulation** - Quick attack simulation tool that allows testing various attack vectors including SQL injection, XSS, path traversal, and brute force attacks against protected sites.
+
+![Deflectra AI Detection Details](images/deflectra-ai-detections.png)
+
+**Figure EXT-8: Deflectra AI Detection Analysis** - Detailed AI analysis showing recent security detections including JWT inspection alerts, missing tokens, and threat confidence scoring with specific IP addresses and threat types.
+
+![Deflectra Blocked Request](images/deflectra-blocked-request.png)
+
+**Figure EXT-9: Deflectra Request Blocking Interface** - Critical severity alert showing how Deflectra blocks unauthorized data exfiltration attempts. Displays the specific reason, IP address, path, and provides direct access to view the blocked request details.
+
+![Deflectra Notification Center](images/deflectra-notifications.png)
+
+**Figure EXT-10: Deflectra Notification Center** - Comprehensive alert management showing medium, high, and critical severity notifications including schema validation, AI detections, and JWT inspection alerts with detailed threat information.
+
+### Integration Considerations
+
+While Deflectra provides enterprise-grade WAF capabilities, this portfolio currently implements security through:
+
+- **Application-level security** via Supabase Row-Level Security (RLS)
+- **Rate limiting** through Edge Functions with built-in throttling
+- **Input validation** using DOMPurify and TypeScript type safety  
+- **Threat detection** via MITRE ATT&CK pattern analysis
+- **Geographic blocking** through IP geolocation and country-level rules
+
+External WAF services like Deflectra can complement these measures in high-traffic production environments where additional layers of protection are required.
+
+---
+
 ## Figure Reference
 
 This section provides a quick reference to all figures in this documentation, organized by section for easy navigation.
@@ -3368,6 +3433,22 @@ This section provides a quick reference to all figures in this documentation, or
 | Figure | Section | Description |
 |--------|---------|-------------|
 | Figure RAG-1 | RAG Chatbot Architecture | RAG pipeline flow from query to response |
+
+### External Security Tools Reference
+
+| Figure | Section | Description |
+|--------|---------|-------------|
+| Figure EXT-1 | Deflectra Adaptive Web Shield | Dashboard overview with threat statistics and active protection |
+| Figure EXT-2 | Deflectra Adaptive Web Shield | 3D threat map showing geographic attack distribution |
+| Figure EXT-3 | Deflectra Adaptive Web Shield | Protected sites management and WAF proxy configuration |
+| Figure EXT-4 | Deflectra Adaptive Web Shield | Security rule engine for XSS and injection protection |
+| Figure EXT-5 | Deflectra Adaptive Web Shield | API protection dashboard with endpoint monitoring |
+| Figure EXT-6 | Deflectra Adaptive Web Shield | Rate limiting configuration with thresholds and actions |
+| Figure EXT-7 | Deflectra Adaptive Web Shield | AI-powered attack simulation testing interface |
+| Figure EXT-8 | Deflectra Adaptive Web Shield | AI detection analysis with threat confidence scoring |
+| Figure EXT-9 | Deflectra Adaptive Web Shield | Request blocking interface showing critical severity alerts |
+| Figure EXT-10 | Deflectra Adaptive Web Shield | Notification center with comprehensive alert management |
+
 
 ---
 
