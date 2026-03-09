@@ -13,7 +13,9 @@ const SITE_ID = "c3311d01-1dff-4074-93cc-6e1b768fd1e8";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const WAF_ENABLED = true;
+// WAF proxy is disabled since Deflectra isn't configured for this site.
+// Pattern detection still runs server-side in edge functions.
+const WAF_ENABLED = false;
 
 export type WafMode = 'preflight' | 'full_proxy';
 const WAF_MODE: WafMode = 'full_proxy';
