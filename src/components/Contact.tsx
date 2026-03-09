@@ -73,19 +73,31 @@ export const Contact = () => {
 
       // WAF-protected edge function call (supports preflight & full proxy modes)
       const { smartInvoke, getWafMode } = await import('@/lib/waf-proxy');
-      const wafResult = await smartInvoke('send-contact-email', validatedData);
-      if (wafResult.blocked) {
-        toast.error("Your message was flagged by our security system. Please remove any special characters and try again.");
-        setIsSending(false);
-        return;
-      }
+      const wafMode = getWafMode();
 
-      // In full_proxy mode, WAF already called the edge function
-      let data, error;
-      if (getWafMode() === 'full_proxy' && wafResult.data) {
+      let data: any;
+      let error: any;
+
+      if (wafMode === 'full_proxy') {
+        // In full_proxy mode, the WAF proxy forwards to the backend function.
+        const wafResult = await smartInvoke('send-contact-email', validatedData);
+        if (wafResult.blocked) {
+          toast.error(
+            "Your message was flagged by our security system. Please remove any special characters and try again."
+          );
+          return;
+        }
         data = wafResult.data;
         error = wafResult.error;
       } else {
+        // In preflight mode, we only inspect; the actual call happens directly if allowed.
+        const wafResult = await smartInvoke('send-contact-email', validatedData);
+        if (wafResult.blocked) {
+          toast.error(
+            "Your message was flagged by our security system. Please remove any special characters and try again."
+          );
+          return;
+        }
         const result = await supabase.functions.invoke('send-contact-email', {
           body: validatedData,
         });
