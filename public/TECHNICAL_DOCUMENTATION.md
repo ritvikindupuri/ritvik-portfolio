@@ -2359,14 +2359,8 @@ The Geographic Blocking system works in concert with the Honeypot and IP Block s
 
 ```mermaid
 flowchart LR
-    subgraph Layer0["Layer 0: WAF (Deflectra)"]
-        Z[Incoming Request] --> Z1{Payload clean?}
-        Z1 -->|No: SQLi/XSS| Z2[Block at proxy]
-        Z1 -->|Yes| A[Continue to Layer 1]
-    end
-
     subgraph Layer1["Layer 1: Geographic Filtering"]
-        A --> B{Country blocked?}
+        A[Incoming Request] --> B{Country blocked?}
         B -->|Yes| C[Reject by country]
         B -->|No or flagged| D[Continue to Layer 2]
     end
@@ -2388,18 +2382,12 @@ flowchart LR
 
 **How the Layers Work Together:**
 
-0. **WAF Layer (First Check - Deflectra)**:
-   - All public-facing edge function requests are routed through the Deflectra WAF proxy
-   - AI-powered inspection detects SQL injection, XSS, and command injection patterns
-   - Malicious payloads are blocked with a 403 response before reaching any edge function
-   - Fails open if proxy is unreachable to ensure availability
-
-1. **Geographic Layer (Second Check)**: 
+1. **Geographic Layer (First Check)**: 
    - Fastest rejection path - stops attacks from entire countries before any processing
    - Flagged countries still proceed but generate alerts
    - Reduces load on honeypot and IP blocking systems
 
-2. **IP Block Layer (Third Check)**:
+2. **IP Block Layer (Second Check)**:
    - Catches individual bad actors that may use VPNs to bypass geographic blocks
    - Includes both manually blocked IPs and auto-blocked honeypot offenders
    - 24-hour auto-blocks provide temporary relief from persistent attackers
@@ -2413,7 +2401,6 @@ flowchart LR
 
 | Source System | Data Generated | Consuming System |
 |---------------|----------------|------------------|
-| WAF (Deflectra) | Blocked injection attempts | Security event logging |
 | Geographic Blocking | Country-based threat patterns | Threat Detector analytics |
 | Honeypot Accounts | IP addresses of attackers | IP Block List (auto-block) |
 | IP Block List | Blocked attacker IPs | Login rejection layer |
@@ -2421,33 +2408,13 @@ flowchart LR
 
 **Example Attack Scenario:**
 
-1. Attacker submits `' OR 1=1 --` in the contact form
-2. **Layer 0 (WAF)**: Deflectra detects SQLi pattern → Blocked at proxy with 403
-3. If payload is clean, attacker from Russia (RU) attempts login with `admin@portfolio.dev`
-4. **Layer 1**: If RU is set to "Block" → Immediate rejection
-5. **Layer 1**: If RU is set to "Flag" → Alert sent, continues to Layer 2
-6. **Layer 2**: If attacker's IP is already blocked → Rejection
-7. **Layer 3**: Email matches honeypot → Trigger logged, location mapped
-8. After 3 triggers from same IP → Auto-blocked for 24 hours
-9. Future attempts rejected at Layer 2 (IP Block) before reaching Layer 3
-
-### Deflectra WAF Integration
-
-The portfolio integrates with **Deflectra**, a custom-built AI-powered Web Application Firewall, as the outermost security layer (Layer 0).
-
-#### Architecture
-
-```
-Client Request → Deflectra WAF Proxy → Edge Function → Response
-                    ↓ (if malicious)
-               403 Blocked
-```
-
-#### Routing Modes
-
-| Mode | Behavior |
-|------|----------|
-| `preflight` | Inspects payload at WAF, then calls edge function directly from client |
+1. Attacker from Russia (RU) attempts login with `admin@portfolio.dev`
+2. **Layer 1**: If RU is set to "Block" → Immediate rejection
+3. **Layer 1**: If RU is set to "Flag" → Alert sent, continues to Layer 2
+4. **Layer 2**: If attacker's IP is already blocked → Rejection
+5. **Layer 3**: Email matches honeypot → Trigger logged, location mapped
+6. After 3 triggers from same IP → Auto-blocked for 24 hours
+7. Future attempts rejected at Layer 2 (IP Block) before reaching Layer 3
 | `full_proxy` | Routes entire request through WAF proxy, which forwards clean requests to origin |
 
 **Current mode: `full_proxy`** — All protected edge function traffic flows through Deflectra for inspection and forwarding.
