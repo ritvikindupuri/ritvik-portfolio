@@ -2415,37 +2415,6 @@ flowchart LR
 5. **Layer 3**: Email matches honeypot → Trigger logged, location mapped
 6. After 3 triggers from same IP → Auto-blocked for 24 hours
 7. Future attempts rejected at Layer 2 (IP Block) before reaching Layer 3
-| `full_proxy` | Routes entire request through WAF proxy, which forwards clean requests to origin |
-
-**Current mode: `full_proxy`** — All protected edge function traffic flows through Deflectra for inspection and forwarding.
-
-#### Protected Functions
-
-- `send-contact-email` — Contact form submissions
-- `portfolio-chatbot` — AI chatbot queries
-- `log-auth-attempt` — Authentication attempt logging
-- `send-visitor-alert` — Visitor notification emails
-- `send-recruiter-alert` — Recruiter detection alerts
-
-#### WAF Event Logging (`waf_events` table)
-
-Every inspection result is logged for analytics:
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `function_name` | text | Edge function called |
-| `blocked` | boolean | Whether request was blocked |
-| `reason` | text | Block reason (null if allowed) |
-| `waf_mode` | text | Mode used (`preflight` or `full_proxy`) |
-| `created_at` | timestamptz | Event timestamp |
-
-#### WAF Analytics Dashboard
-
-The owner dashboard includes WAF Analytics with summary cards, 7-day trend charts, block ratio visualization, per-endpoint breakdowns, and recent blocked request listings.
-
-#### Fail-Open Design
-
-If the WAF proxy is unreachable, requests proceed directly to edge functions to ensure availability. Fallback events are logged with reason `proxy_fallback`.
 
 With security systems in place to block threats, the portfolio keeps the owner informed through a comprehensive automated email notification system.
 
