@@ -9,7 +9,7 @@ import { RAGTestingPanel } from "@/components/RAGTestingPanel";
 import { WafStats } from "@/components/WafStats";
 import { RateLimitViolationsManager } from "@/components/RateLimitViolationsManager";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, LogOut } from "lucide-react";
+import { ArrowLeft, Shield, LogOut, TestTube } from "lucide-react";
 import { toast } from "sonner";
 
 const OwnerDashboard = () => {
