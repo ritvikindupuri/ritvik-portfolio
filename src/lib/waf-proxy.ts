@@ -19,7 +19,6 @@ export type WafMode = 'preflight' | 'full_proxy';
 const WAF_MODE: WafMode = 'full_proxy';
 
 const WAF_PROTECTED_FUNCTIONS = [
-  'send-contact-email',
   'log-auth-attempt',
   'send-visitor-alert',
   'send-recruiter-alert',
