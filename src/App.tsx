@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import RAGDocumentation from "./pages/RAGDocumentation";
 import TechnicalDocumentation from "./pages/TechnicalDocumentation";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import WafTesting from "./pages/WafTesting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
