@@ -20,7 +20,6 @@ const WAF_MODE: WafMode = 'full_proxy';
 
 const WAF_PROTECTED_FUNCTIONS = [
   'send-contact-email',
-  'portfolio-chatbot',
   'log-auth-attempt',
   'send-visitor-alert',
   'send-recruiter-alert',
