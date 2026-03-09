@@ -55,7 +55,7 @@ function validateInput(data: ContactEmailRequest): { valid: boolean; error?: str
   return { valid: true };
 }
 
-const handler = async (req: Request): Promise<Response> => {
+export const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   const preflightResponse = handleCorsPreFlight(req);
   if (preflightResponse) return preflightResponse;
@@ -152,4 +152,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-serve(handler);
+if (import.meta.main) {
+  serve(handler);
+}
