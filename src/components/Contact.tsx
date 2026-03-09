@@ -86,6 +86,14 @@ export const Contact = () => {
       // Validate form data
       const validatedData = contactFormSchema.parse(formData);
 
+      // Client-side guard: don't send obvious attack payloads (can trigger upstream blocks)
+      if (looksLikeAttackPayload(validatedData.message) || looksLikeAttackPayload(validatedData.name)) {
+        toast.error(
+          "Blocked by security: please remove SQL/XSS-like patterns. (Use the WAF test suite for attack payload testing.)"
+        );
+        return;
+      }
+
       // WAF-protected edge function call (supports preflight & full proxy modes)
       const { smartInvoke, getWafMode } = await import('@/lib/waf-proxy');
       const wafMode = getWafMode();
