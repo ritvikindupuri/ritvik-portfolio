@@ -48,12 +48,7 @@ This documentation covers the complete system architecture, data flows, implemen
 - [IP Block List System](#ip-block-list-system)
 - [Geographic Blocking Rules System](#geographic-blocking-rules-system)
 
-### Deflectra WAF (Web Application Firewall)
-- [Deflectra WAF Overview](#deflectra-waf-overview)
-- [How Deflectra Works: Visitor Perspective](#how-deflectra-works-visitor-perspective)
-- [How Deflectra Works: Attacker Perspective](#how-deflectra-works-attacker-perspective)
-- [WAF Request Flow](#waf-request-flow)
-- [WAF Analytics and Monitoring](#waf-analytics-and-monitoring)
+### Security Architecture & Threat Mitigation
 
 ### Security Architecture & Threat Mitigation
 - [Security Architecture Overview](#security-architecture-overview)
