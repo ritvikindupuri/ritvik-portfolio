@@ -3431,6 +3431,22 @@ This section provides a quick reference to all figures in this documentation, or
 |--------|---------|-------------|
 | Figure RAG-1 | RAG Chatbot Architecture | RAG pipeline flow from query to response |
 
+### External Security Tools Reference
+
+| Figure | Section | Description |
+|--------|---------|-------------|
+| Figure EXT-1 | Deflectra Adaptive Web Shield | Dashboard overview with threat statistics and active protection |
+| Figure EXT-2 | Deflectra Adaptive Web Shield | 3D threat map showing geographic attack distribution |
+| Figure EXT-3 | Deflectra Adaptive Web Shield | Protected sites management and WAF proxy configuration |
+| Figure EXT-4 | Deflectra Adaptive Web Shield | Security rule engine for XSS and injection protection |
+| Figure EXT-5 | Deflectra Adaptive Web Shield | API protection dashboard with endpoint monitoring |
+| Figure EXT-6 | Deflectra Adaptive Web Shield | Rate limiting configuration with thresholds and actions |
+| Figure EXT-7 | Deflectra Adaptive Web Shield | AI-powered attack simulation testing interface |
+| Figure EXT-8 | Deflectra Adaptive Web Shield | AI detection analysis with threat confidence scoring |
+| Figure EXT-9 | Deflectra Adaptive Web Shield | Request blocking interface showing critical severity alerts |
+| Figure EXT-10 | Deflectra Adaptive Web Shield | Notification center with comprehensive alert management |
+
+
 ---
 
 ## License
