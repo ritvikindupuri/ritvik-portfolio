@@ -75,33 +75,10 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
         content: m.content
       }));
 
-      // WAF-protected edge function call (supports preflight & full proxy modes)
       const chatBody = { message: userMessage.content, conversationHistory };
-      const { smartInvoke, getWafMode } = await import('@/lib/waf-proxy');
-      const wafResult = await smartInvoke('portfolio-chatbot', chatBody);
-      if (wafResult.blocked) {
-        const blockedMessage: Message = {
-          role: 'assistant',
-          content: '⚠️ Your message was flagged by our security system. Please rephrase and try again.',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, blockedMessage]);
-        setIsLoading(false);
-        return;
-      }
-
-      // In full_proxy mode, WAF already called the edge function
-      let data, error;
-      if (getWafMode() === 'full_proxy' && wafResult.data) {
-        data = wafResult.data;
-        error = wafResult.error;
-      } else {
-        const result = await supabase.functions.invoke('portfolio-chatbot', {
-          body: chatBody
-        });
-        data = result.data;
-        error = result.error;
-      }
+      const { data, error } = await supabase.functions.invoke('portfolio-chatbot', {
+        body: chatBody
+      });
 
       if (error) {
         throw error;
