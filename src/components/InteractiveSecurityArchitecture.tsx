@@ -158,6 +158,14 @@ const securityLayers: SecurityLayer[] = [
   },
 ];
 
+interface AttackSimulation {
+  id: string;
+  name: string;
+  description: string;
+  blockedAt: string;
+  steps: { layer: string; status: "blocked" | "passed" | "pending" }[];
+}
+
 const attackSimulations: AttackSimulation[] = [
   {
     id: "cors-attack",
