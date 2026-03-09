@@ -23,7 +23,7 @@ function makeReq(
       "x-supabase-client-platform": "web",
       "x-supabase-client-platform-version": "2.75.0",
       "x-forwarded-for": ip,
-      "user-agent": "waf-test-suite/1.0",
+      "user-agent": "test-suite/1.0",
     },
     body: body ? JSON.stringify(body) : undefined,
   });
