@@ -40,26 +40,6 @@ interface SecurityLayer {
 
 const securityLayers: SecurityLayer[] = [
   {
-    id: "waf",
-    name: "WAF (Deflectra)",
-    icon: Shield,
-    color: "text-cyan-400",
-    bgColor: "bg-cyan-500/10",
-    description: "AI-powered Web Application Firewall inspects all requests for injection attacks",
-    components: [
-      { name: "SQLi Detection", tooltip: "Deflectra's AI engine analyzes request bodies and query parameters for SQL injection patterns (e.g., ' OR 1=1 --, UNION SELECT). Malicious payloads are blocked before reaching edge functions." },
-      { name: "XSS Prevention", tooltip: "Detects cross-site scripting attempts including <script> tags, event handlers, and encoded payloads. Prevents attackers from injecting malicious JavaScript." },
-      { name: "Payload Inspection", tooltip: "Every request body, query string, and header is inspected against known attack signatures and heuristic rules. The AI engine adapts to new attack patterns." },
-    ],
-    threats: [
-      { name: "SQL Injection (T1190)", tooltip: "Attackers inject malicious SQL into form fields or API parameters. The WAF catches these at the proxy layer before they reach the database." },
-      { name: "Cross-Site Scripting", tooltip: "XSS attacks inject client-side scripts. The WAF detects and blocks script injection attempts in request payloads." },
-      { name: "Command Injection", tooltip: "Attempts to execute system commands through user input. The WAF identifies and blocks command injection patterns." },
-    ],
-    passedExplanation: "The request payload was inspected by the Deflectra WAF proxy. No SQL injection, XSS, or other injection patterns were detected. The request is clean and proceeds to geographic filtering.",
-    blockedExplanation: "The Deflectra WAF detected a malicious payload in the request. The AI engine identified injection patterns (SQLi, XSS, or command injection) and blocked the request with a 403 response before it reached any edge function.",
-  },
-  {
     id: "geographic",
     name: "Geographic Filtering",
     icon: Globe,
