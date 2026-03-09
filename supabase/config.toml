@@ -50,6 +50,3 @@ verify_jwt = false
 
 [functions.generate-cert-description]
 verify_jwt = false
-
-[functions.waf-echo]
-verify_jwt = false
