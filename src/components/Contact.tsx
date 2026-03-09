@@ -26,6 +26,21 @@ const contactFormSchema = z.object({
     .max(2000, "Message must be less than 2000 characters"),
 });
 
+// Prevent sending obvious attack payloads from the browser.
+// These payloads can trigger upstream security blocks that surface as "TypeError: Failed to fetch".
+function looksLikeAttackPayload(text: string): boolean {
+  const t = text.toLowerCase();
+  return (
+    /\bunion\s+select\b/.test(t) ||
+    /\bor\b\s*\d+\s*=\s*\d+/.test(t) ||
+    /\b1\s*=\s*1\b/.test(t) ||
+    /<\s*script\b/.test(t) ||
+    /onerror\s*=/.test(t) ||
+    /onload\s*=/.test(t) ||
+    /<\s*svg\b/.test(t)
+  );
+}
+
 export const Contact = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
