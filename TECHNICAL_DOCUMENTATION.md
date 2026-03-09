@@ -61,9 +61,6 @@ This documentation covers the complete system architecture, data flows, implemen
 ### AI & Chatbot
 - [RAG Chatbot Architecture](#rag-chatbot-architecture)
 
-### External Security Tools
-- [External Security Tools Reference](#external-security-tools-reference)
-
 ### Technical Reference
 - [Database Architecture](#database-architecture)
 - [Edge Functions](#edge-functions)
