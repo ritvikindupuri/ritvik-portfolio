@@ -109,19 +109,28 @@ export async function wafInvoke(
       body: body ? JSON.stringify(body) : undefined,
     });
 
+    const data = await response.json().catch(() => null);
+
     if (response.status === 403) {
-      const errorData = await response.json().catch(() => ({}));
-      const reason = errorData.reason || 'Request blocked by WAF';
+      const reason = data?.reason || data?.message || 'Request blocked by WAF';
       await logWafEvent(functionName, true, reason);
       return { data: null, error: { message: reason, waf_blocked: true } };
     }
 
-    await logWafEvent(functionName, false);
-    const data = await response.json().catch(() => null);
-
     if (!response.ok) {
-      return { data: null, error: { message: data?.error || `HTTP ${response.status}` } };
+      const message = data?.error || data?.message || `HTTP ${response.status}`;
+
+      // If this function/path is not configured in Deflectra, fail open to direct invoke.
+      if (response.status === 404 && /not protected by deflectra/i.test(String(message))) {
+        console.warn('[WAF] Site/path not protected in proxy, falling back to direct invoke:', functionName);
+        await logWafEvent(functionName, false, 'proxy_site_not_configured_fallback');
+        return directInvoke(functionName, body);
+      }
+
+      return { data: null, error: { message } };
     }
+
+    await logWafEvent(functionName, false);
     return { data, error: null };
   } catch (error) {
     // Fail open: direct call
