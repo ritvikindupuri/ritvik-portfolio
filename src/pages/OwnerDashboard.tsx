@@ -9,7 +9,7 @@ import { RAGTestingPanel } from "@/components/RAGTestingPanel";
 import { WafStats } from "@/components/WafStats";
 import { RateLimitViolationsManager } from "@/components/RateLimitViolationsManager";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, LogOut } from "lucide-react";
+import { ArrowLeft, Shield, LogOut, TestTube } from "lucide-react";
 import { toast } from "sonner";
 
 const OwnerDashboard = () => {
@@ -93,6 +93,15 @@ const OwnerDashboard = () => {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/waf-testing')}
+              className="gap-2"
+            >
+              <TestTube className="w-4 h-4" />
+              WAF Testing
+            </Button>
             <PasswordChangeDialog lastPasswordChange={lastPasswordChange} />
             <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
               <Shield className="w-4 h-4 text-primary" />
