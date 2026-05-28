@@ -503,8 +503,8 @@ export const Hero = ({ isOwner, showKeyboard = true }: HeroProps) => {
               {/* University Badge */}
               <div className="flex items-center gap-3 px-5 py-3 bg-card/40 backdrop-blur-sm rounded-xl border border-primary/20">
                 <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png" 
-                  alt="Purdue University" 
+                  src="/src/assets/purdue-logo.svg"
+                  alt="Purdue Logo"
                   className="h-7"
                 />
                 <span className="font-semibold text-sm">Purdue University</span>
