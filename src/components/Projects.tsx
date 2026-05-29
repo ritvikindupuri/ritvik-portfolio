@@ -110,8 +110,8 @@ const SortableProject = ({ project, category, isOwner, onEdit, onRemove, onProje
             {project.type === "Purdue" && (
               <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg">
                 <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Purdue_Boilermakers_logo.svg/1200px-Purdue_Boilermakers_logo.svg.png"
-                  alt="Purdue"
+                  src="/purdue-logo.svg"
+                  alt="Purdue Logo"
                   className="w-7 h-7 object-contain"
                 />
               </div>
