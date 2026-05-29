@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
+import purdueLogo from "@/assets/purdue-logo.svg";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,7 +111,7 @@ const SortableProject = ({ project, category, isOwner, onEdit, onRemove, onProje
             {project.type === "Purdue" && (
               <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg">
                 <img
-                  src="/src/assets/purdue-logo.svg"
+                  src={purdueLogo}
                   alt="Purdue Logo"
                   className="w-7 h-7 object-contain"
                 />
