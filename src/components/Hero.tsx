@@ -3,6 +3,7 @@ import { motion, useAnimation } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, BarChart3, User, Briefcase, Award, FolderOpen, Mail, Shield, BookOpen, Cpu, Sparkles } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
+import purdueLogo from "@/assets/purdue-logo.svg";
 import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -503,7 +504,7 @@ export const Hero = ({ isOwner, showKeyboard = true }: HeroProps) => {
               {/* University Badge */}
               <div className="flex items-center gap-3 px-5 py-3 bg-card/40 backdrop-blur-sm rounded-xl border border-primary/20">
                 <img 
-                  src="/src/assets/purdue-logo.svg"
+                  src={purdueLogo}
                   alt="Purdue Logo"
                   className="h-7"
                 />
