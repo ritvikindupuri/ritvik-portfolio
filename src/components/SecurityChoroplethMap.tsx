@@ -400,7 +400,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     if (!map || !mapboxToken) return;
 
     let cancelled = false;
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const addMarkers = () => {
       if (cancelled || !successMap.current) return;
@@ -480,7 +480,7 @@ export const SecurityChoroplethMap = ({ onLoginAttemptsLoaded }: SecurityChoropl
     if (!map || !mapboxToken) return;
 
     let cancelled = false;
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const addMarkersAndConnectors = () => {
       if (cancelled || !securityMap.current) return;
