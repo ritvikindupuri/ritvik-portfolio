@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown } from "lucide-react";
+import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Server } from "lucide-react";
 import { motion } from "framer-motion";
 import purdueLogo from "@/assets/purdue-logo.svg";
 import { Badge } from "@/components/ui/badge";
@@ -215,6 +215,26 @@ const initialProjects: Record<string, Project[]> = {
       description: "Automated vulnerability scanning for containerized applications",
     },
   ],
+  devsecops: [
+    {
+      title: "OriginTrace — Runtime-to-Source DevSecOps",
+      type: "Personal",
+      startMonth: "Sep 2026",
+      endMonth: "Present",
+      skills: ["Python", "ELK", "Semgrep", "Falco"],
+      github: "https://github.com/ritvikindupuri/OriginTrace_DevSecOps",
+      description: "Correlates live runtime security events with the source code responsible for them, turning container alerts into actionable engineering context.",
+    },
+    {
+      title: "Secure Cloud Infrastructure & CI/CD Pipeline",
+      type: "Personal",
+      startMonth: "Jun 2024",
+      endMonth: "Aug 2024",
+      skills: ["AWS", "Terraform", "GitHub Actions", "Docker"],
+      github: "https://github.com/example/cloud-infra",
+      description: "Designed and deployed secure multi-tier cloud architecture on AWS with automated security compliance scanning.",
+    },
+  ],
   ai: [
     {
       title: "Malware Classification System",
@@ -276,6 +296,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
       const categorizedProjects: Record<string, Project[]> = {
         security: [],
         cloud: [],
+        devsecops: [],
         ai: []
       };
 
@@ -293,13 +314,25 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
         };
 
         // Use saved category, fallback to 'security' if not set
-        const category = project.category || 'security';
-        if (category === 'security') {
+        const category = (project.category || 'security').toLowerCase();
+        if (
+          category === 'devsecops' ||
+          category === 'devops' ||
+          category === 'cloud-infra' ||
+          category === 'infrastructure' ||
+          category === 'cloud infrastructure & devsecops' ||
+          category.includes('devsecops') ||
+          (category === 'security' && project.title?.includes('OriginTrace'))
+        ) {
+          categorizedProjects.devsecops.push(proj);
+        } else if (category === 'security') {
           categorizedProjects.security.push(proj);
         } else if (category === 'cloud') {
           categorizedProjects.cloud.push(proj);
         } else if (category === 'ai') {
           categorizedProjects.ai.push(proj);
+        } else {
+          categorizedProjects.security.push(proj);
         }
       });
 
@@ -506,6 +539,13 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                   <span className="text-sm font-semibold">Cloud Security Projects</span>
                 </TabsTrigger>
                 <TabsTrigger
+                  value="devsecops"
+                  className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
+                >
+                  <Server className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm font-semibold">Cloud Infrastructure & DevSecOps Projects</span>
+                </TabsTrigger>
+                <TabsTrigger
                   value="ai"
                   className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
                 >
@@ -599,7 +639,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                       
                       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle>{editingProject ? 'Edit' : 'Add New'} {key === 'security' ? 'Security Engineering' : key === 'cloud' ? 'Cloud Security' : 'AI'} Project</DialogTitle>
+                          <DialogTitle>{editingProject ? 'Edit' : 'Add New'} {key === 'security' ? 'Security Engineering' : key === 'cloud' ? 'Cloud Security' : key === 'devsecops' ? 'Cloud Infrastructure & DevSecOps' : 'AI'} Project</DialogTitle>
                         </DialogHeader>
                         
                         <div className="space-y-4 py-4">
