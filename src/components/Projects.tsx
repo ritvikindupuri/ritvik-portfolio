@@ -550,7 +550,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                   className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
                 >
                   <Brain className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm font-semibold">AI & Cybersecurity Projects</span>
+                  <span className="text-sm font-semibold">AI Security Projects</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -639,7 +639,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                       
                       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle>{editingProject ? 'Edit' : 'Add New'} {key === 'security' ? 'Security Engineering' : key === 'cloud' ? 'Cloud Security' : key === 'devsecops' ? 'Cloud Infrastructure & DevSecOps' : 'AI'} Project</DialogTitle>
+                          <DialogTitle>{editingProject ? 'Edit' : 'Add New'} {key === 'security' ? 'Security Engineering' : key === 'cloud' ? 'Cloud Security' : key === 'devsecops' ? 'Cloud Infrastructure & DevSecOps' : 'AI Security'} Project</DialogTitle>
                         </DialogHeader>
                         
                         <div className="space-y-4 py-4">
