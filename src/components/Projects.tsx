@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Server } from "lucide-react";
+import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Server, FolderInput } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import purdueLogo from "@/assets/purdue-logo.svg";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,13 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
+
+export const PROJECT_CATEGORIES = [
+  { id: "security", label: "Security Engineering" },
+  { id: "cloud", label: "Cloud Security" },
+  { id: "devsecops", label: "Cloud Infrastructure & DevSecOps" },
+  { id: "ai", label: "AI & Cybersecurity" },
+];
 
 interface ProjectsProps {
   isOwner: boolean;
@@ -38,12 +46,14 @@ interface SortableProjectProps {
   project: Project;
   category: string;
   isOwner: boolean;
+  categories: { id: string; label: string }[];
   onEdit: () => void;
   onRemove: () => void;
+  onMove: (targetCategory: string) => void;
   onProjectClick: (name: string, url?: string) => void;
 }
 
-const SortableProject = ({ project, category, isOwner, onEdit, onRemove, onProjectClick }: SortableProjectProps) => {
+const SortableProject = ({ project, category, isOwner, categories, onEdit, onRemove, onMove, onProjectClick }: SortableProjectProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
   const {
@@ -84,16 +94,44 @@ const SortableProject = ({ project, category, isOwner, onEdit, onRemove, onProje
         )}
 
         {isOwner && (
-          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 z-20">
             <button
               onClick={onEdit}
-              className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm"
+              title="Edit project"
+              className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
             </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  title="Move to category"
+                  className="bg-accent/20 hover:bg-accent/30 text-accent rounded-xl p-2.5 backdrop-blur-sm transition-colors flex items-center gap-1.5"
+                >
+                  <FolderInput className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-background border-border z-50 shadow-xl" align="end">
+                <div className="px-2.5 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border/50">
+                  Move to Category
+                </div>
+                {categories
+                  .filter(cat => cat.id !== category)
+                  .map(cat => (
+                    <DropdownMenuItem 
+                      key={cat.id}
+                      onClick={() => onMove(cat.id)}
+                      className="cursor-pointer text-sm py-2 px-3 focus:bg-primary/10 focus:text-primary"
+                    >
+                      {cat.label}
+                    </DropdownMenuItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <button
               onClick={onRemove}
-              className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm"
+              title="Delete project"
+              className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -177,6 +215,7 @@ const SortableProject = ({ project, category, isOwner, onEdit, onRemove, onProje
 const initialProjects: Record<string, Project[]> = {
   security: [
     {
+      id: "init-sec-1",
       title: "Network Intrusion Detection System",
       type: "Personal",
       startMonth: "Sep 2024",
@@ -186,6 +225,7 @@ const initialProjects: Record<string, Project[]> = {
       description: "Built an ML-powered NIDS to detect anomalous network traffic patterns",
     },
     {
+      id: "init-sec-2",
       title: "Security Audit Tool",
       type: "Purdue",
       startMonth: "Jan 2024",
@@ -197,6 +237,7 @@ const initialProjects: Record<string, Project[]> = {
   ],
   cloud: [
     {
+      id: "init-cloud-1",
       title: "Secure Cloud Infrastructure",
       type: "Personal",
       startMonth: "Jun 2024",
@@ -206,6 +247,7 @@ const initialProjects: Record<string, Project[]> = {
       description: "Designed and deployed secure multi-tier cloud architecture on AWS",
     },
     {
+      id: "init-cloud-2",
       title: "Container Security Scanner",
       type: "Purdue",
       startMonth: "Feb 2024",
@@ -217,6 +259,7 @@ const initialProjects: Record<string, Project[]> = {
   ],
   devsecops: [
     {
+      id: "init-devsecops-1",
       title: "OriginTrace — Runtime-to-Source DevSecOps",
       type: "Personal",
       startMonth: "Sep 2026",
@@ -226,6 +269,7 @@ const initialProjects: Record<string, Project[]> = {
       description: "Correlates live runtime security events with the source code responsible for them, turning container alerts into actionable engineering context.",
     },
     {
+      id: "init-devsecops-2",
       title: "Secure Cloud Infrastructure & CI/CD Pipeline",
       type: "Personal",
       startMonth: "Jun 2024",
@@ -237,6 +281,7 @@ const initialProjects: Record<string, Project[]> = {
   ],
   ai: [
     {
+      id: "init-ai-1",
       title: "Malware Classification System",
       type: "Personal",
       startMonth: "Mar 2024",
@@ -246,6 +291,7 @@ const initialProjects: Record<string, Project[]> = {
       description: "Deep learning model to classify and detect malware variants",
     },
     {
+      id: "init-ai-2",
       title: "Threat Intelligence Analyzer",
       type: "Purdue",
       startMonth: "Oct 2023",
@@ -260,6 +306,7 @@ const initialProjects: Record<string, Project[]> = {
 export const Projects = ({ isOwner }: ProjectsProps) => {
   const { trackProjectClick } = useVisitorTracker();
   const [activeTab, setActiveTab] = useState("security");
+  const [projectCategory, setProjectCategory] = useState<string>("security");
   const [projects, setProjects] = useState(initialProjects);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<string | null>(null);
@@ -314,22 +361,20 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
         };
 
         // Use saved category, fallback to 'security' if not set
-        const category = (project.category || 'security').toLowerCase();
-        if (
-          category === 'devsecops' ||
-          category === 'devops' ||
-          category === 'cloud-infra' ||
-          category === 'infrastructure' ||
-          category === 'cloud infrastructure & devsecops' ||
-          category.includes('devsecops') ||
-          (category === 'security' && project.title?.includes('OriginTrace'))
+        const rawCategory = (project.category || 'security').toLowerCase().trim();
+        if (rawCategory === 'security') {
+          categorizedProjects.security.push(proj);
+        } else if (rawCategory === 'cloud') {
+          categorizedProjects.cloud.push(proj);
+        } else if (
+          rawCategory === 'devsecops' ||
+          rawCategory === 'devops' ||
+          rawCategory === 'cloud-infra' ||
+          rawCategory === 'infrastructure' ||
+          rawCategory === 'cloud infrastructure & devsecops'
         ) {
           categorizedProjects.devsecops.push(proj);
-        } else if (category === 'security') {
-          categorizedProjects.security.push(proj);
-        } else if (category === 'cloud') {
-          categorizedProjects.cloud.push(proj);
-        } else if (category === 'ai') {
+        } else if (rawCategory === 'ai') {
           categorizedProjects.ai.push(proj);
         } else {
           categorizedProjects.security.push(proj);
@@ -380,6 +425,50 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
     })
   );
 
+  const handleMoveProject = async (projectId: string | undefined, fromCategory: string, toCategory: string, projectTitle: string) => {
+    if (fromCategory === toCategory) return;
+    
+    const fromList = projects[fromCategory] || [];
+    const toList = projects[toCategory] || [];
+
+    const projectToMove = fromList.find(p => (projectId && p.id === projectId) || p.title === projectTitle);
+    if (!projectToMove) return;
+
+    // Optimistically update UI
+    const newFromList = fromList.filter(p => (projectId && p.id ? p.id !== projectId : p.title !== projectTitle));
+    const newToList = [...toList, { ...projectToMove, display_order: toList.length }];
+
+    setProjects({
+      ...projects,
+      [fromCategory]: newFromList,
+      [toCategory]: newToList,
+    });
+
+    const targetCategoryObj = PROJECT_CATEGORIES.find(c => c.id === toCategory);
+    const targetLabel = targetCategoryObj ? targetCategoryObj.label : toCategory;
+
+    try {
+      let query = supabase.from('projects').update({ category: toCategory, display_order: toList.length });
+      if (projectId) {
+        query = query.eq('id', projectId);
+      } else {
+        query = query.eq('title', projectTitle);
+      }
+      const { error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success(`Moved "${projectTitle}" to ${targetLabel}`);
+      await fetchProjects();
+    } catch (error) {
+      console.error('Error moving project:', error);
+      toast.error('Failed to move project');
+      fetchProjects(); // Revert
+    }
+  };
+
   const handleAddProject = async () => {
     if (!newProject.title || !newProject.description) return;
     
@@ -391,6 +480,8 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
         toast.error("You must be logged in");
         return;
       }
+
+      const targetCategory = projectCategory || activeTab;
 
       if (editingProject) {
         // Update existing project - use ID for more reliable updates
@@ -409,7 +500,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
               description: newProject.description,
               github_url: newProject.github,
               technologies: newProject.skills,
-              category: activeTab,
+              category: targetCategory,
               start_date: newProject.startMonth,
               end_date: newProject.endMonth
             })
@@ -425,31 +516,27 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
           toast.success("Project updated successfully");
         }
       } else {
-      // Insert new project
-      const { error } = await supabase
-        .from('projects')
-        .insert({
-          user_id: user.id,
-          title: newProject.title,
-          description: newProject.description,
-          github_url: newProject.github,
-          technologies: newProject.skills,
-          category: activeTab,
-          start_date: newProject.startMonth,
-          end_date: newProject.endMonth
-        });
+        // Insert new project
+        const { error } = await supabase
+          .from('projects')
+          .insert({
+            user_id: user.id,
+            title: newProject.title,
+            description: newProject.description,
+            github_url: newProject.github,
+            technologies: newProject.skills,
+            category: targetCategory,
+            start_date: newProject.startMonth,
+            end_date: newProject.endMonth
+          });
 
-      if (error) {
-        toast.error("Failed to add project");
-        console.error('Error adding project:', error);
-        return;
-      }
+        if (error) {
+          toast.error("Failed to add project");
+          console.error('Error adding project:', error);
+          return;
+        }
 
-        setProjects({
-          ...projects,
-          [activeTab]: [...projects[activeTab], newProject],
-        });
-        
+        await fetchProjects();
         toast.success("Project added successfully");
       }
       
@@ -482,10 +569,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
       return;
     }
 
-    setProjects({
-      ...projects,
-      [category]: projects[category].filter((p) => p.title !== projectTitle),
-    });
+    await fetchProjects();
     toast.success(`Removed ${projectTitle} from projects`);
   };
 
@@ -597,12 +681,15 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                             project={project}
                             category={key}
                             isOwner={isOwner}
+                            categories={PROJECT_CATEGORIES}
                             onEdit={() => {
                               setEditingProject(project.title);
                               setNewProject(project);
+                              setProjectCategory(key);
                               setIsAddDialogOpen(true);
                             }}
                             onRemove={() => handleRemoveProject(key, project.title)}
+                            onMove={(targetCategory) => handleMoveProject(project.id, key, targetCategory, project.title)}
                             onProjectClick={trackProjectClick}
                           />
                         </motion.div>
@@ -616,6 +703,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                             setEditingProject(null);
                             setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
                             setSkillInput("");
+                            setProjectCategory(key);
                           }
                         }}>
                           <DialogTrigger asChild>
@@ -624,6 +712,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                                 setEditingProject(null);
                                 setNewProject({ title: "", type: "Personal", startMonth: "", endMonth: "", skills: [], github: "", description: "" });
                                 setSkillInput("");
+                                setProjectCategory(key);
                                 setIsAddDialogOpen(true);
                               }}
                               className="border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 min-h-[400px] group hover:bg-primary/5 transition-all duration-300"
@@ -639,7 +728,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                       
                       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle>{editingProject ? 'Edit' : 'Add New'} {key === 'security' ? 'Security Engineering' : key === 'cloud' ? 'Cloud Security' : key === 'devsecops' ? 'Cloud Infrastructure & DevSecOps' : 'AI Security'} Project</DialogTitle>
+                          <DialogTitle>{editingProject ? 'Edit' : 'Add New'} {PROJECT_CATEGORIES.find(c => c.id === projectCategory)?.label || 'Project'} Project</DialogTitle>
                         </DialogHeader>
                         
                         <div className="space-y-4 py-4">
@@ -650,6 +739,22 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                               value={newProject.title}
                               onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
                             />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Category</label>
+                            <Select value={projectCategory} onValueChange={setProjectCategory}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {PROJECT_CATEGORIES.map(cat => (
+                                  <SelectItem key={cat.id} value={cat.id}>
+                                    {cat.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                           
                           <div className="space-y-2">
