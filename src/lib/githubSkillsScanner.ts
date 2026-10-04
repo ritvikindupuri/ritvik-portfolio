@@ -1,49 +1,4 @@
-﻿// Utility to scan a public GitHub repository for its top 5 skills and technologies
-
-const IGNORED_LANGUAGES = new Set([
-  'makefile', 'html', 'css', 'plpgsql', 'tex', 'cmake', 'batchfile', 'roff', 'powershell', 'vim script'
-]);
-
-const KNOWN_TECH_MAP: Record<string, string> = {
-  // Languages
-  'python': 'Python', 'javascript': 'JavaScript', 'typescript': 'TypeScript', 'go': 'Go', 'golang': 'Go',
-  'rust': 'Rust', 'java': 'Java', 'c++': 'C++', 'cpp': 'C++', 'c': 'C', 'c#': 'C#', 'csharp': 'C#',
-  'ruby': 'Ruby', 'php': 'PHP', 'swift': 'Swift', 'kotlin': 'Kotlin', 'bash': 'Bash', 'shell': 'Shell',
-  
-  // Cloud & Infrastructure
-  'aws': 'AWS', 'azure': 'Azure', 'gcp': 'GCP', 'google cloud': 'GCP',
-  'docker': 'Docker', 'kubernetes': 'Kubernetes', 'k8s': 'Kubernetes', 'kind': 'Kind',
-  'terraform': 'Terraform', 'ansible': 'Ansible', 'helm': 'Helm', 'linux': 'Linux',
-  'cloudflare': 'Cloudflare', 'supabase': 'Supabase', 'firebase': 'Firebase',
-  
-  // Security & DevSecOps
-  'devsecops': 'DevSecOps', 'ebpf': 'eBPF', 'falco': 'Falco', 'semgrep': 'Semgrep', 'trivy': 'Trivy',
-  'wireshark': 'Wireshark', 'nmap': 'Nmap', 'suricata': 'Suricata', 'snort': 'Snort',
-  'metasploit': 'Metasploit', 'burp suite': 'Burp Suite', 'waf': 'WAF', 'iam': 'IAM',
-  'kms': 'KMS', 'vault': 'HashiCorp Vault', 'zero trust': 'Zero Trust', 'guardduty': 'AWS GuardDuty',
-  'cloudtrail': 'AWS CloudTrail', 'sonarqube': 'SonarQube', 'snyk': 'Snyk', 'mitre': 'MITRE ATT&CK',
-  'owasp': 'OWASP',
-  
-  // AI, LLM & Data
-  'pytorch': 'PyTorch', 'tensorflow': 'TensorFlow', 'scikit-learn': 'Scikit-Learn', 'sklearn': 'Scikit-Learn',
-  'openai': 'OpenAI', 'claude': 'Claude', 'gemini': 'Google Gemini', 'langchain': 'LangChain',
-  'rag': 'RAG', 'nlp': 'NLP', 'machine learning': 'ML', 'ml': 'ML', 'deep learning': 'Deep Learning',
-  'llm': 'LLM', 'transformers': 'Transformers',
-  
-  // Web & Backend Frameworks
-  'react': 'React', 'next.js': 'Next.js', 'nextjs': 'Next.js', 'vue': 'Vue.js', 'angular': 'Angular',
-  'node.js': 'Node.js', 'nodejs': 'Node.js', 'fastapi': 'FastAPI', 'flask': 'Flask', 'django': 'Django',
-  'express': 'Express', 'tailwind': 'Tailwind CSS', 'tailwindcss': 'Tailwind CSS', 'graphql': 'GraphQL',
-  'rest api': 'REST API',
-  
-  // Databases & Storage
-  'postgresql': 'PostgreSQL', 'postgres': 'PostgreSQL', 'mysql': 'MySQL', 'mongodb': 'MongoDB',
-  'redis': 'Redis', 'elasticsearch': 'Elasticsearch', 'elk': 'ELK', 'kafka': 'Kafka',
-  
-  // CI/CD & Observability
-  'github actions': 'GitHub Actions', 'ci/cd': 'CI/CD', 'prometheus': 'Prometheus', 'grafana': 'Grafana',
-  'datadog': 'Datadog', 'splunk': 'Splunk'
-};
+﻿// Utility to scan a public GitHub repository and extract its actual skills & tech stack directly from the repo
 
 export interface GitHubRepoParseResult {
   owner: string;
@@ -65,124 +20,317 @@ export function parseGitHubUrl(url: string): GitHubRepoParseResult | null {
   }
 }
 
+const JUNK_TOKENS = new Set([
+  'and', 'or', 'the', 'with', 'using', 'module', 'modules', 'engine', 'frontend', 'backend',
+  'database', 'auth', 'server', 'category', 'technologies', 'technology', 'tools', 'used',
+  'api', 'provider', 'providers', 'core', 'html', 'css', 'makefile', 'plpgsql', 'tex',
+  'version', 'overview', 'features', 'installation', 'usage', 'license', 'description',
+  'getting started', 'table', 'row', 'column', 'framework', 'library', 'platform', 'app'
+]);
+
+function cleanSkillName(raw: string): string {
+  let s = raw
+    // Strip markdown formatting, links, bullets, and symbols
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // markdown link -> text
+    .replace(/!\[.*?\]\(.*?\)/g, '') // strip images
+    .replace(/^[@*_`#\-\s•|:]+|[@*_`#\-\s•|:]+$/g, '')
+    .replace(/\s*\(.*?\)/g, '') // remove parentheticals like (PostgreSQL, Edge Functions)
+    .replace(/\s*v\d+(\.\d+)*/gi, '') // remove version numbers like v1.177.0
+    .replace(/\s*\d+\.\d+\+?/g, '') // remove version numbers like 3.10+
+    .trim();
+
+  // Normalize common casing for known industry standards while preserving arbitrary terms
+  const lower = s.toLowerCase();
+  if (lower === 'ebpf' || lower === 'linux ebpf') return 'eBPF';
+  if (lower === 'falco' || lower === 'sysdig falco') return 'Falco';
+  if (lower === 'fastapi') return 'FastAPI';
+  if (lower === 'typescript') return 'TypeScript';
+  if (lower === 'javascript') return 'JavaScript';
+  if (lower === 'python') return 'Python';
+  if (lower === 'react') return 'React';
+  if (lower === 'nextjs' || lower === 'next.js') return 'Next.js';
+  if (lower === 'tailwind' || lower === 'tailwind css') return 'Tailwind CSS';
+  if (lower === 'supabase') return 'Supabase';
+  if (lower === 'postgresql' || lower === 'postgres') return 'PostgreSQL';
+  if (lower === 'docker') return 'Docker';
+  if (lower === 'kubernetes' || lower === 'k8s') return 'Kubernetes';
+  if (lower === 'aws' || lower.startsWith('aws sdk')) return 'AWS SDK';
+  if (lower === 'gemini' || lower.includes('google gemini')) return 'Google Gemini';
+  if (lower.includes('openai')) return 'OpenAI';
+  if (lower.includes('semgrep')) return 'Semgrep';
+  if (lower.includes('framer motion')) return 'Framer Motion';
+  if (lower === 'github actions') return 'GitHub Actions';
+  if (lower === 'ci/cd' || lower === 'cicd') return 'CI/CD';
+
+  // Capitalize title-case if all lowercase
+  if (s.length > 1 && s === s.toLowerCase()) {
+    return s.split(/[\s-]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+  return s;
+}
+
 /**
- * Scans a public GitHub repository and returns the top 5 detected skills/technologies.
+ * Extracts tech stack items directly from README sections (Tech Stack, Built With, Architecture, etc.)
+ */
+function extractFromReadmeTechSection(readme: string): string[] {
+  const skills: string[] = [];
+
+  // 1. Extract from shields.io badges in the README (e.g. ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python))
+  const badgeMatches = [...readme.matchAll(/img\.shields\.io\/badge\/([^-\s?&/]+)/gi)];
+  for (const m of badgeMatches) {
+    try {
+      const decoded = decodeURIComponent(m[1]).replace(/_/g, ' ');
+      const cleaned = cleanSkillName(decoded);
+      if (cleaned && cleaned.length >= 2 && !JUNK_TOKENS.has(cleaned.toLowerCase())) {
+        skills.push(cleaned);
+      }
+    } catch {}
+  }
+
+  // 2. Extract from dedicated tech stack sections
+  const sectionRegex = /(?:#+\s*(?:Tech\s*Stack|Built\s*With|Technologies(?:\s*Used)?|Technology\s*Stack|Tools\s*Used|Architecture|Stack))([\s\S]*?)(?=\n#+|$)/i;
+  const sectionMatch = readme.match(sectionRegex);
+  if (sectionMatch) {
+    const content = sectionMatch[1];
+
+    // Check table rows: | Category | Tech1, Tech2 |
+    const tableLines = content.split('\n').filter(l => l.includes('|'));
+    for (const line of tableLines) {
+      if (line.includes('---')) continue;
+      const cells = line.split('|').map(c => c.trim()).filter(Boolean);
+      if (cells.length >= 2) {
+        // Cells often contain comma/semicolon/bullet separated technologies
+        const textToSplit = cells.slice(1).join(', ');
+        const items = textToSplit.split(/[,;&•\n]/);
+        for (const item of items) {
+          const cleaned = cleanSkillName(item);
+          if (cleaned && cleaned.length >= 2 && !JUNK_TOKENS.has(cleaned.toLowerCase())) {
+            skills.push(cleaned);
+          }
+        }
+      }
+    }
+
+    // Check list items: * **Frontend:** React, TypeScript, Tailwind CSS
+    const listLines = content.split('\n').filter(l => /^\s*[-*•]/.test(l));
+    for (const line of listLines) {
+      const colonIdx = line.indexOf(':');
+      const textToParse = colonIdx !== -1 ? line.slice(colonIdx + 1) : line.replace(/^[\s\-*•]+/, '');
+      const items = textToParse.split(/[,;&•\n]/);
+      for (const item of items) {
+        const cleaned = cleanSkillName(item);
+        if (cleaned && cleaned.length >= 2 && !JUNK_TOKENS.has(cleaned.toLowerCase())) {
+          skills.push(cleaned);
+        }
+      }
+    }
+  }
+
+  return skills;
+}
+
+/**
+ * Extracts dependencies directly from package.json
+ */
+function extractFromPackageJson(pkg: any): string[] {
+  const skills: string[] = [];
+  const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+  for (const dep of Object.keys(deps)) {
+    if (dep.startsWith('@types/')) continue;
+    if (dep.startsWith('@aws-sdk/')) {
+      skills.push('AWS SDK');
+      continue;
+    }
+    if (dep.includes('supabase')) {
+      skills.push('Supabase');
+      continue;
+    }
+    if (dep === 'react' || dep === 'react-dom') {
+      skills.push('React');
+      continue;
+    }
+    if (dep === 'next') {
+      skills.push('Next.js');
+      continue;
+    }
+    if (dep.includes('tailwind')) {
+      skills.push('Tailwind CSS');
+      continue;
+    }
+    if (dep.includes('framer-motion')) {
+      skills.push('Framer Motion');
+      continue;
+    }
+    if (dep.includes('google') && dep.includes('ai')) {
+      skills.push('Google Gemini');
+      continue;
+    }
+    if (dep.includes('openai')) {
+      skills.push('OpenAI');
+      continue;
+    }
+    if (dep.includes('reactflow') || dep.includes('@xyflow')) {
+      skills.push('ReactFlow');
+      continue;
+    }
+    if (dep === 'vue') {
+      skills.push('Vue.js');
+      continue;
+    }
+    if (dep === 'express') {
+      skills.push('Express');
+      continue;
+    }
+    if (dep === 'fastify') {
+      skills.push('Fastify');
+      continue;
+    }
+    if (dep === 'prisma' || dep === '@prisma/client') {
+      skills.push('Prisma');
+      continue;
+    }
+    if (dep === 'graphql') {
+      skills.push('GraphQL');
+      continue;
+    }
+    // Clean general package name
+    const cleaned = cleanSkillName(dep.replace(/^@[^/]+\//, ''));
+    if (cleaned && cleaned.length >= 3 && !JUNK_TOKENS.has(cleaned.toLowerCase())) {
+      skills.push(cleaned);
+    }
+  }
+  return skills;
+}
+
+/**
+ * Extracts dependencies directly from requirements.txt
+ */
+function extractFromRequirementsTxt(text: string): string[] {
+  const skills: string[] = [];
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const pkg = line.split(/[=<>~;#\s]/)[0].trim().toLowerCase();
+    if (!pkg) continue;
+    if (pkg === 'fastapi') skills.push('FastAPI');
+    else if (pkg === 'uvicorn') skills.push('Uvicorn');
+    else if (pkg === 'pydantic') skills.push('Pydantic');
+    else if (pkg === 'torch' || pkg === 'pytorch') skills.push('PyTorch');
+    else if (pkg === 'tensorflow') skills.push('TensorFlow');
+    else if (pkg === 'scikit-learn' || pkg === 'sklearn') skills.push('Scikit-Learn');
+    else if (pkg === 'boto3') skills.push('AWS SDK');
+    else if (pkg === 'langchain') skills.push('LangChain');
+    else if (pkg === 'flask') skills.push('Flask');
+    else if (pkg === 'django') skills.push('Django');
+    else if (pkg === 'httpx' || pkg === 'requests') skills.push('HTTPX');
+    else if (pkg === 'elasticsearch') skills.push('Elasticsearch');
+    else if (pkg.length > 2 && !JUNK_TOKENS.has(pkg)) {
+      skills.push(pkg.charAt(0).toUpperCase() + pkg.slice(1));
+    }
+  }
+  return skills;
+}
+
+/**
+ * Directly scans and extracts whatever skills/technologies exist in the GitHub repository.
  */
 export async function scanGitHubRepoSkills(repoUrl: string): Promise<string[]> {
   const parsed = parseGitHubUrl(repoUrl);
   if (!parsed) return [];
 
   const { owner, repo } = parsed;
-  const skillScores = new Map<string, number>();
+  const discovered: string[] = [];
 
-  // Helper to add score to a skill
-  const addSkillScore = (rawName: string, points: number) => {
-    const key = rawName.toLowerCase().trim();
-    if (IGNORED_LANGUAGES.has(key)) return;
-    const canonicalName = KNOWN_TECH_MAP[key] || rawName.trim();
-    if (!canonicalName || canonicalName.length < 2) return;
-    skillScores.set(canonicalName, (skillScores.get(canonicalName) || 0) + points);
-  };
-
-  // 1. Query GitHub Languages API
-  try {
-    const langRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
-    if (langRes.ok) {
-      const languages: Record<string, number> = await langRes.json();
-      const sortedLangs = Object.entries(languages).sort((a, b) => b[1] - a[1]);
-      sortedLangs.forEach(([lang], idx) => {
-        addSkillScore(lang, Math.max(30 - idx * 5, 10));
-      });
-    }
-  } catch (err) {
-    console.warn('Languages fetch failed:', err);
-  }
-
-  // 2. Query GitHub Repo Details (Topics, Primary Language, Description)
-  try {
-    const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
-    if (repoRes.ok) {
-      const data = await repoRes.json();
-      if (data.language) {
-        addSkillScore(data.language, 25);
-      }
-      if (Array.isArray(data.topics)) {
-        data.topics.forEach((topic: string) => {
-          addSkillScore(topic, 20);
-        });
-      }
-      if (data.description && typeof data.description === 'string') {
-        const descLower = data.description.toLowerCase();
-        for (const [key, displayName] of Object.entries(KNOWN_TECH_MAP)) {
-          if (key.length >= 3 && descLower.includes(key)) {
-            addSkillScore(displayName, 15);
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('Repo details fetch failed:', err);
-  }
-
-  // 3. Query Raw README across common branch names
-  let readmeText = '';
+  // 1. Check README directly for Tech Stack / Built With section & badges
   for (const branch of ['main', 'master', 'dev']) {
     try {
-      const readmeRes = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/README.md`);
-      if (readmeRes.ok) {
-        readmeText = await readmeRes.text();
+      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/README.md`);
+      if (res.ok) {
+        const text = await res.text();
+        const readmeSkills = extractFromReadmeTechSection(text);
+        discovered.push(...readmeSkills);
         break;
       }
-    } catch {
-      // try next branch
-    }
+    } catch {}
   }
 
-  if (readmeText) {
-    for (const [key, displayName] of Object.entries(KNOWN_TECH_MAP)) {
-      if (key.length < 3 && key !== 'c' && key !== 'go' && key !== 'ml') continue;
-      const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
-      const matches = readmeText.match(regex);
-      if (matches && matches.length > 0) {
-        const weight = Math.min(matches.length * 3, 25);
-        addSkillScore(displayName, weight);
-      }
-    }
-  }
-
-  // 4. Check for key manifest indicators (requirements.txt, package.json, Dockerfile)
+  // 2. Check package.json directly for actual project dependencies
   for (const branch of ['main', 'master']) {
     try {
-      // Check Dockerfile
-      const dockerRes = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/Dockerfile`);
-      if (dockerRes.ok) {
-        addSkillScore('Docker', 20);
-      }
-    } catch {}
-
-    try {
-      // Check requirements.txt
-      const reqRes = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/requirements.txt`);
-      if (reqRes.ok) {
-        const reqText = await reqRes.text();
-        addSkillScore('Python', 15);
-        for (const [key, displayName] of Object.entries(KNOWN_TECH_MAP)) {
-          if (key.length >= 3 && reqText.toLowerCase().includes(key)) {
-            addSkillScore(displayName, 12);
-          }
-        }
+      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/package.json`);
+      if (res.ok) {
+        const pkg = await res.json();
+        discovered.push(...extractFromPackageJson(pkg));
         break;
       }
     } catch {}
   }
 
-  // Sort by score descending and return top 5
-  const topSkills = Array.from(skillScores.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([skill]) => skill)
-    .filter(skill => !IGNORED_LANGUAGES.has(skill.toLowerCase()))
-    .slice(0, 5);
+  // 3. Check requirements.txt directly for actual Python dependencies
+  for (const branch of ['main', 'master']) {
+    try {
+      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/requirements.txt`);
+      if (res.ok) {
+        const text = await res.text();
+        discovered.push(...extractFromRequirementsTxt(text));
+        break;
+      }
+    } catch {}
+  }
 
-  return topSkills;
+  // 4. Check Dockerfile
+  for (const branch of ['main', 'master']) {
+    try {
+      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/Dockerfile`);
+      if (res.ok) {
+        discovered.push('Docker');
+        break;
+      }
+    } catch {}
+  }
+
+  // 5. Query GitHub Languages API directly from repository code
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`);
+    if (res.ok) {
+      const langs = await res.json();
+      Object.keys(langs).forEach(lang => {
+        if (!JUNK_TOKENS.has(lang.toLowerCase())) {
+          discovered.push(cleanSkillName(lang));
+        }
+      });
+    }
+  } catch {}
+
+  // 6. Query GitHub Repo Topics directly from repo tags
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.topics)) {
+        data.topics.forEach((t: string) => {
+          const cleaned = cleanSkillName(t);
+          if (cleaned && !JUNK_TOKENS.has(cleaned.toLowerCase())) {
+            discovered.push(cleaned);
+          }
+        });
+      }
+      if (data.language && !JUNK_TOKENS.has(data.language.toLowerCase())) {
+        discovered.push(cleanSkillName(data.language));
+      }
+    }
+  } catch {}
+
+  // Deduplicate preserving discovery order
+  const uniqueSkills: string[] = [];
+  const seen = new Set<string>();
+
+  for (const skill of discovered) {
+    const key = skill.toLowerCase().trim();
+    if (!seen.has(key) && key.length >= 2 && !JUNK_TOKENS.has(key)) {
+      seen.add(key);
+      uniqueSkills.push(skill);
+    }
+  }
+
+  return uniqueSkills.slice(0, 5);
 }
