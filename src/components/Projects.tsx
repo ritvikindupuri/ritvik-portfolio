@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Server, FolderInput } from "lucide-react";
+import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Server, FolderInput, Sparkles, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import purdueLogo from "@/assets/purdue-logo.svg";
@@ -17,6 +17,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
+import { scanGitHubRepoSkills, parseGitHubUrl } from "@/lib/githubSkillsScanner";
 
 export const PROJECT_CATEGORIES = [
   { id: "security", label: "Security Engineering" },
@@ -321,6 +322,48 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
   });
   const [skillInput, setSkillInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isScanningSkills, setIsScanningSkills] = useState(false);
+
+  const handleScanGitHubSkills = async (urlToScan?: string) => {
+    const targetUrl = (urlToScan !== undefined ? urlToScan : newProject.github).trim();
+    if (!targetUrl) {
+      toast.error("Please enter a GitHub repository URL first");
+      return;
+    }
+
+    const parsed = parseGitHubUrl(targetUrl);
+    if (!parsed) {
+      toast.error("Please enter a valid GitHub URL (e.g., https://github.com/username/repo)");
+      return;
+    }
+
+    setIsScanningSkills(true);
+    const toastId = toast.loading(`Scanning ${parsed.owner}/${parsed.repo} for top skills...`);
+
+    try {
+      const detectedSkills = await scanGitHubRepoSkills(targetUrl);
+      if (detectedSkills.length > 0) {
+        setNewProject((prev) => ({
+          ...prev,
+          skills: detectedSkills,
+        }));
+        toast.success(`Auto-detected top ${detectedSkills.length} skills: ${detectedSkills.join(', ')}`, {
+          id: toastId,
+        });
+      } else {
+        toast.info("No common skills detected from repository. You can add them manually below.", {
+          id: toastId,
+        });
+      }
+    } catch (err) {
+      console.error("Error scanning GitHub skills:", err);
+      toast.error("Failed to scan repository. You can add skills manually.", {
+        id: toastId,
+      });
+    } finally {
+      setIsScanningSkills(false);
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -801,16 +844,71 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                           </div>
                           
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">GitHub Repository</label>
-                            <Input
-                              placeholder="https://github.com/username/repo"
-                              value={newProject.github}
-                              onChange={(e) => setNewProject({ ...newProject, github: e.target.value })}
-                            />
+                            <div className="flex items-center justify-between">
+                              <label className="text-sm font-medium">GitHub Repository</label>
+                              {isScanningSkills && (
+                                <span className="text-xs text-primary flex items-center gap-1.5 animate-pulse">
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  Scanning repo for top skills...
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="https://github.com/username/repo"
+                                value={newProject.github}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setNewProject({ ...newProject, github: val });
+                                  // Auto-scan if user pastes a full valid GitHub URL and skills are empty
+                                  if (parseGitHubUrl(val) && newProject.skills.length === 0 && !isScanningSkills) {
+                                    handleScanGitHubSkills(val);
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleScanGitHubSkills(newProject.github)}
+                                disabled={isScanningSkills || !newProject.github}
+                                className="flex-shrink-0 border-primary/30 hover:border-primary/60 hover:bg-primary/10 gap-1.5"
+                                title="Scan GitHub repository for top 5 skills"
+                              >
+                                {isScanningSkills ? (
+                                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                ) : (
+                                  <Sparkles className="w-4 h-4 text-primary" />
+                                )}
+                                <span className="text-xs font-semibold">Auto-detect Skills</span>
+                              </Button>
+                            </div>
                           </div>
                           
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Skills/Technologies</label>
+                            <div className="flex items-center justify-between">
+                              <label className="text-sm font-medium">Skills/Technologies</label>
+                              {newProject.github && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleScanGitHubSkills(newProject.github)}
+                                  disabled={isScanningSkills}
+                                  className="text-xs text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1 font-medium"
+                                  title="Rescan GitHub repo for top skills"
+                                >
+                                  {isScanningSkills ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>Scanning...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles className="w-3 h-3" />
+                                      <span>Auto-fill from GitHub</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
                             <div className="flex gap-2">
                               <Input
                                 placeholder="Add a skill..."
