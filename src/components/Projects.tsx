@@ -419,6 +419,9 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
           categorizedProjects.devsecops.push(proj);
         } else if (rawCategory === 'ai') {
           categorizedProjects.ai.push(proj);
+        } else if (rawCategory === 'open_source' || rawCategory === 'open-source') {
+          // Handled by dedicated Open Source Contributions section
+          return;
         } else {
           categorizedProjects.security.push(proj);
         }

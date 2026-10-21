@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, BarChart3, User, Briefcase, Award, FolderOpen, Mail, Shield, BookOpen, Cpu, Sparkles } from "lucide-react";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, BarChart3, User, Briefcase, Award, FolderOpen, Mail, Shield, BookOpen, Cpu, Sparkles, GitPullRequest } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import purdueLogo from "@/assets/purdue-logo.svg";
 import Cropper from "react-easy-crop";
@@ -61,6 +61,13 @@ const tableOfContents = [
     icon: FolderOpen,
     tooltip: "A comprehensive archive of all my technical work, personal projects, and explorations.",
     color: "text-cyan-400",
+  },
+  {
+    id: "open-source-section",
+    label: "Open Source",
+    icon: GitPullRequest,
+    tooltip: "Contributions to open source projects, upstream pull requests, security tools, and community software.",
+    color: "text-violet-400",
   },
   {
     id: "certifications-section",

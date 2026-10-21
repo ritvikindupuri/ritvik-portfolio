@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Cpu, Brain, Sparkles, Briefcase, FolderOpen, 
-  Award, BookOpen, Shield, Mail, ChevronUp
+  Award, BookOpen, Shield, Mail, ChevronUp, GitPullRequest
 } from "lucide-react";
 import {
   Tooltip,
@@ -19,6 +19,7 @@ const sections = [
   { id: "featured-projects-section", label: "Featured", icon: Sparkles, color: "bg-yellow-500" },
   { id: "experience-section", label: "Experience", icon: Briefcase, color: "bg-orange-500" },
   { id: "projects-section", label: "Projects", icon: FolderOpen, color: "bg-cyan-500" },
+  { id: "open-source-section", label: "Open Source", icon: GitPullRequest, color: "bg-violet-500" },
   { id: "certifications-section", label: "Certs", icon: Award, color: "bg-red-500" },
   { id: "documentation-section", label: "Docs", icon: BookOpen, color: "bg-indigo-500" },
   { id: "security-section", label: "Security", icon: Shield, color: "bg-emerald-500" },

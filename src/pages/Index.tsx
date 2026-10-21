@@ -10,6 +10,7 @@ import { Certifications } from "@/components/Certifications";
 import { Documentation } from "@/components/Documentation";
 import Experience from "@/components/Experience";
 import { Projects } from "@/components/Projects";
+import { OpenSource } from "@/components/OpenSource";
 import { FeaturedProjects } from "@/components/FeaturedProjects";
 import { Contact } from "@/components/Contact";
 import { AccessDialog } from "@/components/AccessDialog";
@@ -231,6 +232,17 @@ const Index = () => {
           <SectionReveal direction="up" delay={0.1}>
             <div id="projects-section">
               <Projects isOwner={isOwner} />
+            </div>
+          </SectionReveal>
+          
+          <SectionTransition 
+            badge="Open Source Impact" 
+            subtitle="Active contributions to open-source software, upstream security tools, runtime kernels, and community frameworks"
+          />
+          
+          <SectionReveal direction="up" delay={0.1}>
+            <div id="open-source-section">
+              <OpenSource isOwner={isOwner} />
             </div>
           </SectionReveal>
           
