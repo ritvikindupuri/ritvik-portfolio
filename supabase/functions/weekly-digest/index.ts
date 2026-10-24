@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { hasValidCronSecret, unauthorizedResponse } from "../_shared/auth.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -27,7 +28,7 @@ async function sendEmail(to: string[], subject: string, html: string) {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 interface RiskScoreEntry {
@@ -76,6 +77,11 @@ interface WeeklyDigestData {
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Scheduled job only: require the shared cron secret.
+  if (!hasValidCronSecret(req)) {
+    return unauthorizedResponse(corsHeaders);
   }
 
   try {

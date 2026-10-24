@@ -1,8 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { hasValidCronSecret, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 // Extract owner/repo from GitHub URL
@@ -115,6 +116,11 @@ async function generateEmbedding(text: string): Promise<number[] | null> {
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Internal only (called by generate-embeddings / on-project-change).
+  if (!hasValidCronSecret(req)) {
+    return unauthorizedResponse(corsHeaders);
   }
 
   try {

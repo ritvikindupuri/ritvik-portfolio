@@ -1,8 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getOwnerUserId, hasValidCronSecret, internalCallHeaders, unauthorizedResponse } from "../_shared/auth.ts";
+
+// Only these tables may be read/updated by this function.
+const ALLOWED_TABLES = new Set([
+  'documentation', 'projects', 'skills', 'experience', 'ml_models', 'llm_projects', 'certifications', 'github_content',
+]);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 // Generate embeddings using OpenAI's text-embedding-3-small model
@@ -73,9 +79,7 @@ async function triggerGitHubIndexing(supabaseUrl: string, githubUrl: string, sou
     
     const response = await fetch(`${supabaseUrl}/functions/v1/index-github-content`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: internalCallHeaders(),
       body: JSON.stringify({
         github_url: githubUrl,
         source_type: sourceType,
@@ -124,16 +128,21 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Internal callers use x-cron-secret; the owner dashboard uses an owner JWT.
+  if (!hasValidCronSecret(req) && !(await getOwnerUserId(req))) {
+    return unauthorizedResponse(corsHeaders);
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { action, table, id, regenerate } = await req.json();
+    const { action, table, id, regenerate, query: queryText } = await req.json();
 
     if (action === 'generate_all') {
       // Generate embeddings for all content
-      const tables = ['documentation', 'projects', 'skills', 'experience', 'ml_models', 'llm_projects', 'certifications', 'github_content'];
+      const tables = [...ALLOWED_TABLES];
       const results: Record<string, { processed: number; skipped: number; errors: number }> = {};
 
       for (const tableName of tables) {
@@ -206,6 +215,13 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === 'generate_single' && table && id) {
+      if (typeof table !== 'string' || !ALLOWED_TABLES.has(table)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid table' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       // Generate embedding for a single item
       const { data: item, error } = await supabase
         .from(table)
@@ -248,7 +264,8 @@ Deno.serve(async (req: Request) => {
 
     if (action === 'generate_query_embedding') {
       // Generate embedding for a query (used by chatbot)
-      const { query } = await req.json();
+      // Body was already parsed above; re-reading req.json() would throw.
+      const query = typeof queryText === 'string' ? queryText.slice(0, 2000) : '';
       if (!query) {
         throw new Error('Query is required');
       }
