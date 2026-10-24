@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { getOwnerUserId, unauthorizedResponse } from "../_shared/auth.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const OWNER_EMAIL = "rivtik.indupuri@gmail.com";
@@ -11,6 +12,11 @@ const corsHeaders = {
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Owner-only endpoint: require a valid owner JWT.
+  if (!(await getOwnerUserId(req))) {
+    return unauthorizedResponse(corsHeaders);
   }
 
   try {

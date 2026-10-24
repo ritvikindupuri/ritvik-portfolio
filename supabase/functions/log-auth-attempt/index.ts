@@ -81,7 +81,8 @@ async function sendGeoBlockAlert(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        "x-cron-secret": Deno.env.get("CRON_SECRET") ?? "",
       },
       body: JSON.stringify({
         email,

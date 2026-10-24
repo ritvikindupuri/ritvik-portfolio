@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getOwnerUserId, unauthorizedResponse } from "../_shared/auth.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -42,6 +43,11 @@ interface SecurityAnalysisRequest {
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Owner-only endpoint: require a valid owner JWT.
+  if (!(await getOwnerUserId(req))) {
+    return unauthorizedResponse(corsHeaders);
   }
 
   try {
