@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { internalCallHeaders } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,9 +58,7 @@ Deno.serve(async (req: Request) => {
     
     const indexResponse = await fetch(`${supabaseUrl}/functions/v1/index-github-content`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: internalCallHeaders(),
       body: JSON.stringify({
         github_url: project.github_url,
         source_type: 'project',
@@ -73,9 +72,7 @@ Deno.serve(async (req: Request) => {
     // Generate embedding for the project itself
     const projectEmbeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: internalCallHeaders(),
       body: JSON.stringify({
         action: 'generate_single',
         table: 'projects',
@@ -89,9 +86,7 @@ Deno.serve(async (req: Request) => {
     // Also generate embedding for the indexed GitHub content
     const githubEmbeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: internalCallHeaders(),
       body: JSON.stringify({
         action: 'generate_single',
         table: 'github_content',
