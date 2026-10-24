@@ -1,15 +1,21 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { internalCallHeaders } from "../_shared/auth.ts";
+import { hasValidCronSecret, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 // This function is triggered by a database webhook when projects are inserted or updated
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Internal only: require the shared cron secret.
+  if (!hasValidCronSecret(req)) {
+    return unauthorizedResponse(corsHeaders);
   }
 
   try {

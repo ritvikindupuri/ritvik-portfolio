@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { hasValidCronSecret, unauthorizedResponse } from "../_shared/auth.ts";
 
 /**
  * Rate Limit Alert Edge Function
@@ -41,7 +42,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -244,6 +245,11 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ error: 'Method not allowed' }),
       { status: 405, headers: corsHeaders }
     );
+  }
+
+  // Internal only: require the shared cron secret.
+  if (!hasValidCronSecret(req)) {
+    return unauthorizedResponse(corsHeaders);
   }
 
   try {
