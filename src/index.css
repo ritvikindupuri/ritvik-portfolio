@@ -385,8 +385,9 @@
 .logo-fx-aether svg { --fx-glow: rgba(255, 45, 45, 0.5); animation: logo-fx-glow 2s ease-in-out infinite; }
 
 /* KARMA: slow wheel spin */
-.logo-fx-karma .logo-fx-img { --fx-glow: rgba(59, 130, 246, 0.45); animation: logo-fx-spin 24s linear infinite, logo-fx-glow 4s ease-in-out infinite; }
+.logo-fx-karma .logo-fx-karma-wheel { --fx-glow: rgba(59, 130, 246, 0.45); animation: logo-fx-spin 24s linear infinite, logo-fx-glow 4s ease-in-out infinite; }
 @keyframes logo-fx-spin { to { transform: rotate(360deg); } }
+.logo-fx-karma-wheel { transform-origin: 50% 50%; }
 
 /* Chaff: grains drift */
 .logo-fx-chaff-dot { transform-box: fill-box; transform-origin: center; animation: logo-fx-drift 2.7s ease-in-out infinite; }
@@ -397,7 +398,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo-fx, .logo-fx *, .logo-fx-img { animation: none !important; }
+  .logo-fx, .logo-fx *, .logo-fx-img, .logo-fx-karma-wheel { animation: none !important; }
   .logo-fx-cirrus-ping, .logo-fx-aegis-sheen, .logo-fx-aegis-badge { display: none; }
   .logo-fx-strata-core { opacity: 0.3; }
 }

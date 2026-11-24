@@ -34,6 +34,25 @@ const ChaffMark = () => (
   </svg>
 );
 
+const KarmaMark = () => (
+  // KARMA's header wheel from the app, inline so the slow spin stays vector-crisp.
+  <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" className="logo-fx-karma-wheel w-full h-full">
+    <circle cx="14" cy="14" r="11" fill="none" stroke="#326ce5" strokeWidth="2.4" />
+    <circle cx="14" cy="14" r="11" fill="none" stroke="#3b82f6" strokeWidth="1.4" />
+    {[
+      [25, 14], [21.78, 21.78], [14, 25], [6.22, 21.78], [3, 14], [6.22, 6.22], [14, 3], [21.78, 6.22],
+    ].map(([cx, cy]) => (
+      <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.5" fill="#326ce5" />
+    ))}
+    <g stroke="#326ce5" strokeWidth="0.6">
+      <line x1="3" y1="14" x2="25" y2="14" />
+      <line x1="14" y1="3" x2="14" y2="25" />
+      <line x1="6.22" y1="6.22" x2="21.78" y2="21.78" />
+      <line x1="6.22" y1="21.78" x2="21.78" y2="6.22" />
+    </g>
+  </svg>
+);
+
 const ProjectLogo = ({ src, className = "" }: ProjectLogoProps) => {
   const slug = slugFromSrc(src);
   return (
@@ -46,6 +65,8 @@ const ProjectLogo = ({ src, className = "" }: ProjectLogoProps) => {
         <AetherMark />
       ) : slug === "chaff" ? (
         <ChaffMark />
+      ) : slug === "karma" ? (
+        <KarmaMark />
       ) : (
         <img src={src} alt="" draggable={false} loading="lazy" decoding="async" className="logo-fx-img w-full h-full object-contain" />
       )}
