@@ -271,7 +271,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showAll, setShowAll] = useState(false);
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [detailsProject, setDetailsProject] = useState<LLMProject | null>(null);
 
   // Get unique project types for filter
   const categories = ["all", ...new Set(projects.map(p => p.project_type).filter(Boolean))] as string[];
@@ -479,18 +479,6 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     setFormData({ ...formData, technologies: formData.technologies.filter(t => t !== tech) });
   };
 
-  const toggleCard = (projectId: string) => {
-    setExpandedCards(prev => {
-      const next = new Set(prev);
-      if (next.has(projectId)) {
-        next.delete(projectId);
-      } else {
-        next.add(projectId);
-      }
-      return next;
-    });
-  };
-
   const getCategoryIcon = (projectType: string | null) => {
     switch (projectType) {
       case 'Agentic Workflow': return Workflow;
@@ -500,6 +488,26 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
       case 'AI Agent': return Sparkles;
       default: return Layers;
     }
+  };
+
+  const getCategoryColor = (projectType: string | null) => {
+    switch (projectType) {
+      case 'Agentic Workflow': return { from: 'from-violet-500/20', to: 'to-purple-500/20', border: 'border-violet-500/30', glow: 'hover:shadow-violet-500/20', text: 'text-violet-400', bg: 'bg-violet-500/10' };
+      case 'Multi-Agent System': return { from: 'from-blue-500/20', to: 'to-cyan-500/20', border: 'border-blue-500/30', glow: 'hover:shadow-blue-500/20', text: 'text-blue-400', bg: 'bg-blue-500/10' };
+      case 'Tool-Use Agent': return { from: 'from-emerald-500/20', to: 'to-teal-500/20', border: 'border-emerald-500/30', glow: 'hover:shadow-emerald-500/20', text: 'text-emerald-400', bg: 'bg-emerald-500/10' };
+      case 'RAG System': return { from: 'from-amber-500/20', to: 'to-orange-500/20', border: 'border-amber-500/30', glow: 'hover:shadow-amber-500/20', text: 'text-amber-400', bg: 'bg-amber-500/10' };
+      case 'AI Agent': return { from: 'from-pink-500/20', to: 'to-rose-500/20', border: 'border-pink-500/30', glow: 'hover:shadow-pink-500/20', text: 'text-pink-400', bg: 'bg-pink-500/10' };
+      default: return { from: 'from-accent/20', to: 'to-primary/20', border: 'border-accent/30', glow: 'hover:shadow-accent/20', text: 'text-accent', bg: 'bg-accent/10' };
+    }
+  };
+
+  const getBentoSize = (index: number) => {
+    // First card is hero (2x2), then mixed sizes
+    if (index === 0) return 'md:col-span-2 md:row-span-2';
+    // Some 2-wide cards
+    if (index % 5 === 1 || index % 7 === 3) return 'md:col-span-2';
+    // Rest are 1-wide
+    return 'md:col-span-1';
   };
 
   return (
@@ -517,172 +525,126 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
         <div className="w-24 h-1 bg-gradient-to-r from-accent to-neural-pink mx-auto rounded-full mt-4" />
       </div>
 
-      {/* Category Filter */}
+      {/* Category Filter - Segmented Pill Control */}
       {categories.length > 2 && (
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="inline-flex p-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/40 shadow-lg mx-auto">
           {categories.map(category => (
             <button
               key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 text-sm rounded-full transition-all duration-300 ${
+              onClick={() => {
+                setSelectedCategory(category);
+                setShowAll(false);
+              }}
+              className={`px-4 py-2 text-xs font-medium rounded-full transition-all duration-300 ${
                 selectedCategory === category
-                  ? 'bg-accent text-accent-foreground shadow-lg shadow-accent/25'
-                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  ? 'bg-gradient-to-r from-accent/90 to-primary/90 text-white shadow-lg'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {category === "all" ? "All Projects" : category}
+              {category === "all" ? "All" : category}
             </button>
           ))}
         </div>
       )}
 
-      {/* Projects Grid - SecurityTools Style */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+      {/* Bento-Style Asymmetric Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto auto-rows-fr">
         {(showAll ? filteredProjects : filteredProjects.slice(0, 6)).map((project, index) => {
           const CategoryIcon = getCategoryIcon(project.project_type);
-          const isExpanded = expandedCards.has(project.id);
+          const colors = getCategoryColor(project.project_type);
+          const bentoSize = getBentoSize(index);
+          const isHero = index === 0;
           
           return (
             <motion.div
               key={project.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="group relative"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: index * 0.08 }}
+              className={`group relative ${bentoSize} cursor-pointer`}
+              onClick={() => setDetailsProject(project)}
             >
-              <div className="relative bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md border border-border/40 rounded-2xl overflow-hidden hover:border-accent/40 transition-all duration-500 hover:shadow-[0_0_40px_rgba(168,85,247,0.15)]">
-                <div className="h-0.5 bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
+              <div className={`relative h-full bg-gradient-to-br ${colors.from} ${colors.to} backdrop-blur-md border ${colors.border} rounded-2xl overflow-hidden transition-all duration-500 ${colors.glow} hover:shadow-2xl hover:-translate-y-1`}>
+                <div className={`h-1 bg-gradient-to-r ${colors.from} ${colors.to}`} />
                 
-                <div className="p-6 space-y-4">
-                  {/* Icon and Edit Controls */}
-                  <div className="flex items-start justify-between">
-                    <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                      <CategoryIcon className="w-6 h-6 text-accent" />
+                <div className={`p-6 space-y-4 h-full flex flex-col ${isHero ? 'justify-center' : ''}`}>
+                  {/* Owner Edit Controls */}
+                  {isOwner && (
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingProject(project);
+                          const isCustomProjectType = project.project_type && !projectTypes.includes(project.project_type);
+                          const isCustomProvider = project.llm_provider && !llmProviders.includes(project.llm_provider);
+                          const isCustomUseCase = project.use_case && !useCases.includes(project.use_case);
+                          
+                          setFormData({
+                            title: project.title,
+                            description: project.description,
+                            project_type: isCustomProjectType ? "Other" : (project.project_type || ""),
+                            project_type_custom: isCustomProjectType ? project.project_type : "",
+                            llm_provider: isCustomProvider ? "Other" : (project.llm_provider || ""),
+                            llm_provider_custom: isCustomProvider ? project.llm_provider : "",
+                            use_case: isCustomUseCase ? "Other" : (project.use_case || ""),
+                            use_case_custom: isCustomUseCase ? project.use_case : "",
+                            github_url: project.github_url || "",
+                            demo_url: project.demo_url || "",
+                            documentation_url: project.documentation_url || "",
+                            technologies: project.technologies || [],
+                          });
+                          setIsAddDialogOpen(true);
+                        }}
+                        className="bg-background/90 hover:bg-background text-foreground rounded-lg p-1.5 transition-colors backdrop-blur-sm"
+                        title="Edit"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemove(project.id);
+                        }}
+                        className="bg-background/90 hover:bg-destructive text-destructive hover:text-white rounded-lg p-1.5 transition-colors backdrop-blur-sm"
+                        title="Delete"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    
-                    {isOwner && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                        <button
-                          onClick={() => {
-                            setEditingProject(project);
-                            const isCustomProjectType = project.project_type && !projectTypes.includes(project.project_type);
-                            const isCustomProvider = project.llm_provider && !llmProviders.includes(project.llm_provider);
-                            const isCustomUseCase = project.use_case && !useCases.includes(project.use_case);
-                            
-                            setFormData({
-                              title: project.title,
-                              description: project.description,
-                              project_type: isCustomProjectType ? "Other" : (project.project_type || ""),
-                              project_type_custom: isCustomProjectType ? project.project_type : "",
-                              llm_provider: isCustomProvider ? "Other" : (project.llm_provider || ""),
-                              llm_provider_custom: isCustomProvider ? project.llm_provider : "",
-                              use_case: isCustomUseCase ? "Other" : (project.use_case || ""),
-                              use_case_custom: isCustomUseCase ? project.use_case : "",
-                              github_url: project.github_url || "",
-                              demo_url: project.demo_url || "",
-                              documentation_url: project.documentation_url || "",
-                              technologies: project.technologies || [],
-                            });
-                            setIsAddDialogOpen(true);
-                          }}
-                          className="bg-accent/20 hover:bg-accent/30 text-accent rounded-lg p-1.5 transition-colors"
-                          title="Edit"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                        </button>
-                        <button
-                          onClick={() => handleRemove(project.id)}
-                          className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg p-1.5 transition-colors"
-                          title="Delete"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
+                  )}
+
+                  {/* Category Icon - Bigger on hero */}
+                  <div className={`${colors.bg} border ${colors.border} rounded-xl flex items-center justify-center ${isHero ? 'w-20 h-20' : 'w-12 h-12'}`}>
+                    <CategoryIcon className={`${colors.text} ${isHero ? 'w-10 h-10' : 'w-6 h-6'}`} />
                   </div>
 
-                  {/* Title and Category Label */}
+                  {/* Title and Category */}
                   <div className="space-y-2">
-                    <h4 className="text-xl font-bold text-foreground leading-tight">
+                    <h4 className={`font-bold leading-tight ${colors.text} ${isHero ? 'text-2xl md:text-3xl' : 'text-lg'}`}>
                       {project.title}
                     </h4>
                     {project.project_type && (
-                      <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
+                      <span className={`inline-block text-xs px-2.5 py-1 rounded-full ${colors.bg} ${colors.text} border ${colors.border} font-medium`}>
                         {project.project_type}
                       </span>
                     )}
                   </div>
 
-                  {/* One-line description */}
-                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                    {project.description}
+                  {/* Description - 2 lines for regular, impact line for hero */}
+                  <p className={`text-muted-foreground leading-relaxed ${isHero ? 'text-base md:text-lg font-medium' : 'text-sm line-clamp-2'}`}>
+                    {isHero && project.use_case ? project.use_case : project.description}
                   </p>
 
-                  {/* Expand button for details */}
-                  <button
-                    onClick={() => toggleCard(project.id)}
-                    className="inline-flex items-center gap-1.5 text-xs text-accent hover:text-accent/80 transition-colors font-medium"
-                  >
-                    {isExpanded ? 'Hide details' : 'Show details'}
-                    <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                  </button>
-
-                  {/* Expandable details panel */}
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="space-y-3 pt-3 border-t border-border/30"
-                    >
-                      {/* Full description */}
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {project.description}
-                      </p>
-                      
-                      {/* LLM Provider */}
-                      {project.llm_provider && (
-                        <div className="text-xs text-muted-foreground">
-                          <span className="font-semibold">Provider:</span> {project.llm_provider}
-                        </div>
-                      )}
-                      
-                      {/* Use Case */}
-                      {project.use_case && (
-                        <div className="bg-accent/10 rounded-lg px-3 py-2 space-y-1">
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1.5">
-                            <Zap className="w-3 h-3 text-accent/70" />
-                            Use Case
-                          </p>
-                          <p className="text-xs text-foreground/80">{project.use_case}</p>
-                        </div>
-                      )}
-                      
-                      {/* Tech tags */}
-                      {project.technologies && project.technologies.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {project.technologies.map((tech) => (
-                            <span
-                              key={tech}
-                              className="text-[11px] px-2.5 py-1 rounded-full bg-secondary/50 text-muted-foreground border border-border/50 font-medium"
-                            >
-                              {tech}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* Links - Always visible */}
-                  {(project.github_url || project.demo_url || project.documentation_url) && (
-                    <div className="flex gap-2 pt-2">
+                  {/* Links */}
+                  {(project.github_url || project.demo_url) && (
+                    <div className="flex gap-2 mt-auto pt-4">
                       {project.github_url && (
                         <Button
                           asChild
-                          size="sm"
+                          size={isHero ? "default" : "sm"}
                           variant="outline"
                           className="flex-1 gap-2"
+                          onClick={(e: any) => e.stopPropagation()}
                         >
                           <a href={project.github_url} target="_blank" rel="noopener noreferrer">
                             <Github className="w-4 h-4" />
@@ -693,26 +655,14 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                       {project.demo_url && (
                         <Button
                           asChild
-                          size="sm"
+                          size={isHero ? "default" : "sm"}
                           variant="outline"
                           className="flex-1 gap-2"
+                          onClick={(e: any) => e.stopPropagation()}
                         >
                           <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="w-4 h-4" />
                             Demo
-                          </a>
-                        </Button>
-                      )}
-                      {project.documentation_url && (
-                        <Button
-                          asChild
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 gap-2"
-                        >
-                          <a href={project.documentation_url} target="_blank" rel="noopener noreferrer">
-                            <FileText className="w-4 h-4" />
-                            Docs
                           </a>
                         </Button>
                       )}
@@ -724,6 +674,114 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
           );
         })}
       </div>
+
+      {/* Project Details Modal */}
+      {detailsProject && (
+        <Dialog open={!!detailsProject} onOpenChange={() => setDetailsProject(null)}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                {(() => {
+                  const CategoryIcon = getCategoryIcon(detailsProject.project_type);
+                  const colors = getCategoryColor(detailsProject.project_type);
+                  return (
+                    <>
+                      <div className={`${colors.bg} border ${colors.border} rounded-xl p-2`}>
+                        <CategoryIcon className={`${colors.text} w-6 h-6`} />
+                      </div>
+                      <span>{detailsProject.title}</span>
+                    </>
+                  );
+                })()}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              {/* Category & Provider */}
+              <div className="flex flex-wrap gap-2">
+                {detailsProject.project_type && (
+                  <span className={`inline-block text-xs px-3 py-1.5 rounded-full ${getCategoryColor(detailsProject.project_type).bg} ${getCategoryColor(detailsProject.project_type).text} border ${getCategoryColor(detailsProject.project_type).border} font-medium`}>
+                    {detailsProject.project_type}
+                  </span>
+                )}
+                {detailsProject.llm_provider && (
+                  <span className="inline-block text-xs px-3 py-1.5 rounded-full bg-secondary text-muted-foreground border border-border font-medium">
+                    {detailsProject.llm_provider}
+                  </span>
+                )}
+              </div>
+
+              {/* Full Description */}
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Description</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {detailsProject.description}
+                </p>
+              </div>
+
+              {/* Use Case */}
+              {detailsProject.use_case && (
+                <div className="bg-accent/10 rounded-lg px-4 py-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-accent" />
+                    <h4 className="text-sm font-semibold text-accent">Use Case</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {detailsProject.use_case}
+                  </p>
+                </div>
+              )}
+
+              {/* Technologies */}
+              {detailsProject.technologies && detailsProject.technologies.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Technologies</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {detailsProject.technologies.map((tech) => (
+                      <span
+                        key={tech}
+                        className="text-xs px-3 py-1.5 rounded-full bg-secondary/50 text-foreground border border-border font-medium"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Links */}
+              {(detailsProject.github_url || detailsProject.demo_url || detailsProject.documentation_url) && (
+                <div className="flex gap-3 pt-4 border-t border-border">
+                  {detailsProject.github_url && (
+                    <Button asChild variant="outline" className="flex-1 gap-2">
+                      <a href={detailsProject.github_url} target="_blank" rel="noopener noreferrer">
+                        <Github className="w-4 h-4" />
+                        Source Code
+                      </a>
+                    </Button>
+                  )}
+                  {detailsProject.demo_url && (
+                    <Button asChild variant="outline" className="flex-1 gap-2">
+                      <a href={detailsProject.demo_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-4 h-4" />
+                        Live Demo
+                      </a>
+                    </Button>
+                  )}
+                  {detailsProject.documentation_url && (
+                    <Button asChild variant="outline" className="flex-1 gap-2">
+                      <a href={detailsProject.documentation_url} target="_blank" rel="noopener noreferrer">
+                        <FileText className="w-4 h-4" />
+                        Documentation
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Show All / Show Less Button */}
       {filteredProjects.length > 6 && (

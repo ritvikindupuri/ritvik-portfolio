@@ -75,7 +75,7 @@ export const SecurityTools = ({ isOwner }: SecurityToolsProps) => {
         <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         {securityTools.map((tool, index) => (
           <motion.div
             key={tool.name}
