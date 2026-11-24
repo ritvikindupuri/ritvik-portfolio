@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, Zap, BrainCircuit, ShieldCheck, UserCheck, Cloud, Archive, Radar, KeyRound,
   Database, FileCode2, Bot, ShieldAlert, Container, Monitor, Code2, FileText, Globe, ScanSearch,
-  Search, Wrench, SquareTerminal, Swords, Boxes, Server, ShieldBan, ScrollText, GitBranch, ListChecks,
+  Search, Wrench, SquareTerminal, Swords, Boxes, Server, ShieldBan, GitBranch, ListChecks,
   Network, HardDrive,
 } from "lucide-react";
 
@@ -123,7 +123,7 @@ export const agenticArchitectureFlows: { match: string; nodes: FlowNode[] }[] = 
   {
     match: "chaff",
     nodes: [
-      { icon: ScrollText, label: "Traffic logs", sub: "Site requests" },
+      { icon: Search, label: "Elasticsearch logs", sub: "Customer traffic" },
       { icon: Server, label: "Server functions", sub: "TanStack Start" },
       { icon: BrainCircuit, label: "Gemini agent", sub: "search · sample · record" },
       { icon: Database, label: "Supabase", sub: "Threats · campaigns" },
