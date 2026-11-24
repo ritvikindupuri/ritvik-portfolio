@@ -39,6 +39,24 @@ const securityTools: SecurityTool[] = [
     skills: ["Static Analysis", "AI Security", "OWASP"],
     icon: "🔍"
   },
+  {
+    name: "MCP Package Impersonation Auditor",
+    tagline: "Audits installed MCP packages for supply-chain attacks",
+    description: "Catches typosquats, wrong publishers, install scripts, and hidden data exfiltration in your MCP setup.",
+    platform: "Agensi",
+    tryUrl: "https://www.agensi.io/skills/mcp-package-impersonation-auditor",
+    skills: ["Supply Chain", "MCP", "SAST"],
+    icon: "🔐"
+  },
+  {
+    name: "AWS IR Pack",
+    tagline: "GuardDuty + CloudTrail incident response workflows",
+    description: "Triages AWS threats with ready Athena queries, timelines, and confirmation-gated containment playbooks.",
+    platform: "Agensi",
+    tryUrl: "https://www.agensi.io/skills/aws-ir-pack-guardduty-cloudtrail-incident-response",
+    skills: ["Incident Response", "AWS", "DFIR"],
+    icon: "🚨"
+  },
 ];
 
 export const SecurityTools = ({ isOwner }: SecurityToolsProps) => {
