@@ -358,6 +358,20 @@
   45%, 100% { background-position: -30% 0; }
 }
 
+/* AEGIS: soft amber pulse ring around the exploited-CVE alert badge */
+.logo-fx-aegis-badge {
+  position: absolute; left: 74.9%; top: 21.1%; width: 27%; height: 27%;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(245, 158, 11, 0.85);
+  transform: translate(-50%, -50%) scale(0.9);
+  opacity: 0;
+  animation: logo-fx-badge 2.4s ease-out infinite;
+}
+@keyframes logo-fx-badge {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: calc(0.5 * var(--fx)); }
+  60%, 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
 /* ThreatLens: slow lens tilt with a soft shimmer */
 .logo-fx-threatlens .logo-fx-img { animation: logo-fx-tilt 5s ease-in-out infinite; }
 @keyframes logo-fx-tilt {
@@ -384,6 +398,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .logo-fx, .logo-fx *, .logo-fx-img { animation: none !important; }
-  .logo-fx-cirrus-ping, .logo-fx-aegis-sheen { display: none; }
+  .logo-fx-cirrus-ping, .logo-fx-aegis-sheen, .logo-fx-aegis-badge { display: none; }
   .logo-fx-strata-core { opacity: 0.3; }
 }

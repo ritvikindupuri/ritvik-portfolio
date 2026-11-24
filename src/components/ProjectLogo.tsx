@@ -11,7 +11,7 @@ interface ProjectLogoProps {
   className?: string;
 }
 
-const slugFromSrc = (src: string) => src.split("/").pop()?.replace(/\.(png|svg)$/, "") ?? "";
+const slugFromSrc = (src: string) => src.split("?")[0].split("/").pop()?.replace(/\.(png|svg)$/, "") ?? "";
 
 const AetherMark = () => (
   // AETHER's CommandLogo from the app (hexagon + pulsing core), cropped to match the PNG framing.
@@ -52,6 +52,7 @@ const ProjectLogo = ({ src, className = "" }: ProjectLogoProps) => {
       {slug === "strata" && <span className="logo-fx-strata-core" />}
       {slug === "cirrus" && <span className="logo-fx-cirrus-ping" />}
       {slug === "aegis" && <span className="logo-fx-aegis-sheen" />}
+      {slug === "aegis" && <span className="logo-fx-aegis-badge" />}
     </span>
   );
 };
