@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Server, FolderInput, Sparkles, Loader2 } from "lucide-react";
+import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Container, FolderInput, Sparkles, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import purdueLogo from "@/assets/purdue-logo.svg";
@@ -673,7 +673,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                   value="devsecops"
                   className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
                 >
-                  <Server className="w-5 h-5 flex-shrink-0" />
+                  <Container className="w-5 h-5 flex-shrink-0" />
                   <span className="text-sm font-semibold">Container & Kubernetes Security Projects</span>
                 </TabsTrigger>
                 <TabsTrigger
