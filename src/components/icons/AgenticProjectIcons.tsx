@@ -5,6 +5,7 @@ import type { CSSProperties, ReactNode, SVGProps } from "react";
  * Each one is drawn from what the project's code actually does.
  * 24x24 grid, 1.75 stroke, round caps/joins, currentColor (set by the
  * per-project signature color), so they stay crisp from 24px to 48px.
+ * Lucide-style: one stroke weight, no fills, no badges, 2-4 primitives each.
  */
 export interface AgenticIconProps extends Omit<SVGProps<SVGSVGElement>, "children"> {
   className?: string;
@@ -27,121 +28,99 @@ const IconBase = ({ children, ...props }: AgenticIconProps & { children: ReactNo
   </svg>
 );
 
-/** CloudPilot AI: cloud with a pilot heading needle and an approval shield. */
+/** CloudPilot AI: a cloud with a compass heading needle. */
 export const CloudPilotIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <path d="M14 18.5H6.5a4 4 0 0 1-.4-7.98 6 6 0 0 1 11.6-1.2A4.5 4.5 0 0 1 21 13.5" />
-    <path d="M15 10l-1.6 4.1L10 17l1.6-4.1z" />
-    <path d="M18.5 15.2l2.6 1v1.9c0 1.6-1.1 2.6-2.6 3.1-1.5-.5-2.6-1.5-2.6-3.1v-1.9z" />
-    <path d="M17.4 18.3l.8.8 1.4-1.5" />
+    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+    <path d="M12 9.5l-1.58 3.77L7 15.5l1.58-3.77Z" />
   </IconBase>
 );
 
-/** STRATA: rock strata layers with an access key held behind a pause (approval) badge. */
+/** STRATA: three wavy rock strata with a small access key above them. */
 export const StrataIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <path d="M3 12.5c3-1.5 6 1.5 9 0s6-1.5 9 0" />
-    <path d="M3 16.5c3-1.5 6 1.5 9 0s6-1.5 9 0" />
-    <path d="M3 20.5c3-1.5 6 1.5 9 0s6-1.5 9 0" />
-    <circle cx="6" cy="6.5" r="2.2" />
-    <path d="M8.2 6.5H14M12.4 6.5v1.8" />
-    <circle cx="18.6" cy="6.5" r="2.8" />
-    <path d="M17.8 5.3v2.4M19.4 5.3v2.4" />
+    <circle cx="7" cy="5.5" r="2" />
+    <path d="M9 5.5h6.5M13.5 5.5v2" />
+    <path d="M3 11.5c2.5-1.5 5.5 1.5 9 0s6.5-1.5 9 0M3 15.5c2.5-1.5 5.5 1.5 9 0s6.5-1.5 9 0M3 19.5c2.5-1.5 5.5 1.5 9 0s6.5-1.5 9 0" />
   </IconBase>
 );
 
-/** Cirrus: wispy cirrus cloud over an audit checklist with a dashed diff row. */
+/** Cirrus: a wispy cirrus line over an audit checklist. */
 export const CirrusIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <path d="M3 4.5c2.5-1.8 5-2 7.5-1s4.5.5 7-1" />
-    <path d="M6.5 7h8.5c2 0 3.6-.6 5.5-2" />
-    <rect x="6.5" y="10.5" width="11" height="11" rx="1.6" />
-    <path d="M10 10.5V10a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v.5" />
-    <path d="M9 14.6l1 1 1.9-2.1M13.8 14.8h1.8" />
-    <path d="M9.2 18.4h6.2" strokeDasharray="1.6 1.6" />
+    <path d="M4 4.5c2-1.3 4-1.3 6 0s4 1.3 6 0c1.3-.9 2.7-1.1 4-.6" />
+    <rect x="5" y="8" width="14" height="13" rx="2" />
+    <path d="m8.5 12.5 1.5 1.5 3-3" />
+    <path d="M8.5 17.5h7" />
   </IconBase>
 );
 
-/** Containment: a shield guarding a terminal prompt, flanked by gate bars. */
+/** Containment: a shield guarding a terminal prompt. */
 export const ContainmentIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <path d="M12 3l6.5 2.6v5.2c0 4.4-2.8 7.9-6.5 9.7-3.7-1.8-6.5-5.3-6.5-9.7V5.6z" />
-    <path d="M9 9.8l2.3 1.9L9 13.6M12.6 14h2.6" />
-    <path d="M2.2 6.5v11M21.8 6.5v11" />
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z" />
+    <path d="m8.5 9.5 2.5 2.5-2.5 2.5" />
+    <path d="M13 15h3" />
   </IconBase>
 );
 
-/** Spectra AI: a prism splitting one beam into several rays (many tools, one assessment). */
+/** Spectra AI: a prism fanning one assessment into three rays. */
 export const SpectraIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <path d="M8 4l6 13H2z" />
-    <path d="M1 8.6l4.3 1.6" />
-    <path d="M11.3 11.3l10.2-3.8M11.8 12.4L22.5 11M12.3 13.5l8.7 1.5M12.8 14.6l6.7 3.9" />
+    <path d="M8.5 5l6 12h-12Z" />
+    <path d="M12.3 9l8.7-3.5M13.3 11h8.2M14.3 13l6.7 3.5" />
   </IconBase>
 );
 
-/** AEGIS.ai: a heater shield holding code brackets, with a CVE alert badge on its corner. */
+/** AEGIS.ai: a flat-topped shield holding code brackets. */
 export const AegisIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <path d="M15.5 4H5v7c0 5 3.5 8.5 7 10 3.5-1.5 7-5 7-10V8" />
-    <path d="M9.8 10.2l-2 2.4 2 2.4M14.2 10.2l2 2.4-2 2.4M12.8 9.6l-1.6 6" />
-    <circle cx="19.5" cy="4.5" r="2.6" />
-    <path d="M19.5 3.4v1.3M19.5 6.1v.01" />
+    <path d="M4 4h16v7c0 5.5-3.5 8.5-8 10.5C7.5 19.5 4 16.5 4 11Z" />
+    <path d="m9.5 9-2.5 3 2.5 3M14.5 9l2.5 3-2.5 3" />
+    <path d="m13 8.5-2 7" />
   </IconBase>
 );
 
-/** ThreatLens: a lens aperture with ticks for the endpoints it discovers outside-in. */
+/** ThreatLens: a six-blade lens aperture. */
 export const ThreatLensIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <circle cx="12" cy="12" r="6" />
-    <path d="M12 9.6l5.9 3.4M14.08 10.8v6.83M14.08 13.2l-5.92 3.41M12 14.4l-5.91-3.41M9.92 13.2V6.37M9.92 10.8l5.92-3.41" />
-    <path d="M17.27 5.72l1.54-1.84M19.92 9.88l2.32-.62M19.71 14.8l2.25.83" />
+    <circle cx="12" cy="12" r="10" />
+    <path d="m14.31 8 5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16 3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94" />
   </IconBase>
 );
 
-/** AETHER: a falcon feather beside an endpoint screen with an approved check. */
+/** AETHER: a falcon feather. */
 export const AetherIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <rect x="2.5" y="7" width="11" height="8" rx="1" />
-    <path d="M1.5 18.5h11" />
-    <path d="M5.3 11.1l1.5 1.5 2.8-3" />
-    <path d="M21.5 3c-4.5.5-7.6 3.6-8.6 8.4l-.6 3.4 3.4-.9c4.4-1.5 6.3-5.9 5.8-10.9z" />
-    <path d="M10.5 21l8-11.5M17.6 9.6l-2.4.4" />
+    <path d="M20 4C13 4 8 8.5 8 16c7.5 0 12-5 12-12Z" />
+    <path d="M4 20 15 9" />
   </IconBase>
 );
 
-/** KARMA: a Kubernetes helm wheel inside a strike-and-return arrow (attack, then fix). */
+/** KARMA: a seven-spoke Kubernetes helm wheel. */
 export const KarmaIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <circle cx="12" cy="12" r="1.8" />
-    <path d="M12 7l3.91 1.88.96 4.23-2.7 3.39H9.83l-2.7-3.39.96-4.23z" />
-    <path d="M12 10.2V5M13.41 10.88l4.06-3.24M13.75 12.4l5.07 1.16M12.78 13.62l2.26 4.69M11.22 13.62l-2.26 4.69M10.25 12.4l-5.07 1.16M10.59 10.88L6.53 7.64" />
-    <path d="M3.69 16.8A9.6 9.6 0 1 1 20.31 16.8" />
-    <path d="M19.9 14.54l.41 2.26 2.16-.79" />
-    <path d="M2.1 15.6l3.2 2.4" />
+    <circle cx="12" cy="12" r="6.5" />
+    <circle cx="12" cy="12" r="2.2" />
+    <path d="M12.00 9.80L12.00 2.50M13.72 10.63L19.43 6.08M14.14 12.49L21.26 14.11M12.95 13.98L16.12 20.56M11.05 13.98L7.88 20.56M9.86 12.49L2.74 14.11M10.28 10.63L4.57 6.08" />
   </IconBase>
 );
 
-/** Chaff: a wheat stalk with its grain kept, and husk flecks drifting away (bots separated out). */
+/** Chaff: a wheat stalk with its grain. */
 export const ChaffIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <path d="M9 21.5V9" />
-    <path d="M9 3c1.3 1.3 1.3 3.7 0 5-1.3-1.3-1.3-3.7 0-5z" />
-    <path d="M9 12.5c-1.9 0-3.4-1.5-3.6-3.6 1.9 0 3.4 1.5 3.6 3.6zM9 12.5c1.9 0 3.4-1.5 3.6-3.6-1.9 0-3.4 1.5-3.6 3.6z" />
-    <path d="M14.5 9c1.2-1.2 2.8-1.4 3.9-1-1 1.2-2.7 1.4-3.9 1z" />
-    <path d="M16.5 15c1.2-1 2.7-1.1 3.8-.6-1 1-2.6 1.1-3.8.6z" />
-    <path d="M13.5 12.2h2.2M18.5 11.6h2.5M12.5 17.6h2" />
+    <path d="M12 21.5V8.5" />
+    <path d="M12 3c1.5 1.5 1.5 4 0 5.5-1.5-1.5-1.5-4 0-5.5Z" />
+    <path d="M12 12.5c-2.2 0-4-1.8-4-4 2.2 0 4 1.8 4 4Zm0 0c2.2 0 4-1.8 4-4-2.2 0-4 1.8-4 4ZM12 17c-2.2 0-4-1.8-4-4 2.2 0 4 1.8 4 4Zm0 0c2.2 0 4-1.8 4-4-2.2 0-4 1.8-4 4Z" />
   </IconBase>
 );
 
-/** Traceveil: an evidence-pinned attack graph under a veil arc. */
+/** Traceveil: a three-node evidence graph. */
 export const TraceveilIcon = (props: AgenticIconProps) => (
   <IconBase {...props}>
-    <path d="M3 7c5-4.5 13-4.5 18 0" />
-    <circle cx="12" cy="10" r="2" />
-    <circle cx="5.5" cy="18" r="2" />
-    <circle cx="18.5" cy="18" r="2" />
-    <path d="M10.8 11.6l-4.1 4.8M13.2 11.6l4.1 4.8M7.5 18h9" />
-    <path d="M12 16.6v2.8M7.8 13.2l1.9 1.7M16.2 13.2l-1.9 1.7" />
+    <circle cx="12" cy="5" r="2.5" />
+    <circle cx="5.5" cy="18" r="2.5" />
+    <circle cx="18.5" cy="18" r="2.5" />
+    <path d="M10.88 7.24 6.62 15.76M13.12 7.24l4.26 8.52M8 18h8" />
   </IconBase>
 );
