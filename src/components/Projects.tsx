@@ -22,7 +22,7 @@ import { scanGitHubRepoSkills, parseGitHubUrl } from "@/lib/githubSkillsScanner"
 export const PROJECT_CATEGORIES = [
   { id: "security", label: "Security Engineering" },
   { id: "cloud", label: "Cloud Security" },
-  { id: "devsecops", label: "Cloud Infrastructure & DevSecOps" },
+  { id: "devsecops", label: "Container & Kubernetes Security" },
   { id: "ai", label: "AI & Cybersecurity" },
 ];
 
@@ -414,7 +414,8 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
           rawCategory === 'devops' ||
           rawCategory === 'cloud-infra' ||
           rawCategory === 'infrastructure' ||
-          rawCategory === 'cloud infrastructure & devsecops'
+          rawCategory === 'cloud infrastructure & devsecops' ||
+          rawCategory === 'container & kubernetes security'
         ) {
           categorizedProjects.devsecops.push(proj);
         } else if (rawCategory === 'ai') {
@@ -673,7 +674,7 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                   className="flex items-center gap-3 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-lg transition-all py-3 md:py-4 px-5 md:px-6 rounded-xl hover:bg-primary/10 border border-transparent data-[state=active]:border-primary/40"
                 >
                   <Server className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm font-semibold">Cloud Infrastructure & DevSecOps Projects</span>
+                  <span className="text-sm font-semibold">Container & Kubernetes Security Projects</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="ai"
