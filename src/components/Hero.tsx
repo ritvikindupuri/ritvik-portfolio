@@ -157,13 +157,16 @@ const NeuralNetworkBackground = () => {
   ];
 
   const allNodes = layers.flatMap((layer, layerIndex) =>
-    Array.from({ length: layer.nodes }, (_, i) => ({
-      x: layer.x + (Math.random() - 0.5) * 8,
-      y: 15 + (i / (layer.nodes - 1 || 1)) * 70 + (Math.random() - 0.5) * 5,
-      layerIndex,
-      id: `${layerIndex}-${i}`,
-      size: 2 + Math.random() * 2,
-    }))
+    Array.from({ length: layer.nodes }, (_, i) => {
+      const size = 2 + Math.random() * 2;
+      return {
+        x: layer.x + (Math.random() - 0.5) * 8,
+        y: 15 + (i / (layer.nodes - 1 || 1)) * 70 + (Math.random() - 0.5) * 5,
+        layerIndex,
+        id: `${layerIndex}-${i}`,
+        size: isNaN(size) ? 3 : size, // Safety fallback
+      };
+    })
   );
 
   // Connect nodes between adjacent layers
@@ -240,37 +243,40 @@ const NeuralNetworkBackground = () => {
         ))}
 
         {/* Neural nodes */}
-        {allNodes.map((node, i) => (
-          <g key={`node-${node.id}`}>
-            {/* Outer glow */}
-            <motion.circle
-              cx={`${node.x}%`}
-              cy={`${node.y}%`}
-              r={node.size * 3}
-              fill={node.layerIndex % 2 === 0 ? "hsl(var(--cyber-glow))" : "hsl(var(--cyber-purple))"}
-              opacity="0.1"
-              filter="url(#neuralGlow)"
-              animate={{
-                r: [node.size * 3, node.size * 4, node.size * 3],
-                opacity: [0.1, 0.25, 0.1],
-              }}
-              transition={{
-                duration: 2 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-                ease: "easeInOut",
-              }}
-            />
-            {/* Core node */}
-            <circle
-              cx={`${node.x}%`}
-              cy={`${node.y}%`}
-              r={node.size}
-              fill={node.layerIndex % 2 === 0 ? "hsl(var(--cyber-glow))" : "hsl(var(--cyber-purple))"}
-              opacity="0.7"
-            />
-          </g>
-        ))}
+        {allNodes.filter(node => node && node.size != null && !isNaN(node.size)).map((node, i) => {
+          const safeSize = Math.max(2, node.size || 3); // Ensure valid size
+          return (
+            <g key={`node-${node.id}`}>
+              {/* Outer glow */}
+              <motion.circle
+                cx={`${node.x}%`}
+                cy={`${node.y}%`}
+                r={safeSize * 3}
+                fill={node.layerIndex % 2 === 0 ? "hsl(var(--cyber-glow))" : "hsl(var(--cyber-purple))"}
+                opacity="0.1"
+                filter="url(#neuralGlow)"
+                animate={{
+                  r: [safeSize * 3, safeSize * 4, safeSize * 3],
+                  opacity: [0.1, 0.25, 0.1],
+                }}
+                transition={{
+                  duration: 2 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                  ease: "easeInOut",
+                }}
+              />
+              {/* Core node */}
+              <circle
+                cx={`${node.x}%`}
+                cy={`${node.y}%`}
+                r={safeSize}
+                fill={node.layerIndex % 2 === 0 ? "hsl(var(--cyber-glow))" : "hsl(var(--cyber-purple))"}
+                opacity="0.7"
+              />
+            </g>
+          );
+        })}
       </svg>
 
       {/* Floating ML/Cyber icons */}

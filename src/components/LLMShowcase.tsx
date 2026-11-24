@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database, Cloud, Radar, ShieldCheck, Crosshair, Eye, Boxes, Bug, Shield } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database, Cloud, Radar, ShieldCheck, Crosshair, Eye, Boxes, Bug, Shield, ArrowLeft, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -270,9 +271,13 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const [editingProject, setEditingProject] = useState<LLMProject | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [isHovering, setIsHovering] = useState(false);
-  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [currentRotation, setCurrentRotation] = useState(0);
+  const [selectedProject, setSelectedProject] = useState<LLMProject | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const autoRotateRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get unique project types for filter
   const categories = ["all", ...new Set(projects.map(p => p.project_type).filter(Boolean))] as string[];
@@ -303,27 +308,75 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     fetchProjects();
   }, []);
 
-  // Auto-select first project when projects load
+  // Auto-rotate carousel (respects prefers-reduced-motion)
   useEffect(() => {
-    if (filteredProjects.length > 0 && !selectedProjectId) {
-      setSelectedProjectId(filteredProjects[0].id);
-    }
-  }, [filteredProjects]);
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || isDragging || filteredProjects.length === 0) return;
 
-  // Auto-advance spotlight every 6s unless hovering
+    autoRotateRef.current = setInterval(() => {
+      setCurrentRotation(prev => prev + (360 / Math.max(filteredProjects.length, 1)));
+    }, 3000);
+
+    return () => {
+      if (autoRotateRef.current) clearInterval(autoRotateRef.current);
+    };
+  }, [filteredProjects.length, isDragging]);
+
+  // Keyboard navigation
   useEffect(() => {
-    if (isHovering || filteredProjects.length <= 1) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        rotateLeft();
+      } else if (e.key === 'ArrowRight') {
+        rotateRight();
+      }
+    };
 
-    const interval = setInterval(() => {
-      setSelectedProjectId(current => {
-        const currentIndex = filteredProjects.findIndex(p => p.id === current);
-        const nextIndex = (currentIndex + 1) % filteredProjects.length;
-        return filteredProjects[nextIndex].id;
-      });
-    }, 6000);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filteredProjects.length]);
 
-    return () => clearInterval(interval);
-  }, [isHovering, filteredProjects]);
+  const rotateLeft = () => {
+    if (filteredProjects.length === 0) return;
+    setCurrentRotation(prev => prev - (360 / filteredProjects.length));
+  };
+
+  const rotateRight = () => {
+    if (filteredProjects.length === 0) return;
+    setCurrentRotation(prev => prev + (360 / filteredProjects.length));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const delta = e.clientX - dragStart;
+    setCurrentRotation(prev => prev + delta * 0.5);
+    setDragStart(e.clientX);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setDragStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const delta = e.touches[0].clientX - dragStart;
+    setCurrentRotation(prev => prev + delta * 0.5);
+    setDragStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -517,68 +570,6 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     return Sparkles;
   };
 
-  const accentPalette = ['cyan', 'violet', 'emerald', 'amber', 'rose', 'sky', 'fuchsia', 'lime'];
-  
-  const getProjectAccent = (index: number) => {
-    const color = accentPalette[index % accentPalette.length];
-    const colorMap: Record<string, any> = {
-      cyan: { 
-        from: 'from-cyan-500', to: 'to-cyan-600', 
-        bg: 'bg-cyan-500/20', border: 'border-cyan-500/50',
-        text: 'text-cyan-400', glow: 'shadow-cyan-500/50',
-        dot: 'bg-cyan-500'
-      },
-      violet: { 
-        from: 'from-violet-500', to: 'to-violet-600', 
-        bg: 'bg-violet-500/20', border: 'border-violet-500/50',
-        text: 'text-violet-400', glow: 'shadow-violet-500/50',
-        dot: 'bg-violet-500'
-      },
-      emerald: { 
-        from: 'from-emerald-500', to: 'to-emerald-600', 
-        bg: 'bg-emerald-500/20', border: 'border-emerald-500/50',
-        text: 'text-emerald-400', glow: 'shadow-emerald-500/50',
-        dot: 'bg-emerald-500'
-      },
-      amber: { 
-        from: 'from-amber-500', to: 'to-amber-600', 
-        bg: 'bg-amber-500/20', border: 'border-amber-500/50',
-        text: 'text-amber-400', glow: 'shadow-amber-500/50',
-        dot: 'bg-amber-500'
-      },
-      rose: { 
-        from: 'from-rose-500', to: 'to-rose-600', 
-        bg: 'bg-rose-500/20', border: 'border-rose-500/50',
-        text: 'text-rose-400', glow: 'shadow-rose-500/50',
-        dot: 'bg-rose-500'
-      },
-      sky: { 
-        from: 'from-sky-500', to: 'to-sky-600', 
-        bg: 'bg-sky-500/20', border: 'border-sky-500/50',
-        text: 'text-sky-400', glow: 'shadow-sky-500/50',
-        dot: 'bg-sky-500'
-      },
-      fuchsia: { 
-        from: 'from-fuchsia-500', to: 'to-fuchsia-600', 
-        bg: 'bg-fuchsia-500/20', border: 'border-fuchsia-500/50',
-        text: 'text-fuchsia-400', glow: 'shadow-fuchsia-500/50',
-        dot: 'bg-fuchsia-500'
-      },
-      lime: { 
-        from: 'from-lime-500', to: 'to-lime-600', 
-        bg: 'bg-lime-500/20', border: 'border-lime-500/50',
-        text: 'text-lime-400', glow: 'shadow-lime-500/50',
-        dot: 'bg-lime-500'
-      },
-    };
-    return colorMap[color];
-  };
-
-  const selectedProject = filteredProjects.find(p => p.id === selectedProjectId) || filteredProjects[0];
-  const selectedIndex = selectedProject ? filteredProjects.findIndex(p => p.id === selectedProjectId) : 0;
-  const selectedAccent = selectedProject && selectedIndex >= 0 ? getProjectAccent(selectedIndex) : getProjectAccent(0);
-  const SelectedIcon = selectedProject ? getProjectIcon(selectedProject) : Sparkles;
-
   // Safety check: if no projects, show loading state
   if (filteredProjects.length === 0) {
     return (
@@ -649,238 +640,270 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
         </div>
       )}
 
-      {/* Interactive Spotlight Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 max-w-7xl mx-auto">
-        {/* Left: Project List */}
-        <div className="hidden lg:block space-y-2 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      {/* 3D Carousel Gallery - Desktop */}
+      <div className="hidden md:block relative max-w-5xl mx-auto"
+        style={{ perspective: '1000px', height: '500px' }}
+        onMouseEnter={() => { if (autoRotateRef.current) clearInterval(autoRotateRef.current); }}
+        onMouseLeave={() => {
+          const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (!prefersReducedMotion && filteredProjects.length > 0) {
+            autoRotateRef.current = setInterval(() => {
+              setCurrentRotation(prev => prev + (360 / filteredProjects.length));
+            }, 3000);
+          }
+        }}
+      >
+        <div 
+          ref={carouselRef}
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            transformStyle: 'preserve-3d',
+            transform: `rotateY(${currentRotation}deg)`,
+            transition: isDragging ? 'none' : 'transform 0.5s ease-out',
+          }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {filteredProjects.map((project, index) => {
             const ProjectIcon = getProjectIcon(project);
-            const accent = getProjectAccent(index);
-            const isSelected = selectedProjectId === project.id;
-            
-            if (!accent) return null; // Safety guard
+            const angle = (360 / filteredProjects.length) * index;
+            const radius = 300;
             
             return (
-              <motion.button
+              <div
                 key={project.id}
-                onClick={() => setSelectedProjectId(project.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setSelectedProjectId(project.id);
-                  }
+                className="absolute top-1/2 left-1/2 cursor-pointer"
+                style={{
+                  transform: `
+                    translate(-50%, -50%)
+                    rotateY(${angle}deg)
+                    translateZ(${radius}px)
+                  `,
+                  backfaceVisibility: 'hidden',
                 }}
-                className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left w-full ${
-                  isSelected 
-                    ? `${accent?.bg || 'bg-accent/20'} ${accent?.border || 'border-accent/50'} border backdrop-blur-sm` 
-                    : 'hover:bg-secondary/50 border border-transparent'
-                }`}
+                onClick={() => {
+                  setSelectedProject(project);
+                  setIsSheetOpen(true);
+                }}
               >
-                <div className={`w-10 h-10 rounded-lg ${accent?.bg || 'bg-accent/20'} ${accent?.border || 'border-accent/50'} border flex-shrink-0 flex items-center justify-center`}>
-                  <ProjectIcon className={`w-5 h-5 ${accent?.text || 'text-accent'}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-foreground truncate">
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  className="w-32 h-32 rounded-2xl bg-card/80 backdrop-blur-md border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-primary/50 hover:shadow-2xl flex flex-col items-center justify-center gap-3 p-4"
+                >
+                  <ProjectIcon className="w-12 h-12 text-primary" />
+                  <p className="text-xs font-medium text-center text-foreground leading-tight line-clamp-2">
                     {project.title}
-                  </div>
-                </div>
-                <div className={`w-2 h-2 rounded-full ${accent?.dot || 'bg-accent'} ${isSelected ? 'opacity-100' : 'opacity-30'}`} />
-              </motion.button>
+                  </p>
+                  {isOwner && (
+                    <div className="absolute top-1 right-1 opacity-0 hover:opacity-100">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-background/90 hover:bg-background text-foreground rounded-lg p-1 transition-colors"
+                          >
+                            <MoreVertical className="w-3 h-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingProject(project);
+                              const isCustomProjectType = project.project_type && !projectTypes.includes(project.project_type);
+                              const isCustomProvider = project.llm_provider && !llmProviders.includes(project.llm_provider);
+                              const isCustomUseCase = project.use_case && !useCases.includes(project.use_case);
+                              
+                              setFormData({
+                                title: project.title,
+                                description: project.description,
+                                project_type: isCustomProjectType ? "Other" : (project.project_type || ""),
+                                project_type_custom: isCustomProjectType ? project.project_type : "",
+                                llm_provider: isCustomProvider ? "Other" : (project.llm_provider || ""),
+                                llm_provider_custom: isCustomProvider ? project.llm_provider : "",
+                                use_case: isCustomUseCase ? "Other" : (project.use_case || ""),
+                                use_case_custom: isCustomUseCase ? project.use_case : "",
+                                github_url: project.github_url || "",
+                                demo_url: project.demo_url || "",
+                                documentation_url: project.documentation_url || "",
+                                technologies: project.technologies || [],
+                              });
+                              setIsAddDialogOpen(true);
+                            }}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemove(project.id);
+                            }}
+                            className="text-destructive"
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+                </motion.div>
+              </div>
             );
           })}
         </div>
 
-        {/* Mobile: Horizontal Swipeable Chips */}
-        <div className="lg:hidden overflow-x-auto pb-3">
-          <div className="flex gap-2 min-w-min px-1">
-            {filteredProjects.map((project, index) => {
-              const ProjectIcon = getProjectIcon(project);
-              const accent = getProjectAccent(index);
-              const isSelected = selectedProjectId === project.id;
-              
-              if (!accent) return null; // Safety guard
-              
-              return (
-                <button
-                  key={project.id}
-                  onClick={() => setSelectedProjectId(project.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-300 whitespace-nowrap ${
-                    isSelected
-                      ? `${accent?.bg || 'bg-accent/20'} ${accent?.border || 'border-accent/50'} border ${accent?.text || 'text-accent'}`
-                      : 'bg-secondary/50 text-muted-foreground border border-transparent'
-                  }`}
-                >
-                  <ProjectIcon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{project.title}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right: Showcase Panel */}
-        {selectedProject && (
-          <motion.div
-            key={selectedProjectId}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="relative"
-            onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
-            onMouseMove={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setCursorPosition({
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top,
-              });
-            }}
+        {/* Arrow Navigation Buttons */}
+        <div className="absolute top-1/2 left-4 -translate-y-1/2 z-10">
+          <Button
+            onClick={rotateLeft}
+            size="icon"
+            variant="outline"
+            className="rounded-full bg-background/80 backdrop-blur-sm hover:bg-primary/20 border-primary/50"
           >
-            <div className={`relative min-h-[500px] rounded-3xl overflow-hidden backdrop-blur-sm border-2 ${selectedAccent?.border || 'border-accent/50'} ${selectedAccent?.glow || 'shadow-accent/50'} shadow-2xl transition-all duration-500`}>
-              {/* Animated gradient mesh background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${selectedAccent?.from || 'from-accent-500'}/20 ${selectedAccent?.to || 'to-accent-600'}/20 opacity-60`} />
-              <div 
-                className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-                style={{
-                  background: `radial-gradient(circle 300px at ${cursorPosition.x || 0}px ${cursorPosition.y || 0}px, rgba(255, 255, 255, 0.1), transparent)`,
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </div>
+        <div className="absolute top-1/2 right-4 -translate-y-1/2 z-10">
+          <Button
+            onClick={rotateRight}
+            size="icon"
+            variant="outline"
+            className="rounded-full bg-background/80 backdrop-blur-sm hover:bg-primary/20 border-primary/50"
+          >
+            <ArrowRight className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile: Horizontal Swipe Row */}
+      <div className="md:hidden overflow-x-auto pb-3 px-4">
+        <div className="flex gap-4 min-w-min">
+          {filteredProjects.map((project) => {
+            const ProjectIcon = getProjectIcon(project);
+            
+            return (
+              <div
+                key={project.id}
+                onClick={() => {
+                  setSelectedProject(project);
+                  setIsSheetOpen(true);
                 }}
-              />
-              
-              {/* Noise/grid texture */}
-              <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
-              
-              {/* Content */}
-              <div className="relative z-10 p-8 md:p-12 space-y-6">
-                {/* Owner Controls */}
-                {isOwner && (
-                  <div className="absolute top-4 right-4 flex gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingProject(selectedProject);
-                        const isCustomProjectType = selectedProject.project_type && !projectTypes.includes(selectedProject.project_type);
-                        const isCustomProvider = selectedProject.llm_provider && !llmProviders.includes(selectedProject.llm_provider);
-                        const isCustomUseCase = selectedProject.use_case && !useCases.includes(selectedProject.use_case);
-                        
-                        setFormData({
-                          title: selectedProject.title,
-                          description: selectedProject.description,
-                          project_type: isCustomProjectType ? "Other" : (selectedProject.project_type || ""),
-                          project_type_custom: isCustomProjectType ? selectedProject.project_type : "",
-                          llm_provider: isCustomProvider ? "Other" : (selectedProject.llm_provider || ""),
-                          llm_provider_custom: isCustomProvider ? selectedProject.llm_provider : "",
-                          use_case: isCustomUseCase ? "Other" : (selectedProject.use_case || ""),
-                          use_case_custom: isCustomUseCase ? selectedProject.use_case : "",
-                          github_url: selectedProject.github_url || "",
-                          demo_url: selectedProject.demo_url || "",
-                          documentation_url: selectedProject.documentation_url || "",
-                          technologies: selectedProject.technologies || [],
-                        });
-                        setIsAddDialogOpen(true);
-                      }}
-                      className="bg-background/90 hover:bg-background backdrop-blur-sm text-foreground rounded-lg p-2 transition-colors"
-                      title="Edit"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                    </button>
-                    <button
-                      onClick={() => handleRemove(selectedProject.id)}
-                      className="bg-background/90 hover:bg-destructive backdrop-blur-sm text-destructive hover:text-white rounded-lg p-2 transition-colors"
-                      title="Delete"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Large Icon */}
-                <div className={`w-20 h-20 rounded-2xl ${selectedAccent?.bg || 'bg-accent/20'} ${selectedAccent?.border || 'border-accent/50'} border-2 flex items-center justify-center backdrop-blur-sm`}>
-                  <SelectedIcon className={`w-10 h-10 ${selectedAccent?.text || 'text-accent'}`} />
-                </div>
-
-                {/* Title */}
-                <div className="space-y-3">
-                  <h4 className={`text-3xl md:text-4xl font-bold leading-tight ${selectedAccent?.text || 'text-accent'}`}>
-                    {selectedProject.title}
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.project_type && (
-                      <span className={`inline-block text-xs px-3 py-1.5 rounded-full ${selectedAccent?.bg || 'bg-accent/20'} ${selectedAccent?.text || 'text-accent'} ${selectedAccent?.border || 'border-accent/50'} border font-medium`}>
-                        {selectedProject.project_type}
-                      </span>
-                    )}
-                    {selectedProject.llm_provider && (
-                      <span className="inline-block text-xs px-3 py-1.5 rounded-full bg-secondary/80 text-muted-foreground border border-border font-medium backdrop-blur-sm">
-                        {selectedProject.llm_provider}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Impact Description */}
-                <p className="text-base md:text-lg text-foreground/90 leading-relaxed max-w-2xl">
-                  {selectedProject.description}
+                className="flex-shrink-0 w-28 h-28 rounded-xl bg-card/80 backdrop-blur-md border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-primary/50 cursor-pointer flex flex-col items-center justify-center gap-2 p-3"
+              >
+                <ProjectIcon className="w-10 h-10 text-primary" />
+                <p className="text-xs font-medium text-center text-foreground leading-tight line-clamp-2">
+                  {project.title}
                 </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
-                {/* Use Case */}
-                {selectedProject.use_case && (
-                  <div className={`${selectedAccent?.bg || 'bg-accent/20'} backdrop-blur-sm rounded-xl p-4 border ${selectedAccent?.border || 'border-accent/50'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap className={`w-4 h-4 ${selectedAccent?.text || 'text-accent'}`} />
-                      <h5 className={`text-sm font-semibold ${selectedAccent?.text || 'text-accent'}`}>Use Case</h5>
-                    </div>
-                    <p className="text-sm text-foreground/80">{selectedProject.use_case}</p>
-                  </div>
+      {/* Side Panel Sheet */}
+      {selectedProject && (
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-3">
+                {(() => {
+                  const ProjectIcon = getProjectIcon(selectedProject);
+                  return (
+                    <>
+                      <div className="w-12 h-12 rounded-xl bg-primary/20 border-2 border-primary/50 flex items-center justify-center">
+                        <ProjectIcon className="w-6 h-6 text-primary" />
+                      </div>
+                      <span className="text-left">{selectedProject.title}</span>
+                    </>
+                  );
+                })()}
+              </SheetTitle>
+              <SheetDescription className="text-left pt-2">
+                {selectedProject.description}
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="space-y-6 py-6">
+              {/* Category & Provider */}
+              <div className="flex flex-wrap gap-2">
+                {selectedProject.project_type && (
+                  <Badge variant="outline" className="border-primary/50 text-primary">
+                    {selectedProject.project_type}
+                  </Badge>
                 )}
+                {selectedProject.llm_provider && (
+                  <Badge variant="secondary">
+                    {selectedProject.llm_provider}
+                  </Badge>
+                )}
+              </div>
 
-                {/* Technologies */}
-                {selectedProject.technologies && selectedProject.technologies.length > 0 && (
+              {/* Use Case */}
+              {selectedProject.use_case && (
+                <div className="bg-primary/10 backdrop-blur-sm rounded-xl p-4 border border-primary/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <h4 className="text-sm font-semibold text-primary">Use Case</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{selectedProject.use_case}</p>
+                </div>
+              )}
+
+              {/* Technologies */}
+              {selectedProject.technologies && selectedProject.technologies.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Technologies</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedProject.technologies.map((tech) => (
                       <span
                         key={tech}
-                        className="text-xs px-3 py-1.5 rounded-full bg-secondary/60 backdrop-blur-sm text-foreground border border-border font-medium"
+                        className="text-xs px-3 py-1.5 rounded-full bg-secondary/60 text-foreground border border-border font-medium"
                       >
                         {tech}
                       </span>
                     ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Gradient-filled Buttons */}
-                {(selectedProject.github_url || selectedProject.demo_url) && (
-                  <div className="flex gap-3 pt-4">
-                    {selectedProject.github_url && (
-                      <Button
-                        asChild
-                        size="lg"
-                        className={`bg-gradient-to-r ${selectedAccent?.from || 'from-accent'} ${selectedAccent?.to || 'to-primary'} hover:opacity-90 text-white border-0 shadow-lg ${selectedAccent?.glow || 'shadow-accent/50'} transition-all duration-300`}
-                      >
-                        <a href={selectedProject.github_url} target="_blank" rel="noopener noreferrer">
-                          <Github className="w-5 h-5 mr-2" />
-                          Source Code
-                        </a>
-                      </Button>
-                    )}
-                    {selectedProject.demo_url && (
-                      <Button
-                        asChild
-                        size="lg"
-                        className={`bg-gradient-to-r ${selectedAccent?.from || 'from-accent'} ${selectedAccent?.to || 'to-primary'} hover:opacity-90 text-white border-0 shadow-lg ${selectedAccent?.glow || 'shadow-accent/50'} transition-all duration-300`}
-                      >
-                        <a href={selectedProject.demo_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-5 h-5 mr-2" />
-                          Live Demo
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* Links */}
+              {(selectedProject.github_url || selectedProject.demo_url || selectedProject.documentation_url) && (
+                <div className="flex flex-col gap-3 pt-4 border-t border-border">
+                  {selectedProject.github_url && (
+                    <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/80 hover:opacity-90">
+                      <a href={selectedProject.github_url} target="_blank" rel="noopener noreferrer">
+                        <Github className="w-5 h-5 mr-2" />
+                        Source Code
+                      </a>
+                    </Button>
+                  )}
+                  {selectedProject.demo_url && (
+                    <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/80 hover:opacity-90">
+                      <a href={selectedProject.demo_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-5 h-5 mr-2" />
+                        Live Demo
+                      </a>
+                    </Button>
+                  )}
+                  {selectedProject.documentation_url && (
+                    <Button asChild variant="outline" className="w-full border-primary/50">
+                      <a href={selectedProject.documentation_url} target="_blank" rel="noopener noreferrer">
+                        <FileText className="w-5 h-5 mr-2" />
+                        Documentation
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
-          </motion.div>
-        )}
-      </div>
-
+          </SheetContent>
+        </Sheet>
+      )}
 
       {projects.length === 0 && !isOwner && (
         <div className="text-center py-12 text-muted-foreground">
