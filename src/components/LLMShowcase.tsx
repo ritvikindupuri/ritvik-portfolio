@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database, Cloud, Radar, ShieldCheck, Crosshair, Eye, Boxes, Bug, Shield, ArrowLeft, ArrowRight } from "lucide-react";
+import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database, Cloud, Radar, ShieldCheck, Crosshair, Eye, Boxes, Bug, Shield, ArrowLeft, ArrowRight, Scan, Package, Siren, ShieldAlert, ShieldHalf, Waves, Box, Lock, Container, Sparkle, Footprints, EyeOff, CloudCog, Binary, Hexagon, Target, Fingerprint, LockKeyhole, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { agenticProjectDetails } from "@/data/agenticProjectDetails";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -555,19 +556,148 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     setFormData({ ...formData, technologies: formData.technologies.filter(t => t !== tech) });
   };
 
-  const getProjectIcon = (project: LLMProject) => {
-    const text = `${project.title} ${project.use_case || ''} ${project.description}`.toLowerCase();
-    if (text.includes('cloud')) return Cloud;
-    if (text.includes('intrusion') || text.includes('detection')) return Radar;
-    if (text.includes('firewall') || text.includes('containment')) return ShieldCheck;
-    if (text.includes('pentest') || text.includes('assessment')) return Crosshair;
-    if (text.includes('threat intel')) return Eye;
-    if (text.includes('orchestrator') || text.includes('falcon')) return Workflow;
-    if (text.includes('kubernetes') || text.includes('karma')) return Boxes;
-    if (text.includes('bot traffic') || text.includes('chaff')) return Bug;
-    if (text.includes('graph') || text.includes('traceveil')) return Network;
-    if (text.includes('aegis')) return Shield;
-    return Sparkles;
+  // Extract short name from title (before ':' or ' - ' / ' — ')
+  const getShortName = (title: string): string => {
+    const separators = [':', ' - ', ' — ', ' – '];
+    for (const sep of separators) {
+      const index = title.indexOf(sep);
+      if (index !== -1) {
+        return title.substring(0, index).trim();
+      }
+    }
+    return title;
+  };
+
+  // Project signature icon and color mapping
+  const getProjectSignature = (project: LLMProject): { icon: any; color: string; gradient: string; shadow: string } => {
+    const title = project.title.toLowerCase();
+    const description = project.description.toLowerCase();
+    
+    // Map by title first (most specific)
+    if (title.includes('agentpot')) return { 
+      icon: Bug, 
+      color: '#f59e0b', // amber
+      gradient: 'from-amber-500/20 to-amber-600/10',
+      shadow: 'shadow-amber-500/30'
+    };
+    if (title.includes('lume')) return { 
+      icon: Scan, 
+      color: '#06b6d4', // cyan
+      gradient: 'from-cyan-500/20 to-cyan-600/10',
+      shadow: 'shadow-cyan-500/30'
+    };
+    if (title.includes('mcp') && title.includes('impersonation')) return { 
+      icon: Fingerprint, 
+      color: '#8b5cf6', // violet
+      gradient: 'from-violet-500/20 to-violet-600/10',
+      shadow: 'shadow-violet-500/30'
+    };
+    if (title.includes('aws ir')) return { 
+      icon: Siren, 
+      color: '#dc2626', // red
+      gradient: 'from-red-500/20 to-red-600/10',
+      shadow: 'shadow-red-500/30'
+    };
+    if (title.includes('strata')) return { 
+      icon: CloudCog, 
+      color: '#0ea5e9', // sky
+      gradient: 'from-sky-500/20 to-sky-600/10',
+      shadow: 'shadow-sky-500/30'
+    };
+    if (title.includes('cirrus')) return { 
+      icon: Shield, 
+      color: '#3b82f6', // blue
+      gradient: 'from-blue-500/20 to-blue-600/10',
+      shadow: 'shadow-blue-500/30'
+    };
+    if (title.includes('aegis')) return { 
+      icon: ShieldHalf, 
+      color: '#6366f1', // indigo
+      gradient: 'from-indigo-500/20 to-indigo-600/10',
+      shadow: 'shadow-indigo-500/30'
+    };
+    if (title.includes('threatlens')) return { 
+      icon: Target, 
+      color: '#ec4899', // pink
+      gradient: 'from-pink-500/20 to-pink-600/10',
+      shadow: 'shadow-pink-500/30'
+    };
+    if (title.includes('aether')) return { 
+      icon: Waves, 
+      color: '#a855f7', // purple
+      gradient: 'from-purple-500/20 to-purple-600/10',
+      shadow: 'shadow-purple-500/30'
+    };
+    if (title.includes('spectra')) return { 
+      icon: Waves, 
+      color: '#d946ef', // fuchsia
+      gradient: 'from-fuchsia-500/20 to-fuchsia-600/10',
+      shadow: 'shadow-fuchsia-500/30'
+    };
+    if (title.includes('containment')) return { 
+      icon: LockKeyhole, 
+      color: '#059669', // emerald
+      gradient: 'from-emerald-500/20 to-emerald-600/10',
+      shadow: 'shadow-emerald-500/30'
+    };
+    if (title.includes('karma')) return { 
+      icon: Boxes, 
+      color: '#10b981', // green
+      gradient: 'from-green-500/20 to-green-600/10',
+      shadow: 'shadow-green-500/30'
+    };
+    if (title.includes('chaff')) return { 
+      icon: Sparkle, 
+      color: '#f97316', // orange
+      gradient: 'from-orange-500/20 to-orange-600/10',
+      shadow: 'shadow-orange-500/30'
+    };
+    if (title.includes('traceveil')) return { 
+      icon: EyeOff, 
+      color: '#64748b', // slate
+      gradient: 'from-slate-500/20 to-slate-600/10',
+      shadow: 'shadow-slate-500/30'
+    };
+    
+    // Fallback patterns by description keywords
+    if (description.includes('cloud') || description.includes('kubernetes')) return { 
+      icon: Cloud, 
+      color: '#06b6d4',
+      gradient: 'from-cyan-500/20 to-cyan-600/10',
+      shadow: 'shadow-cyan-500/30'
+    };
+    if (description.includes('intrusion') || description.includes('detection')) return { 
+      icon: Radar, 
+      color: '#ec4899',
+      gradient: 'from-pink-500/20 to-pink-600/10',
+      shadow: 'shadow-pink-500/30'
+    };
+    if (description.includes('pentest') || description.includes('assessment')) return { 
+      icon: Crosshair, 
+      color: '#dc2626',
+      gradient: 'from-red-500/20 to-red-600/10',
+      shadow: 'shadow-red-500/30'
+    };
+    if (description.includes('threat intel')) return { 
+      icon: Eye, 
+      color: '#8b5cf6',
+      gradient: 'from-violet-500/20 to-violet-600/10',
+      shadow: 'shadow-violet-500/30'
+    };
+    if (description.includes('workflow') || description.includes('orchestrat')) return { 
+      icon: Workflow, 
+      color: '#6366f1',
+      gradient: 'from-indigo-500/20 to-indigo-600/10',
+      shadow: 'shadow-indigo-500/30'
+    };
+    
+    // Ultimate fallback
+    return { 
+      icon: Shield, 
+      color: '#a855f7',
+      gradient: 'from-purple-500/20 to-purple-600/10',
+      shadow: 'shadow-purple-500/30'
+    };
   };
 
   // Safety check: if no projects, show loading state
@@ -670,7 +800,8 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
           onTouchEnd={handleTouchEnd}
         >
           {filteredProjects.map((project, index) => {
-            const ProjectIcon = getProjectIcon(project);
+            const signature = getProjectSignature(project);
+            const ProjectIcon = signature.icon;
             const angle = (360 / filteredProjects.length) * index;
             const radius = 300;
             
@@ -693,11 +824,26 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
               >
                 <motion.div
                   whileHover={{ scale: 1.1 }}
-                  className="w-32 h-32 rounded-2xl bg-card/80 backdrop-blur-md border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-primary/50 hover:shadow-2xl flex flex-col items-center justify-center gap-3 p-4"
+                  className={`w-32 h-32 rounded-2xl bg-card/80 backdrop-blur-md border-2 transition-all duration-300 shadow-lg hover:shadow-2xl flex flex-col items-center justify-center gap-3 p-4 ${signature.shadow}`}
+                  style={{ 
+                    borderColor: signature.color + '80',
+                  }}
                 >
-                  <ProjectIcon className="w-12 h-12 text-primary" />
-                  <p className="text-xs font-medium text-center text-foreground leading-tight line-clamp-2">
-                    {project.title}
+                  {/* Layered icon treatment - hexagon badge with gradient ring and glow */}
+                  <div className="relative">
+                    <div 
+                      className={`absolute inset-0 blur-md opacity-50 rounded-lg bg-gradient-to-br ${signature.gradient}`}
+                      style={{ transform: 'scale(1.2)' }}
+                    />
+                    <div 
+                      className={`relative w-14 h-14 rounded-lg bg-gradient-to-br ${signature.gradient} backdrop-blur-sm flex items-center justify-center border`}
+                      style={{ borderColor: signature.color + '40' }}
+                    >
+                      <ProjectIcon className="w-7 h-7" style={{ color: signature.color }} />
+                    </div>
+                  </div>
+                  <p className="text-xs font-medium text-center text-foreground leading-snug" style={{ textWrap: 'balance', wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {getShortName(project.title)}
                   </p>
                   {isOwner && (
                     <div className="absolute top-1 right-1 opacity-0 hover:opacity-100">
@@ -784,7 +930,8 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
       <div className="md:hidden overflow-x-auto pb-3 px-4">
         <div className="flex gap-4 min-w-min">
           {filteredProjects.map((project) => {
-            const ProjectIcon = getProjectIcon(project);
+            const signature = getProjectSignature(project);
+            const ProjectIcon = signature.icon;
             
             return (
               <div
@@ -793,11 +940,25 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                   setSelectedProject(project);
                   setIsSheetOpen(true);
                 }}
-                className="flex-shrink-0 w-28 h-28 rounded-xl bg-card/80 backdrop-blur-md border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-primary/50 cursor-pointer flex flex-col items-center justify-center gap-2 p-3"
+                className={`flex-shrink-0 w-28 h-28 rounded-xl bg-card/80 backdrop-blur-md border-2 transition-all duration-300 shadow-lg cursor-pointer flex flex-col items-center justify-center gap-2 p-3 ${signature.shadow}`}
+                style={{ 
+                  borderColor: signature.color + '80',
+                }}
               >
-                <ProjectIcon className="w-10 h-10 text-primary" />
-                <p className="text-xs font-medium text-center text-foreground leading-tight line-clamp-2">
-                  {project.title}
+                <div className="relative">
+                  <div 
+                    className={`absolute inset-0 blur-md opacity-50 rounded-lg bg-gradient-to-br ${signature.gradient}`}
+                    style={{ transform: 'scale(1.2)' }}
+                  />
+                  <div 
+                    className={`relative w-12 h-12 rounded-lg bg-gradient-to-br ${signature.gradient} backdrop-blur-sm flex items-center justify-center border`}
+                    style={{ borderColor: signature.color + '40' }}
+                  >
+                    <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />
+                  </div>
+                </div>
+                <p className="text-xs font-medium text-center text-foreground leading-snug" style={{ textWrap: 'balance', wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {getShortName(project.title)}
                 </p>
               </div>
             );
@@ -809,98 +970,173 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
       {selectedProject && (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-3">
-                {(() => {
-                  const ProjectIcon = getProjectIcon(selectedProject);
-                  return (
-                    <>
-                      <div className="w-12 h-12 rounded-xl bg-primary/20 border-2 border-primary/50 flex items-center justify-center">
-                        <ProjectIcon className="w-6 h-6 text-primary" />
+            {(() => {
+              const signature = getProjectSignature(selectedProject);
+              const ProjectIcon = signature.icon;
+              return (
+                <>
+                  {/* Signature color header strip */}
+                  <div 
+                    className="absolute top-0 left-0 right-0 h-1"
+                    style={{ background: `linear-gradient(to right, ${signature.color}, ${signature.color}80)` }}
+                  />
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-3 pt-2">
+                      <div 
+                        className={`relative w-12 h-12 rounded-xl backdrop-blur-sm flex items-center justify-center border-2`}
+                        style={{ 
+                          background: `linear-gradient(to br, ${signature.color}20, ${signature.color}10)`,
+                          borderColor: signature.color + '50'
+                        }}
+                      >
+                        <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />
                       </div>
                       <span className="text-left">{selectedProject.title}</span>
-                    </>
-                  );
-                })()}
-              </SheetTitle>
-              <SheetDescription className="text-left pt-2">
-                {selectedProject.description}
-              </SheetDescription>
-            </SheetHeader>
+                    </SheetTitle>
+                    <SheetDescription className="text-left pt-2">
+                      {selectedProject.description}
+                    </SheetDescription>
+                    
+                    {/* Enriched project details */}
+                    {agenticProjectDetails[selectedProject.title] && (
+                      <div className="space-y-4 pt-4 text-left">
+                        {/* Key Features */}
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-4 h-4" style={{ color: signature.color }} />
+                            <h4 className="text-sm font-semibold" style={{ color: signature.color }}>Key features</h4>
+                          </div>
+                          <ul className="space-y-2">
+                            {agenticProjectDetails[selectedProject.title].keyFeatures.map((feature, idx) => (
+                              <li key={idx} className="text-sm text-muted-foreground leading-relaxed flex gap-2">
+                                <span style={{ color: signature.color }}>•</span>
+                                <span>{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        {/* Architecture */}
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Cpu className="w-4 h-4" style={{ color: signature.color }} />
+                            <h4 className="text-sm font-semibold" style={{ color: signature.color }}>Architecture</h4>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {agenticProjectDetails[selectedProject.title].architecture}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </SheetHeader>
 
-            <div className="space-y-6 py-6">
-              {/* Category & Provider */}
-              <div className="flex flex-wrap gap-2">
-                {selectedProject.project_type && (
-                  <Badge variant="outline" className="border-primary/50 text-primary">
-                    {selectedProject.project_type}
-                  </Badge>
-                )}
-                {selectedProject.llm_provider && (
-                  <Badge variant="secondary">
-                    {selectedProject.llm_provider}
-                  </Badge>
-                )}
-              </div>
+                  <div className="space-y-6 py-6">
+                    {/* Category & Provider */}
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProject.project_type && (
+                        <Badge 
+                          variant="outline" 
+                          style={{ 
+                            borderColor: signature.color + '50',
+                            color: signature.color
+                          }}
+                        >
+                          {selectedProject.project_type}
+                        </Badge>
+                      )}
+                      {selectedProject.llm_provider && (
+                        <Badge variant="secondary">
+                          {selectedProject.llm_provider}
+                        </Badge>
+                      )}
+                    </div>
 
-              {/* Use Case */}
-              {selectedProject.use_case && (
-                <div className="bg-primary/10 backdrop-blur-sm rounded-xl p-4 border border-primary/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-primary" />
-                    <h4 className="text-sm font-semibold text-primary">Use Case</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{selectedProject.use_case}</p>
-                </div>
-              )}
-
-              {/* Technologies */}
-              {selectedProject.technologies && selectedProject.technologies.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Technologies</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.technologies.map((tech) => (
-                      <span
-                        key={tech}
-                        className="text-xs px-3 py-1.5 rounded-full bg-secondary/60 text-foreground border border-border font-medium"
+                    {/* Use Case */}
+                    {selectedProject.use_case && (
+                      <div 
+                        className="backdrop-blur-sm rounded-xl p-4 border"
+                        style={{ 
+                          background: `${signature.color}10`,
+                          borderColor: signature.color + '30'
+                        }}
                       >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap className="w-4 h-4" style={{ color: signature.color }} />
+                          <h4 className="text-sm font-semibold" style={{ color: signature.color }}>Use Case</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{selectedProject.use_case}</p>
+                      </div>
+                    )}
 
-              {/* Links */}
-              {(selectedProject.github_url || selectedProject.demo_url || selectedProject.documentation_url) && (
-                <div className="flex flex-col gap-3 pt-4 border-t border-border">
-                  {selectedProject.github_url && (
-                    <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/80 hover:opacity-90">
-                      <a href={selectedProject.github_url} target="_blank" rel="noopener noreferrer">
-                        <Github className="w-5 h-5 mr-2" />
-                        Source Code
-                      </a>
-                    </Button>
-                  )}
-                  {selectedProject.demo_url && (
-                    <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/80 hover:opacity-90">
-                      <a href={selectedProject.demo_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="w-5 h-5 mr-2" />
-                        Live Demo
-                      </a>
-                    </Button>
-                  )}
-                  {selectedProject.documentation_url && (
-                    <Button asChild variant="outline" className="w-full border-primary/50">
-                      <a href={selectedProject.documentation_url} target="_blank" rel="noopener noreferrer">
-                        <FileText className="w-5 h-5 mr-2" />
-                        Documentation
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
+                    {/* Technologies */}
+                    {selectedProject.technologies && selectedProject.technologies.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3">Technologies</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProject.technologies.map((tech) => (
+                            <span
+                              key={tech}
+                              className="text-xs px-3 py-1.5 rounded-full bg-secondary/60 text-foreground border border-border font-medium"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Links */}
+                    {(selectedProject.github_url || selectedProject.demo_url || selectedProject.documentation_url) && (
+                      <div className="flex flex-col gap-3 pt-4 border-t border-border">
+                        {selectedProject.github_url && (
+                          <Button 
+                            asChild 
+                            className="w-full hover:opacity-90"
+                            style={{ 
+                              background: `linear-gradient(to r, ${signature.color}, ${signature.color}cc)`
+                            }}
+                          >
+                            <a href={selectedProject.github_url} target="_blank" rel="noopener noreferrer">
+                              <Github className="w-5 h-5 mr-2" />
+                              Source Code
+                            </a>
+                          </Button>
+                        )}
+                        {selectedProject.demo_url && (
+                          <Button 
+                            asChild 
+                            className="w-full hover:opacity-90"
+                            style={{ 
+                              background: `linear-gradient(to r, ${signature.color}, ${signature.color}cc)`
+                            }}
+                          >
+                            <a href={selectedProject.demo_url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-5 h-5 mr-2" />
+                              Live Demo
+                            </a>
+                          </Button>
+                        )}
+                        {selectedProject.documentation_url && (
+                          <Button 
+                            asChild 
+                            variant="outline" 
+                            className="w-full"
+                            style={{ 
+                              borderColor: signature.color + '50'
+                            }}
+                          >
+                            <a href={selectedProject.documentation_url} target="_blank" rel="noopener noreferrer">
+                              <FileText className="w-5 h-5 mr-2" />
+                              Documentation
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </SheetContent>
         </Sheet>
       )}

@@ -15,6 +15,7 @@
 // Allowed origins - only the portfolio domain and local development
 const ALLOWED_ORIGINS = [
   'https://ritvik-portfolio.lovable.app',
+  'https://ritvik-portfolio.pages.dev',
   'https://ritvikindupuri.com',
   'https://www.ritvikindupuri.com',
   'http://localhost:5173',
@@ -63,7 +64,8 @@ export function getCorsHeaders(requestOrigin: string | null): Record<string, str
       (allowed) =>
         requestOrigin === allowed ||
         requestOrigin.endsWith('.lovable.app') ||
-        requestOrigin.endsWith('.lovableproject.com')
+        requestOrigin.endsWith('.lovableproject.com') ||
+        requestOrigin.endsWith('.ritvik-portfolio.pages.dev')
     )
       ? requestOrigin
       : ALLOWED_ORIGINS[0];
@@ -89,7 +91,10 @@ export function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
   return ALLOWED_ORIGINS.some(
     (allowed) =>
-      origin === allowed || origin.endsWith('.lovable.app') || origin.endsWith('.lovableproject.com')
+      origin === allowed || 
+      origin.endsWith('.lovable.app') || 
+      origin.endsWith('.lovableproject.com') ||
+      origin.endsWith('.ritvik-portfolio.pages.dev')
   );
 }
 
