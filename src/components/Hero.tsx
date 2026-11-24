@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, BarChart3, User, Briefcase, Award, FolderOpen, Mail, Shield, BookOpen, Cpu, Sparkles, GitPullRequest } from "lucide-react";
+import { Camera, Github, Linkedin, Brain, Lock, ZoomIn, ZoomOut, X, BarChart3, User, Briefcase, Award, FolderOpen, Mail, Shield, BookOpen, Cpu, Sparkles, GitPullRequest, Wrench } from "lucide-react";
 import cyberBg from "@/assets/cyber-bg.jpg";
 import purdueLogo from "@/assets/purdue-logo.svg";
 import Cropper from "react-easy-crop";
@@ -35,10 +35,10 @@ const tableOfContents = [
     color: "text-green-400",
   },
   {
-    id: "ml-section",
-    label: "AI/ML",
-    icon: Brain,
-    tooltip: "View my machine learning models and LLM/AI engineering projects with real-world applications.",
+    id: "security-tools-section",
+    label: "Security Tools",
+    icon: Wrench,
+    tooltip: "Open-source security tools for AI agents and cloud infrastructure — honeypots, skill scanners, and threat detection.",
     color: "text-purple-400",
   },
   {

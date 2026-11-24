@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  User, Cpu, Brain, Sparkles, Briefcase, FolderOpen, 
+  User, Cpu, Wrench, Sparkles, Briefcase, FolderOpen, 
   Award, BookOpen, Shield, Mail, ChevronUp, GitPullRequest
 } from "lucide-react";
 import {
@@ -15,7 +15,7 @@ import { useChatbot } from "@/contexts/ChatbotContext";
 const sections = [
   { id: "about-section", label: "About", icon: User, color: "bg-blue-500" },
   { id: "skills-section", label: "Skills", icon: Cpu, color: "bg-green-500" },
-  { id: "ml-section", label: "AI/ML", icon: Brain, color: "bg-purple-500" },
+  { id: "security-tools-section", label: "Security Tools", icon: Wrench, color: "bg-purple-500" },
   { id: "featured-projects-section", label: "Featured", icon: Sparkles, color: "bg-yellow-500" },
   { id: "experience-section", label: "Experience", icon: Briefcase, color: "bg-orange-500" },
   { id: "projects-section", label: "Projects", icon: FolderOpen, color: "bg-cyan-500" },
