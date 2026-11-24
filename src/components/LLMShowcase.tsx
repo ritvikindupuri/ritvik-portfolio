@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database } from "lucide-react";
+import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database, Cloud, Radar, ShieldCheck, Crosshair, Eye, Boxes, Bug, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -270,8 +270,9 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const [editingProject, setEditingProject] = useState<LLMProject | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [showAll, setShowAll] = useState(false);
-  const [detailsProject, setDetailsProject] = useState<LLMProject | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [isHovering, setIsHovering] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
   // Get unique project types for filter
   const categories = ["all", ...new Set(projects.map(p => p.project_type).filter(Boolean))] as string[];
@@ -301,6 +302,28 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  // Auto-select first project when projects load
+  useEffect(() => {
+    if (filteredProjects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(filteredProjects[0].id);
+    }
+  }, [filteredProjects]);
+
+  // Auto-advance spotlight every 6s unless hovering
+  useEffect(() => {
+    if (isHovering || filteredProjects.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setSelectedProjectId(current => {
+        const currentIndex = filteredProjects.findIndex(p => p.id === current);
+        const nextIndex = (currentIndex + 1) % filteredProjects.length;
+        return filteredProjects[nextIndex].id;
+      });
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [isHovering, filteredProjects]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -479,36 +502,82 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     setFormData({ ...formData, technologies: formData.technologies.filter(t => t !== tech) });
   };
 
-  const getCategoryIcon = (projectType: string | null) => {
-    switch (projectType) {
-      case 'Agentic Workflow': return Workflow;
-      case 'Multi-Agent System': return Network;
-      case 'Tool-Use Agent': return Bot;
-      case 'RAG System': return Database;
-      case 'AI Agent': return Sparkles;
-      default: return Layers;
-    }
+  const getProjectIcon = (project: LLMProject) => {
+    const text = `${project.title} ${project.use_case || ''} ${project.description}`.toLowerCase();
+    if (text.includes('cloud')) return Cloud;
+    if (text.includes('intrusion') || text.includes('detection')) return Radar;
+    if (text.includes('firewall') || text.includes('containment')) return ShieldCheck;
+    if (text.includes('pentest') || text.includes('assessment')) return Crosshair;
+    if (text.includes('threat intel')) return Eye;
+    if (text.includes('orchestrator') || text.includes('falcon')) return Workflow;
+    if (text.includes('kubernetes') || text.includes('karma')) return Boxes;
+    if (text.includes('bot traffic') || text.includes('chaff')) return Bug;
+    if (text.includes('graph') || text.includes('traceveil')) return Network;
+    if (text.includes('aegis')) return Shield;
+    return Sparkles;
   };
 
-  const getCategoryColor = (projectType: string | null) => {
-    switch (projectType) {
-      case 'Agentic Workflow': return { from: 'from-violet-500/20', to: 'to-purple-500/20', border: 'border-violet-500/30', glow: 'hover:shadow-violet-500/20', text: 'text-violet-400', bg: 'bg-violet-500/10' };
-      case 'Multi-Agent System': return { from: 'from-blue-500/20', to: 'to-cyan-500/20', border: 'border-blue-500/30', glow: 'hover:shadow-blue-500/20', text: 'text-blue-400', bg: 'bg-blue-500/10' };
-      case 'Tool-Use Agent': return { from: 'from-emerald-500/20', to: 'to-teal-500/20', border: 'border-emerald-500/30', glow: 'hover:shadow-emerald-500/20', text: 'text-emerald-400', bg: 'bg-emerald-500/10' };
-      case 'RAG System': return { from: 'from-amber-500/20', to: 'to-orange-500/20', border: 'border-amber-500/30', glow: 'hover:shadow-amber-500/20', text: 'text-amber-400', bg: 'bg-amber-500/10' };
-      case 'AI Agent': return { from: 'from-pink-500/20', to: 'to-rose-500/20', border: 'border-pink-500/30', glow: 'hover:shadow-pink-500/20', text: 'text-pink-400', bg: 'bg-pink-500/10' };
-      default: return { from: 'from-accent/20', to: 'to-primary/20', border: 'border-accent/30', glow: 'hover:shadow-accent/20', text: 'text-accent', bg: 'bg-accent/10' };
-    }
+  const accentPalette = ['cyan', 'violet', 'emerald', 'amber', 'rose', 'sky', 'fuchsia', 'lime'];
+  
+  const getProjectAccent = (index: number) => {
+    const color = accentPalette[index % accentPalette.length];
+    const colorMap: Record<string, any> = {
+      cyan: { 
+        from: 'from-cyan-500', to: 'to-cyan-600', 
+        bg: 'bg-cyan-500/20', border: 'border-cyan-500/50',
+        text: 'text-cyan-400', glow: 'shadow-cyan-500/50',
+        dot: 'bg-cyan-500'
+      },
+      violet: { 
+        from: 'from-violet-500', to: 'to-violet-600', 
+        bg: 'bg-violet-500/20', border: 'border-violet-500/50',
+        text: 'text-violet-400', glow: 'shadow-violet-500/50',
+        dot: 'bg-violet-500'
+      },
+      emerald: { 
+        from: 'from-emerald-500', to: 'to-emerald-600', 
+        bg: 'bg-emerald-500/20', border: 'border-emerald-500/50',
+        text: 'text-emerald-400', glow: 'shadow-emerald-500/50',
+        dot: 'bg-emerald-500'
+      },
+      amber: { 
+        from: 'from-amber-500', to: 'to-amber-600', 
+        bg: 'bg-amber-500/20', border: 'border-amber-500/50',
+        text: 'text-amber-400', glow: 'shadow-amber-500/50',
+        dot: 'bg-amber-500'
+      },
+      rose: { 
+        from: 'from-rose-500', to: 'to-rose-600', 
+        bg: 'bg-rose-500/20', border: 'border-rose-500/50',
+        text: 'text-rose-400', glow: 'shadow-rose-500/50',
+        dot: 'bg-rose-500'
+      },
+      sky: { 
+        from: 'from-sky-500', to: 'to-sky-600', 
+        bg: 'bg-sky-500/20', border: 'border-sky-500/50',
+        text: 'text-sky-400', glow: 'shadow-sky-500/50',
+        dot: 'bg-sky-500'
+      },
+      fuchsia: { 
+        from: 'from-fuchsia-500', to: 'to-fuchsia-600', 
+        bg: 'bg-fuchsia-500/20', border: 'border-fuchsia-500/50',
+        text: 'text-fuchsia-400', glow: 'shadow-fuchsia-500/50',
+        dot: 'bg-fuchsia-500'
+      },
+      lime: { 
+        from: 'from-lime-500', to: 'to-lime-600', 
+        bg: 'bg-lime-500/20', border: 'border-lime-500/50',
+        text: 'text-lime-400', glow: 'shadow-lime-500/50',
+        dot: 'bg-lime-500'
+      },
+    };
+    return colorMap[color];
   };
 
-  const getBentoSize = (index: number) => {
-    // First card is hero (2x2), then mixed sizes
-    if (index === 0) return 'md:col-span-2 md:row-span-2';
-    // Some 2-wide cards
-    if (index % 5 === 1 || index % 7 === 3) return 'md:col-span-2';
-    // Rest are 1-wide
-    return 'md:col-span-1';
-  };
+  const selectedProject = filteredProjects.find(p => p.id === selectedProjectId) || filteredProjects[0];
+  const selectedIndex = filteredProjects.findIndex(p => p.id === selectedProjectId);
+  const selectedAccent = selectedProject ? getProjectAccent(selectedIndex) : getProjectAccent(0);
+  const SelectedIcon = selectedProject ? getProjectIcon(selectedProject) : Sparkles;
 
   return (
     <div className="space-y-8">
@@ -527,284 +596,255 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
 
       {/* Category Filter - Segmented Pill Control */}
       {categories.length > 2 && (
-        <div className="inline-flex p-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/40 shadow-lg mx-auto">
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => {
-                setSelectedCategory(category);
-                setShowAll(false);
-              }}
-              className={`px-4 py-2 text-xs font-medium rounded-full transition-all duration-300 ${
-                selectedCategory === category
-                  ? 'bg-gradient-to-r from-accent/90 to-primary/90 text-white shadow-lg'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {category === "all" ? "All" : category}
-            </button>
-          ))}
+        <div className="flex justify-center">
+          <div className="inline-flex p-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/40 shadow-lg">
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => {
+                  setSelectedCategory(category);
+                }}
+                className={`px-4 py-2 text-xs font-medium rounded-full transition-all duration-300 ${
+                  selectedCategory === category
+                    ? 'bg-gradient-to-r from-accent/90 to-primary/90 text-white shadow-lg'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {category === "all" ? "All" : category}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Bento-Style Asymmetric Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto auto-rows-fr">
-        {(showAll ? filteredProjects : filteredProjects.slice(0, 6)).map((project, index) => {
-          const CategoryIcon = getCategoryIcon(project.project_type);
-          const colors = getCategoryColor(project.project_type);
-          const bentoSize = getBentoSize(index);
-          const isHero = index === 0;
-          
-          return (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: index * 0.08 }}
-              className={`group relative ${bentoSize} cursor-pointer`}
-              onClick={() => setDetailsProject(project)}
-            >
-              <div className={`relative h-full bg-gradient-to-br ${colors.from} ${colors.to} backdrop-blur-md border ${colors.border} rounded-2xl overflow-hidden transition-all duration-500 ${colors.glow} hover:shadow-2xl hover:-translate-y-1`}>
-                <div className={`h-1 bg-gradient-to-r ${colors.from} ${colors.to}`} />
-                
-                <div className={`p-6 space-y-4 h-full flex flex-col ${isHero ? 'justify-center' : ''}`}>
-                  {/* Owner Edit Controls */}
-                  {isOwner && (
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingProject(project);
-                          const isCustomProjectType = project.project_type && !projectTypes.includes(project.project_type);
-                          const isCustomProvider = project.llm_provider && !llmProviders.includes(project.llm_provider);
-                          const isCustomUseCase = project.use_case && !useCases.includes(project.use_case);
-                          
-                          setFormData({
-                            title: project.title,
-                            description: project.description,
-                            project_type: isCustomProjectType ? "Other" : (project.project_type || ""),
-                            project_type_custom: isCustomProjectType ? project.project_type : "",
-                            llm_provider: isCustomProvider ? "Other" : (project.llm_provider || ""),
-                            llm_provider_custom: isCustomProvider ? project.llm_provider : "",
-                            use_case: isCustomUseCase ? "Other" : (project.use_case || ""),
-                            use_case_custom: isCustomUseCase ? project.use_case : "",
-                            github_url: project.github_url || "",
-                            demo_url: project.demo_url || "",
-                            documentation_url: project.documentation_url || "",
-                            technologies: project.technologies || [],
-                          });
-                          setIsAddDialogOpen(true);
-                        }}
-                        className="bg-background/90 hover:bg-background text-foreground rounded-lg p-1.5 transition-colors backdrop-blur-sm"
-                        title="Edit"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemove(project.id);
-                        }}
-                        className="bg-background/90 hover:bg-destructive text-destructive hover:text-white rounded-lg p-1.5 transition-colors backdrop-blur-sm"
-                        title="Delete"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Category Icon - Bigger on hero */}
-                  <div className={`${colors.bg} border ${colors.border} rounded-xl flex items-center justify-center ${isHero ? 'w-20 h-20' : 'w-12 h-12'}`}>
-                    <CategoryIcon className={`${colors.text} ${isHero ? 'w-10 h-10' : 'w-6 h-6'}`} />
+      {/* Interactive Spotlight Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 max-w-7xl mx-auto">
+        {/* Left: Project List */}
+        <div className="hidden lg:block space-y-2 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          {filteredProjects.map((project, index) => {
+            const ProjectIcon = getProjectIcon(project);
+            const accent = getProjectAccent(index);
+            const isSelected = selectedProjectId === project.id;
+            
+            return (
+              <motion.button
+                key={project.id}
+                onClick={() => setSelectedProjectId(project.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedProjectId(project.id);
+                  }
+                }}
+                className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left w-full ${
+                  isSelected 
+                    ? `${accent.bg} ${accent.border} border backdrop-blur-sm` 
+                    : 'hover:bg-secondary/50 border border-transparent'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-lg ${accent.bg} ${accent.border} border flex-shrink-0 flex items-center justify-center`}>
+                  <ProjectIcon className={`w-5 h-5 ${accent.text}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-foreground truncate">
+                    {project.title}
                   </div>
+                </div>
+                <div className={`w-2 h-2 rounded-full ${accent.dot} ${isSelected ? 'opacity-100' : 'opacity-30'}`} />
+              </motion.button>
+            );
+          })}
+        </div>
 
-                  {/* Title and Category */}
-                  <div className="space-y-2">
-                    <h4 className={`font-bold leading-tight ${colors.text} ${isHero ? 'text-2xl md:text-3xl' : 'text-lg'}`}>
-                      {project.title}
-                    </h4>
-                    {project.project_type && (
-                      <span className={`inline-block text-xs px-2.5 py-1 rounded-full ${colors.bg} ${colors.text} border ${colors.border} font-medium`}>
-                        {project.project_type}
+        {/* Mobile: Horizontal Swipeable Chips */}
+        <div className="lg:hidden overflow-x-auto pb-3">
+          <div className="flex gap-2 min-w-min px-1">
+            {filteredProjects.map((project, index) => {
+              const ProjectIcon = getProjectIcon(project);
+              const accent = getProjectAccent(index);
+              const isSelected = selectedProjectId === project.id;
+              
+              return (
+                <button
+                  key={project.id}
+                  onClick={() => setSelectedProjectId(project.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-300 whitespace-nowrap ${
+                    isSelected
+                      ? `${accent.bg} ${accent.border} border ${accent.text}`
+                      : 'bg-secondary/50 text-muted-foreground border border-transparent'
+                  }`}
+                >
+                  <ProjectIcon className="w-4 h-4" />
+                  <span className="text-sm font-medium">{project.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right: Showcase Panel */}
+        {selectedProject && (
+          <motion.div
+            key={selectedProjectId}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative"
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setCursorPosition({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+              });
+            }}
+          >
+            <div className={`relative min-h-[500px] rounded-3xl overflow-hidden backdrop-blur-sm border-2 ${selectedAccent.border} ${selectedAccent.glow} shadow-2xl transition-all duration-500`}>
+              {/* Animated gradient mesh background */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${selectedAccent.from}/20 ${selectedAccent.to}/20 opacity-60`} />
+              <div 
+                className={`absolute inset-0 bg-gradient-radial ${selectedAccent.from}/30 ${selectedAccent.to}/30 opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none`}
+                style={{
+                  background: `radial-gradient(circle 300px at ${cursorPosition.x}px ${cursorPosition.y}px, currentColor, transparent)`,
+                }}
+              />
+              
+              {/* Noise/grid texture */}
+              <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
+              
+              {/* Content */}
+              <div className="relative z-10 p-8 md:p-12 space-y-6">
+                {/* Owner Controls */}
+                {isOwner && (
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingProject(selectedProject);
+                        const isCustomProjectType = selectedProject.project_type && !projectTypes.includes(selectedProject.project_type);
+                        const isCustomProvider = selectedProject.llm_provider && !llmProviders.includes(selectedProject.llm_provider);
+                        const isCustomUseCase = selectedProject.use_case && !useCases.includes(selectedProject.use_case);
+                        
+                        setFormData({
+                          title: selectedProject.title,
+                          description: selectedProject.description,
+                          project_type: isCustomProjectType ? "Other" : (selectedProject.project_type || ""),
+                          project_type_custom: isCustomProjectType ? selectedProject.project_type : "",
+                          llm_provider: isCustomProvider ? "Other" : (selectedProject.llm_provider || ""),
+                          llm_provider_custom: isCustomProvider ? selectedProject.llm_provider : "",
+                          use_case: isCustomUseCase ? "Other" : (selectedProject.use_case || ""),
+                          use_case_custom: isCustomUseCase ? selectedProject.use_case : "",
+                          github_url: selectedProject.github_url || "",
+                          demo_url: selectedProject.demo_url || "",
+                          documentation_url: selectedProject.documentation_url || "",
+                          technologies: selectedProject.technologies || [],
+                        });
+                        setIsAddDialogOpen(true);
+                      }}
+                      className="bg-background/90 hover:bg-background backdrop-blur-sm text-foreground rounded-lg p-2 transition-colors"
+                      title="Edit"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    </button>
+                    <button
+                      onClick={() => handleRemove(selectedProject.id)}
+                      className="bg-background/90 hover:bg-destructive backdrop-blur-sm text-destructive hover:text-white rounded-lg p-2 transition-colors"
+                      title="Delete"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Large Icon */}
+                <div className={`w-20 h-20 rounded-2xl ${selectedAccent.bg} ${selectedAccent.border} border-2 flex items-center justify-center backdrop-blur-sm`}>
+                  <SelectedIcon className={`w-10 h-10 ${selectedAccent.text}`} />
+                </div>
+
+                {/* Title */}
+                <div className="space-y-3">
+                  <h4 className={`text-3xl md:text-4xl font-bold leading-tight ${selectedAccent.text}`}>
+                    {selectedProject.title}
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProject.project_type && (
+                      <span className={`inline-block text-xs px-3 py-1.5 rounded-full ${selectedAccent.bg} ${selectedAccent.text} ${selectedAccent.border} border font-medium`}>
+                        {selectedProject.project_type}
+                      </span>
+                    )}
+                    {selectedProject.llm_provider && (
+                      <span className="inline-block text-xs px-3 py-1.5 rounded-full bg-secondary/80 text-muted-foreground border border-border font-medium backdrop-blur-sm">
+                        {selectedProject.llm_provider}
                       </span>
                     )}
                   </div>
-
-                  {/* Description - 2 lines for regular, impact line for hero */}
-                  <p className={`text-muted-foreground leading-relaxed ${isHero ? 'text-base md:text-lg font-medium' : 'text-sm line-clamp-2'}`}>
-                    {isHero && project.use_case ? project.use_case : project.description}
-                  </p>
-
-                  {/* Links */}
-                  {(project.github_url || project.demo_url) && (
-                    <div className="flex gap-2 mt-auto pt-4">
-                      {project.github_url && (
-                        <Button
-                          asChild
-                          size={isHero ? "default" : "sm"}
-                          variant="outline"
-                          className="flex-1 gap-2"
-                          onClick={(e: any) => e.stopPropagation()}
-                        >
-                          <a href={project.github_url} target="_blank" rel="noopener noreferrer">
-                            <Github className="w-4 h-4" />
-                            Code
-                          </a>
-                        </Button>
-                      )}
-                      {project.demo_url && (
-                        <Button
-                          asChild
-                          size={isHero ? "default" : "sm"}
-                          variant="outline"
-                          className="flex-1 gap-2"
-                          onClick={(e: any) => e.stopPropagation()}
-                        >
-                          <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="w-4 h-4" />
-                            Demo
-                          </a>
-                        </Button>
-                      )}
-                    </div>
-                  )}
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
 
-      {/* Project Details Modal */}
-      {detailsProject && (
-        <Dialog open={!!detailsProject} onOpenChange={() => setDetailsProject(null)}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3">
-                {(() => {
-                  const CategoryIcon = getCategoryIcon(detailsProject.project_type);
-                  const colors = getCategoryColor(detailsProject.project_type);
-                  return (
-                    <>
-                      <div className={`${colors.bg} border ${colors.border} rounded-xl p-2`}>
-                        <CategoryIcon className={`${colors.text} w-6 h-6`} />
-                      </div>
-                      <span>{detailsProject.title}</span>
-                    </>
-                  );
-                })()}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-6 py-4">
-              {/* Category & Provider */}
-              <div className="flex flex-wrap gap-2">
-                {detailsProject.project_type && (
-                  <span className={`inline-block text-xs px-3 py-1.5 rounded-full ${getCategoryColor(detailsProject.project_type).bg} ${getCategoryColor(detailsProject.project_type).text} border ${getCategoryColor(detailsProject.project_type).border} font-medium`}>
-                    {detailsProject.project_type}
-                  </span>
-                )}
-                {detailsProject.llm_provider && (
-                  <span className="inline-block text-xs px-3 py-1.5 rounded-full bg-secondary text-muted-foreground border border-border font-medium">
-                    {detailsProject.llm_provider}
-                  </span>
-                )}
-              </div>
-
-              {/* Full Description */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2">Description</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {detailsProject.description}
+                {/* Impact Description */}
+                <p className="text-base md:text-lg text-foreground/90 leading-relaxed max-w-2xl">
+                  {selectedProject.description}
                 </p>
-              </div>
 
-              {/* Use Case */}
-              {detailsProject.use_case && (
-                <div className="bg-accent/10 rounded-lg px-4 py-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-accent" />
-                    <h4 className="text-sm font-semibold text-accent">Use Case</h4>
+                {/* Use Case */}
+                {selectedProject.use_case && (
+                  <div className={`${selectedAccent.bg} backdrop-blur-sm rounded-xl p-4 border ${selectedAccent.border}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className={`w-4 h-4 ${selectedAccent.text}`} />
+                      <h5 className={`text-sm font-semibold ${selectedAccent.text}`}>Use Case</h5>
+                    </div>
+                    <p className="text-sm text-foreground/80">{selectedProject.use_case}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {detailsProject.use_case}
-                  </p>
-                </div>
-              )}
+                )}
 
-              {/* Technologies */}
-              {detailsProject.technologies && detailsProject.technologies.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Technologies</h4>
+                {/* Technologies */}
+                {selectedProject.technologies && selectedProject.technologies.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {detailsProject.technologies.map((tech) => (
+                    {selectedProject.technologies.map((tech) => (
                       <span
                         key={tech}
-                        className="text-xs px-3 py-1.5 rounded-full bg-secondary/50 text-foreground border border-border font-medium"
+                        className="text-xs px-3 py-1.5 rounded-full bg-secondary/60 backdrop-blur-sm text-foreground border border-border font-medium"
                       >
                         {tech}
                       </span>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Links */}
-              {(detailsProject.github_url || detailsProject.demo_url || detailsProject.documentation_url) && (
-                <div className="flex gap-3 pt-4 border-t border-border">
-                  {detailsProject.github_url && (
-                    <Button asChild variant="outline" className="flex-1 gap-2">
-                      <a href={detailsProject.github_url} target="_blank" rel="noopener noreferrer">
-                        <Github className="w-4 h-4" />
-                        Source Code
-                      </a>
-                    </Button>
-                  )}
-                  {detailsProject.demo_url && (
-                    <Button asChild variant="outline" className="flex-1 gap-2">
-                      <a href={detailsProject.demo_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="w-4 h-4" />
-                        Live Demo
-                      </a>
-                    </Button>
-                  )}
-                  {detailsProject.documentation_url && (
-                    <Button asChild variant="outline" className="flex-1 gap-2">
-                      <a href={detailsProject.documentation_url} target="_blank" rel="noopener noreferrer">
-                        <FileText className="w-4 h-4" />
-                        Documentation
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              )}
+                {/* Gradient-filled Buttons */}
+                {(selectedProject.github_url || selectedProject.demo_url) && (
+                  <div className="flex gap-3 pt-4">
+                    {selectedProject.github_url && (
+                      <Button
+                        asChild
+                        size="lg"
+                        className={`bg-gradient-to-r ${selectedAccent.from} ${selectedAccent.to} hover:opacity-90 text-white border-0 shadow-lg ${selectedAccent.glow} transition-all duration-300`}
+                      >
+                        <a href={selectedProject.github_url} target="_blank" rel="noopener noreferrer">
+                          <Github className="w-5 h-5 mr-2" />
+                          Source Code
+                        </a>
+                      </Button>
+                    )}
+                    {selectedProject.demo_url && (
+                      <Button
+                        asChild
+                        size="lg"
+                        className={`bg-gradient-to-r ${selectedAccent.from} ${selectedAccent.to} hover:opacity-90 text-white border-0 shadow-lg ${selectedAccent.glow} transition-all duration-300`}
+                      >
+                        <a href={selectedProject.demo_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-5 h-5 mr-2" />
+                          Live Demo
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+          </motion.div>
+        )}
+      </div>
 
-      {/* Show All / Show Less Button */}
-      {filteredProjects.length > 6 && (
-        <div className="flex justify-center mt-8">
-          <Button
-            onClick={() => setShowAll(!showAll)}
-            variant="outline"
-            className="gap-2"
-          >
-            {showAll ? (
-              <>
-                Show less
-                <ChevronDown className="w-4 h-4 rotate-180" />
-              </>
-            ) : (
-              <>
-                Show all {filteredProjects.length} projects
-                <ChevronDown className="w-4 h-4" />
-              </>
-            )}
-          </Button>
-        </div>
-      )}
 
       {projects.length === 0 && !isOwner && (
         <div className="text-center py-12 text-muted-foreground">
