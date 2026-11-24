@@ -622,7 +622,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     };
     if (title.includes('aegis')) return { 
       icon: Shield, 
-      logo: '/project-logos/aegis.png?v=2', 
+      logo: '/project-logos/aegis.png?v=3', 
       color: '#6366f1', // indigo
       gradient: 'from-indigo-500/20 to-indigo-600/10',
       shadow: 'shadow-indigo-500/30'
