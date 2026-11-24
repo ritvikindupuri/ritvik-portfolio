@@ -295,3 +295,95 @@
 .same-ip-popup .mapboxgl-popup-tip {
   border-top-color: hsl(230 25% 9%);
 }
+/* ---------- Agentic Security Systems: per-logo effects (ProjectLogo.tsx) ---------- */
+.logo-fx { --fx: 1; }
+.group:hover .logo-fx, .group:focus-visible .logo-fx { --fx: 1.7; }
+
+@keyframes logo-fx-glow {
+  0%, 100% { filter: drop-shadow(0 0 calc(1px * var(--fx)) var(--fx-glow)); }
+  50% { filter: drop-shadow(0 0 calc(4px * var(--fx)) var(--fx-glow)); }
+}
+.logo-fx-cloudpilot .logo-fx-img { --fx-glow: rgba(255, 153, 0, 0.6); animation: logo-fx-glow 3.2s ease-in-out infinite; }
+.logo-fx-spectra .logo-fx-img { --fx-glow: rgba(196, 70, 237, 0.65); animation: logo-fx-glow 3.8s ease-in-out infinite; }
+.logo-fx-traceveil .logo-fx-img { --fx-glow: rgba(20, 220, 195, 0.55); animation: logo-fx-glow 4.2s ease-in-out infinite; }
+
+/* STRATA: inner core glow pulse */
+.logo-fx-strata-core {
+  position: absolute; left: 50%; top: 50%; width: 30%; height: 30%;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255, 224, 150, 0.95) 0%, rgba(255, 210, 130, 0.35) 45%, rgba(255, 210, 130, 0) 70%);
+  mix-blend-mode: screen;
+  animation: logo-fx-core 2.8s ease-in-out infinite;
+}
+@keyframes logo-fx-core {
+  0%, 100% { opacity: calc(0.2 * var(--fx)); transform: translate(-50%, -50%) scale(0.8); }
+  50% { opacity: calc(0.55 * var(--fx)); transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Cirrus: radar ping from the crosshair center */
+.logo-fx-cirrus-ping {
+  position: absolute; left: 49.8%; top: 53.7%; width: 12%; height: 12%;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(96, 165, 250, 0.9);
+  transform: translate(-50%, -50%) scale(0.3);
+  opacity: 0;
+  animation: logo-fx-ping 2.6s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+}
+@keyframes logo-fx-ping {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: calc(0.55 * var(--fx)); }
+  70%, 100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+}
+
+/* Containment: gentle bob */
+.logo-fx-containment .logo-fx-img { animation: logo-fx-bob 3s ease-in-out infinite; }
+@keyframes logo-fx-bob {
+  0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 0 rgba(251, 191, 36, 0)); }
+  50% { transform: translateY(calc(-1.5px * var(--fx))); filter: drop-shadow(0 0 calc(2px * var(--fx)) rgba(251, 191, 36, 0.45)); }
+}
+
+/* AEGIS: sheen sweep masked to the shield */
+.logo-fx-aegis-sheen {
+  position: absolute; inset: 0;
+  -webkit-mask-image: var(--logo-mask); mask-image: var(--logo-mask);
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.55) 50%, transparent 62%);
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+  opacity: calc(0.75 * var(--fx));
+  animation: logo-fx-sheen 4.5s ease-in-out infinite;
+}
+@keyframes logo-fx-sheen {
+  0% { background-position: 130% 0; }
+  45%, 100% { background-position: -30% 0; }
+}
+
+/* ThreatLens: slow lens tilt with a soft shimmer */
+.logo-fx-threatlens .logo-fx-img { animation: logo-fx-tilt 5s ease-in-out infinite; }
+@keyframes logo-fx-tilt {
+  0%, 100% { transform: rotate(calc(-3deg * var(--fx))); filter: brightness(1); }
+  50% { transform: rotate(calc(3deg * var(--fx))); filter: brightness(calc(1 + 0.08 * var(--fx))) drop-shadow(0 0 calc(2px * var(--fx)) rgba(56, 189, 248, 0.5)); }
+}
+
+/* AETHER: the app's own 2s core pulse, plus a faint hex glow */
+.logo-fx-aether-dot { animation: logo-fx-aether-pulse 2s ease-in-out infinite; }
+@keyframes logo-fx-aether-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+.logo-fx-aether svg { --fx-glow: rgba(255, 45, 45, 0.5); animation: logo-fx-glow 2s ease-in-out infinite; }
+
+/* KARMA: slow wheel spin */
+.logo-fx-karma .logo-fx-img { --fx-glow: rgba(59, 130, 246, 0.45); animation: logo-fx-spin 24s linear infinite, logo-fx-glow 4s ease-in-out infinite; }
+@keyframes logo-fx-spin { to { transform: rotate(360deg); } }
+
+/* Chaff: grains drift */
+.logo-fx-chaff-dot { transform-box: fill-box; transform-origin: center; animation: logo-fx-drift 2.7s ease-in-out infinite; }
+@keyframes logo-fx-drift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(calc(0.35px * var(--fx)), calc(-0.5px * var(--fx))); }
+  66% { transform: translate(calc(-0.3px * var(--fx)), calc(0.3px * var(--fx))); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-fx, .logo-fx *, .logo-fx-img { animation: none !important; }
+  .logo-fx-cirrus-ping, .logo-fx-aegis-sheen { display: none; }
+  .logo-fx-strata-core { opacity: 0.3; }
+}

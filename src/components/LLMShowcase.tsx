@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database, Cloud, Radar, ShieldCheck, Crosshair, Eye, Boxes, Bug, Shield, ArrowLeft, ArrowRight, Scan, Package, Siren, ShieldAlert, ShieldHalf, Waves, Box, Lock, Container, Sparkle, Footprints, EyeOff, CloudCog, Binary, Hexagon, Target, Fingerprint, LockKeyhole, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { agenticProjectDetails } from "@/data/agenticProjectDetails";
+import ProjectLogo from "@/components/ProjectLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -841,7 +842,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
               >
                 <motion.div
                   whileHover={{ scale: 1.1 }}
-                  className={`w-32 h-32 rounded-2xl bg-card/80 backdrop-blur-md border-2 transition-all duration-300 shadow-lg hover:shadow-2xl flex flex-col items-center justify-center gap-3 p-4 ${signature.shadow}`}
+                  className={`group w-32 h-32 rounded-2xl bg-card/80 backdrop-blur-md border-2 transition-all duration-300 shadow-lg hover:shadow-2xl flex flex-col items-center justify-center gap-3 p-4 ${signature.shadow}`}
                   style={{ 
                     borderColor: signature.color + '80',
                   }}
@@ -856,7 +857,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                       className={`relative w-14 h-14 rounded-lg bg-gradient-to-br ${signature.gradient} backdrop-blur-sm flex items-center justify-center border`}
                       style={{ borderColor: signature.color + '40' }}
                     >
-                      {signature.logo ? <img src={signature.logo} alt="" aria-hidden="true" draggable={false} loading="lazy" className="w-10 h-10 object-contain select-none pointer-events-none" /> : <ProjectIcon className="w-7 h-7" style={{ color: signature.color }} />}
+                      {signature.logo ? <ProjectLogo src={signature.logo} className="w-10 h-10" /> : <ProjectIcon className="w-7 h-7" style={{ color: signature.color }} />}
                     </div>
                   </div>
                   <p className="text-xs font-medium text-center text-foreground leading-snug" style={{ textWrap: 'balance', wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -957,7 +958,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                   setSelectedProject(project);
                   setIsSheetOpen(true);
                 }}
-                className={`flex-shrink-0 w-28 h-28 rounded-xl bg-card/80 backdrop-blur-md border-2 transition-all duration-300 shadow-lg cursor-pointer flex flex-col items-center justify-center gap-2 p-3 ${signature.shadow}`}
+                className={`group flex-shrink-0 w-28 h-28 rounded-xl bg-card/80 backdrop-blur-md border-2 transition-all duration-300 shadow-lg cursor-pointer flex flex-col items-center justify-center gap-2 p-3 ${signature.shadow}`}
                 style={{ 
                   borderColor: signature.color + '80',
                 }}
@@ -971,7 +972,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                     className={`relative w-12 h-12 rounded-lg bg-gradient-to-br ${signature.gradient} backdrop-blur-sm flex items-center justify-center border`}
                     style={{ borderColor: signature.color + '40' }}
                   >
-                    {signature.logo ? <img src={signature.logo} alt="" aria-hidden="true" draggable={false} loading="lazy" className="w-9 h-9 object-contain select-none pointer-events-none" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
+                    {signature.logo ? <ProjectLogo src={signature.logo} className="w-9 h-9" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
                   </div>
                 </div>
                 <p className="text-xs font-medium text-center text-foreground leading-snug" style={{ textWrap: 'balance', wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -1006,7 +1007,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                           borderColor: signature.color + '50'
                         }}
                       >
-                        {signature.logo ? <img src={signature.logo} alt="" aria-hidden="true" draggable={false} loading="lazy" className="w-9 h-9 object-contain select-none pointer-events-none" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
+                        {signature.logo ? <ProjectLogo src={signature.logo} className="w-9 h-9" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
                       </div>
                       <span className="text-left">{selectedProject.title}</span>
                     </SheetTitle>
