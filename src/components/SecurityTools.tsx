@@ -34,7 +34,7 @@ const securityTools: SecurityTool[] = [
     tagline: "Scans Claude skills for malicious intent before install",
     description: "Runs 35 offline checks for prompt injection, credential theft, and exfiltration patterns in skill files.",
     platform: "Agensi",
-    tryUrl: "https://www.agensi.io/skills/lume-skill-detection",
+    tryUrl: "https://lume---skill-detection.codeworker.workers.dev/",
     sourceUrl: "https://github.com/ritvikindupuri/Lume---Skill-detection",
     skills: ["Static Analysis", "AI Security", "OWASP"],
     icon: ScanSearch
