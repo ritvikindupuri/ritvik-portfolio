@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Container, FolderInput, Sparkles, Loader2 } from "lucide-react";
+import { Github, Target, Cloud, Brain, ExternalLink, Plus, X, Shield, GripVertical, ChevronDown, Container, FolderInput, Sparkles, Loader2, ChevronRight } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import purdueLogo from "@/assets/purdue-logo.svg";
@@ -309,6 +309,13 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
   const [activeTab, setActiveTab] = useState("security");
   const [projectCategory, setProjectCategory] = useState<string>("security");
   const [projects, setProjects] = useState(initialProjects);
+  const [showAll, setShowAll] = useState<Record<string, boolean>>({
+    security: false,
+    cloud: false,
+    devsecops: false,
+    ai: false,
+  });
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [newProject, setNewProject] = useState<Project>({
@@ -637,6 +644,31 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
     });
   };
 
+  const toggleShowAll = (category: string) => {
+    setShowAll(prev => ({ ...prev, [category]: !prev[category] }));
+  };
+
+  const toggleCard = (projectId: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'security': return Shield;
+      case 'cloud': return Cloud;
+      case 'devsecops': return Container;
+      case 'ai': return Brain;
+      default: return Target;
+    }
+  };
 
   return (
     <section id="projects" className="py-32 px-4 bg-card/20 relative overflow-hidden">
@@ -686,65 +718,170 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
               </TabsList>
             </div>
 
-            {Object.entries(projects).map(([key, projectList]) => (
+            {Object.entries(projects).map(([key, projectList]) => {
+              const CategoryIcon = getCategoryIcon(key);
+              const displayedProjects = showAll[key] ? projectList.filter(p => p.id) : projectList.filter(p => p.id).slice(0, 6);
+              const totalCount = projectList.filter(p => p.id).length;
+              
+              return (
               <TabsContent key={key} value={key} className="space-y-8">
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={(event) => handleDragEnd(event, key)}
-                >
-                  <SortableContext
-                    items={projectList.filter(p => p.id).map(p => p.id!)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <motion.div 
-                      className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10"
-                      initial="hidden"
-                      whileInView="visible"
-                      viewport={{ once: true, margin: "-50px" }}
-                      variants={{
-                        hidden: { opacity: 0 },
-                        visible: {
-                          opacity: 1,
-                          transition: { staggerChildren: 0.12, delayChildren: 0.1 }
-                        }
-                      }}
-                    >
-                      {projectList.filter(p => p.id).map((project) => (
-                        <motion.div
-                          key={project.id}
-                          variants={{
-                            hidden: { opacity: 0, y: 40, scale: 0.95 },
-                            visible: { 
-                              opacity: 1, 
-                              y: 0, 
-                              scale: 1,
-                              transition: { duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }
-                            }
-                          }}
-                        >
-                          <SortableProject
-                            key={project.id}
-                            project={project}
-                            category={key}
-                            isOwner={isOwner}
-                            categories={PROJECT_CATEGORIES}
-                            onEdit={() => {
-                              setEditingProject(project.title);
-                              setNewProject(project);
-                              setProjectCategory(key);
-                              setIsAddDialogOpen(true);
-                            }}
-                            onRemove={() => handleRemoveProject(key, project.title)}
-                            onMove={(targetCategory) => handleMoveProject(project.id, key, targetCategory, project.title)}
-                            onProjectClick={trackProjectClick}
-                          />
-                        </motion.div>
-                      ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                  {displayedProjects.map((project, index) => {
+                    const isExpanded = expandedCards.has(project.id!);
+                    return (
+                      <motion.div
+                        key={project.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: index * 0.1 }}
+                        className="group relative"
+                      >
+                        <div className="relative bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md border border-border/40 rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_rgba(0,255,255,0.15)]">
+                          <div className="h-0.5 bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+                          
+                          <div className="p-6 space-y-4">
+                            {/* Icon and Edit Controls */}
+                            <div className="flex items-start justify-between">
+                              <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                <CategoryIcon className="w-6 h-6 text-primary" />
+                              </div>
+                              
+                              {isOwner && (
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                  <button
+                                    onClick={() => {
+                                      setEditingProject(project.title);
+                                      setNewProject(project);
+                                      setProjectCategory(key);
+                                      setIsAddDialogOpen(true);
+                                    }}
+                                    className="bg-primary/20 hover:bg-primary/30 text-primary rounded-lg p-1.5 transition-colors"
+                                    title="Edit"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveProject(key, project.title)}
+                                    className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg p-1.5 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
 
-                      {/* Add Project Button - Owner Only */}
-                      {isOwner && activeTab === key && (
-                        <Dialog open={isAddDialogOpen && activeTab === key} onOpenChange={(open) => {
+                            {/* Title */}
+                            <div className="space-y-1">
+                              <h4 className="text-xl font-bold text-foreground leading-tight">
+                                {project.title}
+                              </h4>
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {project.startMonth} - {project.endMonth}
+                              </p>
+                            </div>
+
+                            {/* One-line description */}
+                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                              {project.description}
+                            </p>
+
+                            {/* Expand button for details */}
+                            <button
+                              onClick={() => toggleCard(project.id!)}
+                              className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+                            >
+                              {isExpanded ? 'Hide details' : 'Show details'}
+                              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            </button>
+
+                            {/* Expandable details panel */}
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="space-y-3 pt-3 border-t border-border/30"
+                              >
+                                {/* Full description */}
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  {project.description}
+                                </p>
+                                
+                                {/* Tech tags */}
+                                {project.skills && project.skills.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {project.skills.map((skill) => (
+                                      <span
+                                        key={skill}
+                                        className="text-[11px] px-2.5 py-1 rounded-full bg-secondary/50 text-muted-foreground border border-border/50 font-medium"
+                                      >
+                                        {skill}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </motion.div>
+                            )}
+
+                            {/* GitHub link */}
+                            {project.github && (
+                              <div className="pt-2">
+                                <Button
+                                  asChild
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full gap-2"
+                                >
+                                  <a
+                                    href={project.github}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => trackProjectClick(project.title, project.github)}
+                                  >
+                                    <Github className="w-4 h-4" />
+                                    View Source
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+
+                </div>
+
+                {/* Show All / Show Less Button */}
+                {totalCount > 6 && (
+                  <div className="flex justify-center mt-8">
+                    <Button
+                      onClick={() => toggleShowAll(key)}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      {showAll[key] ? (
+                        <>
+                          Show less
+                          <ChevronDown className="w-4 h-4 rotate-180" />
+                        </>
+                      ) : (
+                        <>
+                          Show all {totalCount} projects
+                          <ChevronDown className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Add Project Button - Owner Only */}
+                {isOwner && activeTab === key && (
+                  <div className="mt-8">
+                    <div className="max-w-5xl mx-auto">
+                      <Dialog open={isAddDialogOpen && activeTab === key} onOpenChange={(open) => {
                           setIsAddDialogOpen(open);
                           if (!open) {
                             setEditingProject(null);
@@ -956,12 +1093,12 @@ export const Projects = ({ isOwner }: ProjectsProps) => {
                   </div>
                         </DialogContent>
                       </Dialog>
-                    )}
-                    </motion.div>
-                  </SortableContext>
-                </DndContext>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
-            ))}
+              );
+            })}
           </Tabs>
         </div>
       </div>
