@@ -15,7 +15,7 @@ import { FeaturedProjects } from "@/components/FeaturedProjects";
 import { Contact } from "@/components/Contact";
 import { AccessDialog } from "@/components/AccessDialog";
 import { PortfolioChatbot } from "@/components/PortfolioChatbot";
-import { MLShowcase } from "@/components/MLShowcase";
+import { SecurityTools } from "@/components/SecurityTools";
 import { LLMShowcase } from "@/components/LLMShowcase";
 import { SectionTransition } from "@/components/SectionTransition";
 import { VisitorTrackerProvider } from "@/components/VisitorTrackerProvider";
@@ -175,20 +175,20 @@ const Index = () => {
           
           <SectionTransition 
             badge="Applied Intelligence" 
-            subtitle="Where theory meets implementation — ML models and AI systems built to solve real-world problems"
+            subtitle="Where theory meets implementation — security tools and AI systems built to solve real-world problems"
           />
           
-          {/* ML & LLM Showcase - Side by Side */}
+          {/* Security Tools & LLM Showcase - Side by Side */}
           <SectionReveal direction="up" delay={0.1}>
-            <section id="ml-section" className="py-16 px-4 relative overflow-hidden">
+            <section id="security-tools-section" className="py-16 px-4 relative overflow-hidden">
               <div className="absolute inset-0 neural-grid opacity-5" />
               <div className="absolute top-1/4 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
               <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
               
               <div className="container mx-auto max-w-7xl relative z-10">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                  {/* ML Model Showcase */}
-                  <MLShowcase isOwner={isOwner} />
+                  {/* Security Tools Showcase */}
+                  <SecurityTools isOwner={isOwner} />
                   
                   {/* Vertical Divider */}
                   <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 -translate-x-1/2">
