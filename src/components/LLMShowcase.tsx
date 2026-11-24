@@ -319,7 +319,13 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     }
 
     if (data) {
-      setProjects(data.map(p => ({
+      // Filter out internal chatbot project (migration pending on live DB)
+      const filteredData = data.filter(p => 
+        p.id !== 'nvgfgoykyeouwrksszpb' && 
+        p.title !== 'Semantic RAG Portfolio Chatbot'
+      );
+      
+      setProjects(filteredData.map(p => ({
         ...p,
         technologies: p.technologies || []
       })));
