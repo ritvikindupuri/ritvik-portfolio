@@ -478,10 +478,10 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
           <Sparkles className="w-8 h-8 text-accent" />
         </div>
         <h3 className="text-4xl md:text-5xl font-bold font-sans text-gradient-neural pb-1">
-          AI Engineering
+          Agentic Security Systems
         </h3>
         <p className="text-sm text-muted-foreground font-medium max-w-md mx-auto leading-relaxed">
-          LLM integrations, RAG systems & agentic workflows
+          Autonomous agents for cloud defense, detection & red teaming
         </p>
         <div className="w-24 h-1 bg-gradient-to-r from-accent to-neural-pink mx-auto rounded-full mt-4" />
       </div>

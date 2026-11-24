@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Wrench, ExternalLink, Github } from "lucide-react";
+import { Wrench, ExternalLink, Github, Bug, ScanSearch, PackageSearch, Siren } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +15,7 @@ interface SecurityTool {
   tryUrl?: string;
   sourceUrl?: string;
   skills: string[];
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const securityTools: SecurityTool[] = [
@@ -27,7 +27,7 @@ const securityTools: SecurityTool[] = [
     tryUrl: "https://agentpot-app.vercel.app",
     sourceUrl: "https://github.com/ritvikindupuri/AgentPot",
     skills: ["Honeypot", "MCP", "Threat Intel"],
-    icon: "🍯"
+    icon: Bug
   },
   {
     name: "Lume Skill Detection",
@@ -37,7 +37,7 @@ const securityTools: SecurityTool[] = [
     tryUrl: "https://www.agensi.io/skills/lume-skill-detection",
     sourceUrl: "https://github.com/ritvikindupuri/Lume---Skill-detection",
     skills: ["Static Analysis", "AI Security", "OWASP"],
-    icon: "🔍"
+    icon: ScanSearch
   },
   {
     name: "MCP Package Impersonation Auditor",
@@ -46,7 +46,7 @@ const securityTools: SecurityTool[] = [
     platform: "Agensi",
     tryUrl: "https://www.agensi.io/skills/mcp-package-impersonation-auditor",
     skills: ["Supply Chain", "MCP", "SAST"],
-    icon: "🔐"
+    icon: PackageSearch
   },
   {
     name: "AWS IR Pack",
@@ -55,7 +55,7 @@ const securityTools: SecurityTool[] = [
     platform: "Agensi",
     tryUrl: "https://www.agensi.io/skills/aws-ir-pack-guardduty-cloudtrail-incident-response",
     skills: ["Incident Response", "AWS", "DFIR"],
-    icon: "🚨"
+    icon: Siren
   },
 ];
 
@@ -87,10 +87,12 @@ export const SecurityTools = ({ isOwner }: SecurityToolsProps) => {
             <div className="relative bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md border border-border/40 rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_rgba(0,255,255,0.15)]">
               <div className="h-0.5 bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
               
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 flex flex-col h-full">
                 {/* Icon and Badge Row */}
                 <div className="flex items-start justify-between">
-                  <div className="text-4xl">{tool.icon}</div>
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <tool.icon className="w-6 h-6 text-primary" />
+                  </div>
                   <Badge variant="secondary" className="text-xs font-medium">
                     {tool.platform}
                   </Badge>
@@ -123,24 +125,22 @@ export const SecurityTools = ({ isOwner }: SecurityToolsProps) => {
                   ))}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-2">
-                  {tool.tryUrl && (
-                    <Button
-                      asChild
-                      size="sm"
-                      className="flex-1 gap-2"
+                {/* Action Buttons - Always at bottom with consistent layout */}
+                <div className="flex gap-3 pt-2 mt-auto">
+                  <Button
+                    asChild
+                    size="sm"
+                    className="flex-1 gap-2"
+                  >
+                    <a
+                      href={tool.tryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <a
-                        href={tool.tryUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Try it
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </Button>
-                  )}
+                      Try it
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </Button>
                   {tool.sourceUrl && (
                     <Button
                       asChild
