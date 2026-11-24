@@ -26,7 +26,7 @@ const FROM_EMAIL = "Portfolio Security <security@ritvikindupuri.com>";
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
-  'https://ritvik-portfolio.lovable.app',
+  'https://ritvik-portfolio.pages.dev',
   'https://ritvikindupuri.com',
   'https://www.ritvikindupuri.com',
   'http://localhost:5173',
@@ -36,7 +36,7 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
   const allowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => 
-    origin === allowed || origin.endsWith('.lovable.app')
+    origin === allowed || origin.endsWith('.ritvik-portfolio.pages.dev')
   ) ? origin : ALLOWED_ORIGINS[0];
 
   return {

@@ -11,7 +11,7 @@ function makeReq(
   opts?: { method?: string; ip?: string; origin?: string },
 ): Request {
   const method = opts?.method ?? "POST";
-  const origin = opts?.origin ?? "https://ritvik-indupuri-portfolio.lovable.app";
+  const origin = opts?.origin ?? "https://ritvik-portfolio.pages.dev";
   const ip = opts?.ip ?? "203.0.113.10";
 
   return new Request("http://local.test/send-contact-email", {
