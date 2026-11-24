@@ -575,9 +575,41 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   };
 
   const selectedProject = filteredProjects.find(p => p.id === selectedProjectId) || filteredProjects[0];
-  const selectedIndex = filteredProjects.findIndex(p => p.id === selectedProjectId);
-  const selectedAccent = selectedProject ? getProjectAccent(selectedIndex) : getProjectAccent(0);
+  const selectedIndex = selectedProject ? filteredProjects.findIndex(p => p.id === selectedProjectId) : 0;
+  const selectedAccent = selectedProject && selectedIndex >= 0 ? getProjectAccent(selectedIndex) : getProjectAccent(0);
   const SelectedIcon = selectedProject ? getProjectIcon(selectedProject) : Sparkles;
+
+  // Safety check: if no projects, show loading state
+  if (filteredProjects.length === 0) {
+    return (
+      <div className="space-y-8">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 mb-3 shadow-purple">
+            <Sparkles className="w-8 h-8 text-accent" />
+          </div>
+          <h3 className="text-4xl md:text-5xl font-bold font-sans text-gradient-neural pb-1">
+            Agentic Security Systems
+          </h3>
+          <p className="text-sm text-muted-foreground font-medium max-w-md mx-auto leading-relaxed">
+            Loading projects...
+          </p>
+        </div>
+        {isOwner && (
+          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+            if (!open) resetForm();
+            setIsAddDialogOpen(open);
+          }}>
+            <DialogTrigger asChild>
+              <Button className="w-full bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30">
+                <Plus className="w-4 h-4 mr-2" />
+                Add LLM Project
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -626,6 +658,8 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
             const accent = getProjectAccent(index);
             const isSelected = selectedProjectId === project.id;
             
+            if (!accent) return null; // Safety guard
+            
             return (
               <motion.button
                 key={project.id}
@@ -638,19 +672,19 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                 }}
                 className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left w-full ${
                   isSelected 
-                    ? `${accent.bg} ${accent.border} border backdrop-blur-sm` 
+                    ? `${accent?.bg || 'bg-accent/20'} ${accent?.border || 'border-accent/50'} border backdrop-blur-sm` 
                     : 'hover:bg-secondary/50 border border-transparent'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-lg ${accent.bg} ${accent.border} border flex-shrink-0 flex items-center justify-center`}>
-                  <ProjectIcon className={`w-5 h-5 ${accent.text}`} />
+                <div className={`w-10 h-10 rounded-lg ${accent?.bg || 'bg-accent/20'} ${accent?.border || 'border-accent/50'} border flex-shrink-0 flex items-center justify-center`}>
+                  <ProjectIcon className={`w-5 h-5 ${accent?.text || 'text-accent'}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm text-foreground truncate">
                     {project.title}
                   </div>
                 </div>
-                <div className={`w-2 h-2 rounded-full ${accent.dot} ${isSelected ? 'opacity-100' : 'opacity-30'}`} />
+                <div className={`w-2 h-2 rounded-full ${accent?.dot || 'bg-accent'} ${isSelected ? 'opacity-100' : 'opacity-30'}`} />
               </motion.button>
             );
           })}
@@ -664,13 +698,15 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
               const accent = getProjectAccent(index);
               const isSelected = selectedProjectId === project.id;
               
+              if (!accent) return null; // Safety guard
+              
               return (
                 <button
                   key={project.id}
                   onClick={() => setSelectedProjectId(project.id)}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-300 whitespace-nowrap ${
                     isSelected
-                      ? `${accent.bg} ${accent.border} border ${accent.text}`
+                      ? `${accent?.bg || 'bg-accent/20'} ${accent?.border || 'border-accent/50'} border ${accent?.text || 'text-accent'}`
                       : 'bg-secondary/50 text-muted-foreground border border-transparent'
                   }`}
                 >
@@ -700,13 +736,13 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
               });
             }}
           >
-            <div className={`relative min-h-[500px] rounded-3xl overflow-hidden backdrop-blur-sm border-2 ${selectedAccent.border} ${selectedAccent.glow} shadow-2xl transition-all duration-500`}>
+            <div className={`relative min-h-[500px] rounded-3xl overflow-hidden backdrop-blur-sm border-2 ${selectedAccent?.border || 'border-accent/50'} ${selectedAccent?.glow || 'shadow-accent/50'} shadow-2xl transition-all duration-500`}>
               {/* Animated gradient mesh background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${selectedAccent.from}/20 ${selectedAccent.to}/20 opacity-60`} />
+              <div className={`absolute inset-0 bg-gradient-to-br ${selectedAccent?.from || 'from-accent-500'}/20 ${selectedAccent?.to || 'to-accent-600'}/20 opacity-60`} />
               <div 
-                className={`absolute inset-0 bg-gradient-radial ${selectedAccent.from}/30 ${selectedAccent.to}/30 opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none`}
+                className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none"
                 style={{
-                  background: `radial-gradient(circle 300px at ${cursorPosition.x}px ${cursorPosition.y}px, currentColor, transparent)`,
+                  background: `radial-gradient(circle 300px at ${cursorPosition.x || 0}px ${cursorPosition.y || 0}px, rgba(255, 255, 255, 0.1), transparent)`,
                 }}
               />
               
@@ -757,18 +793,18 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                 )}
 
                 {/* Large Icon */}
-                <div className={`w-20 h-20 rounded-2xl ${selectedAccent.bg} ${selectedAccent.border} border-2 flex items-center justify-center backdrop-blur-sm`}>
-                  <SelectedIcon className={`w-10 h-10 ${selectedAccent.text}`} />
+                <div className={`w-20 h-20 rounded-2xl ${selectedAccent?.bg || 'bg-accent/20'} ${selectedAccent?.border || 'border-accent/50'} border-2 flex items-center justify-center backdrop-blur-sm`}>
+                  <SelectedIcon className={`w-10 h-10 ${selectedAccent?.text || 'text-accent'}`} />
                 </div>
 
                 {/* Title */}
                 <div className="space-y-3">
-                  <h4 className={`text-3xl md:text-4xl font-bold leading-tight ${selectedAccent.text}`}>
+                  <h4 className={`text-3xl md:text-4xl font-bold leading-tight ${selectedAccent?.text || 'text-accent'}`}>
                     {selectedProject.title}
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedProject.project_type && (
-                      <span className={`inline-block text-xs px-3 py-1.5 rounded-full ${selectedAccent.bg} ${selectedAccent.text} ${selectedAccent.border} border font-medium`}>
+                      <span className={`inline-block text-xs px-3 py-1.5 rounded-full ${selectedAccent?.bg || 'bg-accent/20'} ${selectedAccent?.text || 'text-accent'} ${selectedAccent?.border || 'border-accent/50'} border font-medium`}>
                         {selectedProject.project_type}
                       </span>
                     )}
@@ -787,10 +823,10 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
 
                 {/* Use Case */}
                 {selectedProject.use_case && (
-                  <div className={`${selectedAccent.bg} backdrop-blur-sm rounded-xl p-4 border ${selectedAccent.border}`}>
+                  <div className={`${selectedAccent?.bg || 'bg-accent/20'} backdrop-blur-sm rounded-xl p-4 border ${selectedAccent?.border || 'border-accent/50'}`}>
                     <div className="flex items-center gap-2 mb-2">
-                      <Zap className={`w-4 h-4 ${selectedAccent.text}`} />
-                      <h5 className={`text-sm font-semibold ${selectedAccent.text}`}>Use Case</h5>
+                      <Zap className={`w-4 h-4 ${selectedAccent?.text || 'text-accent'}`} />
+                      <h5 className={`text-sm font-semibold ${selectedAccent?.text || 'text-accent'}`}>Use Case</h5>
                     </div>
                     <p className="text-sm text-foreground/80">{selectedProject.use_case}</p>
                   </div>
@@ -817,7 +853,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                       <Button
                         asChild
                         size="lg"
-                        className={`bg-gradient-to-r ${selectedAccent.from} ${selectedAccent.to} hover:opacity-90 text-white border-0 shadow-lg ${selectedAccent.glow} transition-all duration-300`}
+                        className={`bg-gradient-to-r ${selectedAccent?.from || 'from-accent'} ${selectedAccent?.to || 'to-primary'} hover:opacity-90 text-white border-0 shadow-lg ${selectedAccent?.glow || 'shadow-accent/50'} transition-all duration-300`}
                       >
                         <a href={selectedProject.github_url} target="_blank" rel="noopener noreferrer">
                           <Github className="w-5 h-5 mr-2" />
@@ -829,7 +865,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                       <Button
                         asChild
                         size="lg"
-                        className={`bg-gradient-to-r ${selectedAccent.from} ${selectedAccent.to} hover:opacity-90 text-white border-0 shadow-lg ${selectedAccent.glow} transition-all duration-300`}
+                        className={`bg-gradient-to-r ${selectedAccent?.from || 'from-accent'} ${selectedAccent?.to || 'to-primary'} hover:opacity-90 text-white border-0 shadow-lg ${selectedAccent?.glow || 'shadow-accent/50'} transition-all duration-300`}
                       >
                         <a href={selectedProject.demo_url} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-5 h-5 mr-2" />
