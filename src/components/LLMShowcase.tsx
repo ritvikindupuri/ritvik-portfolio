@@ -3,6 +3,8 @@ import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVe
 import { motion, AnimatePresence } from "framer-motion";
 import { agenticProjectDetails } from "@/data/agenticProjectDetails";
 import ProjectLogo from "@/components/ProjectLogo";
+import ArchitectureFlow from "@/components/ArchitectureFlow";
+import { getArchitectureFlow } from "@/data/agenticArchitectureFlows";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -280,6 +282,16 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const [dragStart, setDragStart] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const autoRotateRef = useRef<NodeJS.Timeout | null>(null);
+  // Once the visitor navigates the carousel themselves, auto-rotate stops for the rest of the session.
+  const [userHasControl, setUserHasControl] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('agentic-carousel-user-control') === '1'; } catch { return false; }
+  });
+  const takeControl = () => {
+    if (autoRotateRef.current) { clearInterval(autoRotateRef.current); autoRotateRef.current = null; }
+    if (userHasControl) return;
+    setUserHasControl(true);
+    try { sessionStorage.setItem('agentic-carousel-user-control', '1'); } catch { /* ignore */ }
+  };
 
   // Get unique project types for filter
   const categories = ["all", ...new Set(projects.map(p => p.project_type).filter(Boolean))] as string[];
@@ -313,7 +325,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   // Auto-rotate carousel (respects prefers-reduced-motion)
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion || isDragging || filteredProjects.length === 0) return;
+    if (prefersReducedMotion || userHasControl || isDragging || filteredProjects.length === 0) return;
 
     autoRotateRef.current = setInterval(() => {
       setCurrentRotation(prev => prev + (360 / Math.max(filteredProjects.length, 1)));
@@ -322,11 +334,13 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     return () => {
       if (autoRotateRef.current) clearInterval(autoRotateRef.current);
     };
-  }, [filteredProjects.length, isDragging]);
+  }, [filteredProjects.length, isDragging, userHasControl]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
       if (e.key === 'ArrowLeft') {
         rotateLeft();
       } else if (e.key === 'ArrowRight') {
@@ -340,11 +354,13 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
 
   const rotateLeft = () => {
     if (filteredProjects.length === 0) return;
+    takeControl();
     setCurrentRotation(prev => prev - (360 / filteredProjects.length));
   };
 
   const rotateRight = () => {
     if (filteredProjects.length === 0) return;
+    takeControl();
     setCurrentRotation(prev => prev + (360 / filteredProjects.length));
   };
 
@@ -356,6 +372,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
     const delta = e.clientX - dragStart;
+    if (delta !== 0) takeControl();
     setCurrentRotation(prev => prev + delta * 0.5);
     setDragStart(e.clientX);
   };
@@ -372,6 +389,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
     const delta = e.touches[0].clientX - dragStart;
+    if (delta !== 0) takeControl();
     setCurrentRotation(prev => prev + delta * 0.5);
     setDragStart(e.touches[0].clientX);
   };
@@ -651,16 +669,16 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     if (title.includes('containment')) return { 
       icon: Shield, 
       logo: '/project-logos/containment.png', 
-      color: '#059669', // emerald
-      gradient: 'from-emerald-500/20 to-emerald-600/10',
-      shadow: 'shadow-emerald-500/30'
+      color: '#f59e0b', // amber, matches the Containment logo
+      gradient: 'from-amber-500/20 to-amber-600/10',
+      shadow: 'shadow-amber-500/30'
     };
     if (title.includes('karma')) return { 
       icon: Shield, 
       logo: '/project-logos/karma.png', 
-      color: '#10b981', // green
-      gradient: 'from-green-500/20 to-green-600/10',
-      shadow: 'shadow-green-500/30'
+      color: '#326ce5', // Kubernetes blue, matches the KARMA wheel
+      gradient: 'from-blue-600/20 to-blue-700/10',
+      shadow: 'shadow-blue-600/30'
     };
     if (title.includes('chaff')) return { 
       icon: Shield, 
@@ -723,8 +741,10 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     return (
       <div className="space-y-8">
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 mb-3 shadow-purple">
-            <Sparkles className="w-8 h-8 text-accent" />
+          <div className="flex justify-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 mb-3 shadow-purple">
+              <Sparkles className="w-8 h-8 text-accent" />
+            </div>
           </div>
           <h3 className="text-4xl md:text-5xl font-bold font-sans text-gradient-neural pb-1">
             Agentic Security Systems
@@ -753,8 +773,10 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 mb-3 shadow-purple">
-          <Sparkles className="w-8 h-8 text-accent" />
+        <div className="flex justify-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 mb-3 shadow-purple">
+            <Sparkles className="w-8 h-8 text-accent" />
+          </div>
         </div>
         <h3 className="text-4xl md:text-5xl font-bold font-sans text-gradient-neural pb-1">
           Agentic Security Systems
@@ -768,17 +790,18 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
       {/* Category Filter - Segmented Pill Control */}
       {categories.length > 2 && (
         <div className="flex justify-center">
-          <div className="inline-flex p-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/40 shadow-lg">
+          <div className="inline-flex max-w-full overflow-x-auto p-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/40 shadow-lg">
             {categories.map(category => (
               <button
                 key={category}
                 onClick={() => {
                   setSelectedCategory(category);
                 }}
-                className={`px-4 py-2 text-xs font-medium rounded-full transition-all duration-300 ${
+                aria-pressed={selectedCategory === category}
+                className={`shrink-0 whitespace-nowrap px-4 py-2 text-xs font-medium rounded-full border transition-colors duration-200 ${
                   selectedCategory === category
-                    ? 'bg-gradient-to-r from-accent/90 to-primary/90 text-white shadow-lg'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-foreground/10 text-foreground border-foreground/15'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-foreground/5'
                 }`}
               >
                 {category === "all" ? "All" : category}
@@ -794,7 +817,8 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
         onMouseEnter={() => { if (autoRotateRef.current) clearInterval(autoRotateRef.current); }}
         onMouseLeave={() => {
           const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          if (!prefersReducedMotion && filteredProjects.length > 0) {
+          if (!prefersReducedMotion && !userHasControl && filteredProjects.length > 0) {
+            if (autoRotateRef.current) clearInterval(autoRotateRef.current);
             autoRotateRef.current = setInterval(() => {
               setCurrentRotation(prev => prev + (360 / filteredProjects.length));
             }, 3000);
@@ -836,6 +860,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                   backfaceVisibility: 'hidden',
                 }}
                 onClick={() => {
+                  takeControl();
                   setSelectedProject(project);
                   setIsSheetOpen(true);
                 }}
@@ -850,11 +875,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                   {/* Layered icon treatment - hexagon badge with gradient ring and glow */}
                   <div className="relative">
                     <div 
-                      className={`absolute inset-0 blur-md opacity-50 rounded-lg bg-gradient-to-br ${signature.gradient}`}
-                      style={{ transform: 'scale(1.2)' }}
-                    />
-                    <div 
-                      className={`relative w-14 h-14 rounded-lg bg-gradient-to-br ${signature.gradient} backdrop-blur-sm flex items-center justify-center border`}
+                      className="relative w-14 h-14 rounded-lg bg-white/[0.04] flex items-center justify-center border"
                       style={{ borderColor: signature.color + '40' }}
                     >
                       {signature.logo ? <ProjectLogo src={signature.logo} className="w-10 h-10" /> : <ProjectIcon className="w-7 h-7" style={{ color: signature.color }} />}
@@ -955,6 +976,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
               <div
                 key={project.id}
                 onClick={() => {
+                  takeControl();
                   setSelectedProject(project);
                   setIsSheetOpen(true);
                 }}
@@ -965,11 +987,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
               >
                 <div className="relative">
                   <div 
-                    className={`absolute inset-0 blur-md opacity-50 rounded-lg bg-gradient-to-br ${signature.gradient}`}
-                    style={{ transform: 'scale(1.2)' }}
-                  />
-                  <div 
-                    className={`relative w-12 h-12 rounded-lg bg-gradient-to-br ${signature.gradient} backdrop-blur-sm flex items-center justify-center border`}
+                    className="relative w-12 h-12 rounded-lg bg-white/[0.04] flex items-center justify-center border"
                     style={{ borderColor: signature.color + '40' }}
                   >
                     {signature.logo ? <ProjectLogo src={signature.logo} className="w-9 h-9" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
@@ -987,7 +1005,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
       {/* Side Panel Sheet */}
       {selectedProject && (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetContent className="w-full sm:w-[58vw] sm:max-w-[800px] overflow-y-auto p-6 sm:p-10">
             {(() => {
               const signature = getProjectSignature(selectedProject);
               const ProjectIcon = signature.icon;
@@ -999,35 +1017,32 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                     style={{ background: `linear-gradient(to right, ${signature.color}, ${signature.color}80)` }}
                   />
                   <SheetHeader>
-                    <SheetTitle className="flex items-center gap-3 pt-2">
+                    <SheetTitle className="flex items-center gap-4 pt-2 pr-8">
                       <div 
-                        className={`relative w-12 h-12 rounded-xl backdrop-blur-sm flex items-center justify-center border-2`}
-                        style={{ 
-                          background: `linear-gradient(to br, ${signature.color}20, ${signature.color}10)`,
-                          borderColor: signature.color + '50'
-                        }}
+                        className="relative w-14 h-14 shrink-0 rounded-xl bg-white/[0.04] flex items-center justify-center border"
+                        style={{ borderColor: signature.color + '50' }}
                       >
-                        {signature.logo ? <ProjectLogo src={signature.logo} className="w-9 h-9" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
+                        {signature.logo ? <ProjectLogo src={signature.logo} className="w-10 h-10" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
                       </div>
-                      <span className="text-left">{selectedProject.title}</span>
+                      <span className="text-left text-xl sm:text-2xl leading-snug">{selectedProject.title}</span>
                     </SheetTitle>
-                    <SheetDescription className="text-left pt-2">
+                    <SheetDescription className="text-left pt-3 text-[15px] leading-relaxed">
                       {selectedProject.description}
                     </SheetDescription>
                     
                     {/* Enriched project details */}
                     {agenticProjectDetails[selectedProject.title] && (
-                      <div className="space-y-4 pt-4 text-left">
+                      <div className="space-y-8 pt-6 text-left">
                         {/* Key Features */}
                         <div>
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-3">
                             <Sparkles className="w-4 h-4" style={{ color: signature.color }} />
-                            <h4 className="text-sm font-semibold" style={{ color: signature.color }}>Key features</h4>
+                            <h4 className="text-sm font-semibold tracking-wide" style={{ color: signature.color }}>Key features</h4>
                           </div>
-                          <ul className="space-y-2">
+                          <ul className="grid gap-3 lg:grid-cols-2">
                             {agenticProjectDetails[selectedProject.title].keyFeatures.map((feature, idx) => (
-                              <li key={idx} className="text-sm text-muted-foreground leading-relaxed flex gap-2">
-                                <span style={{ color: signature.color }}>•</span>
+                              <li key={idx} className="text-sm text-muted-foreground leading-relaxed rounded-xl border border-border/50 bg-white/[0.02] p-4 flex gap-3">
+                                <span className="mt-[7px] w-1.5 h-1.5 shrink-0 rounded-full" style={{ background: signature.color }} />
                                 <span>{feature}</span>
                               </li>
                             ))}
@@ -1036,19 +1051,31 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                         
                         {/* Architecture */}
                         <div>
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-3">
                             <Cpu className="w-4 h-4" style={{ color: signature.color }} />
-                            <h4 className="text-sm font-semibold" style={{ color: signature.color }}>Architecture</h4>
+                            <h4 className="text-sm font-semibold tracking-wide" style={{ color: signature.color }}>Architecture</h4>
                           </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {agenticProjectDetails[selectedProject.title].architecture}
-                          </p>
+                          {(() => {
+                            const flow = getArchitectureFlow(selectedProject.title);
+                            return flow ? (
+                              <>
+                                <ArchitectureFlow nodes={flow} color={signature.color} />
+                                <p className="text-xs text-muted-foreground/80 leading-relaxed mt-3">
+                                  {agenticProjectDetails[selectedProject.title].architecture}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-sm text-muted-foreground leading-relaxed">
+                                {agenticProjectDetails[selectedProject.title].architecture}
+                              </p>
+                            );
+                          })()}
                         </div>
                       </div>
                     )}
                   </SheetHeader>
 
-                  <div className="space-y-6 py-6">
+                  <div className="space-y-8 py-8">
                     {/* Category & Provider */}
                     <div className="flex flex-wrap gap-2">
                       {selectedProject.project_type && (
@@ -1089,7 +1116,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                     {/* Technologies */}
                     {selectedProject.technologies && selectedProject.technologies.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-semibold mb-3">Technologies</h4>
+                        <h4 className="text-sm font-semibold tracking-wide mb-3">Technologies</h4>
                         <div className="flex flex-wrap gap-2">
                           {selectedProject.technologies.map((tech) => (
                             <span
@@ -1105,46 +1132,27 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
 
                     {/* Links */}
                     {(selectedProject.github_url || selectedProject.demo_url || selectedProject.documentation_url) && (
-                      <div className="flex flex-col gap-3 pt-4 border-t border-border">
+                      <div className="flex flex-wrap gap-2.5 pt-6 border-t border-border">
                         {selectedProject.github_url && (
-                          <Button 
-                            asChild 
-                            className="w-full hover:opacity-90"
-                            style={{ 
-                              background: `linear-gradient(to r, ${signature.color}, ${signature.color}cc)`
-                            }}
-                          >
+                          <Button asChild size="sm" className="rounded-full px-4">
                             <a href={selectedProject.github_url} target="_blank" rel="noopener noreferrer">
-                              <Github className="w-5 h-5 mr-2" />
+                              <Github className="w-4 h-4 mr-1.5" />
                               Source Code
                             </a>
                           </Button>
                         )}
                         {selectedProject.demo_url && (
-                          <Button 
-                            asChild 
-                            className="w-full hover:opacity-90"
-                            style={{ 
-                              background: `linear-gradient(to r, ${signature.color}, ${signature.color}cc)`
-                            }}
-                          >
+                          <Button asChild size="sm" variant="outline" className="rounded-full px-4">
                             <a href={selectedProject.demo_url} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="w-5 h-5 mr-2" />
+                              <ExternalLink className="w-4 h-4 mr-1.5" />
                               Live Demo
                             </a>
                           </Button>
                         )}
                         {selectedProject.documentation_url && (
-                          <Button 
-                            asChild 
-                            variant="outline" 
-                            className="w-full"
-                            style={{ 
-                              borderColor: signature.color + '50'
-                            }}
-                          >
+                          <Button asChild size="sm" variant="outline" className="rounded-full px-4">
                             <a href={selectedProject.documentation_url} target="_blank" rel="noopener noreferrer">
-                              <FileText className="w-5 h-5 mr-2" />
+                              <FileText className="w-4 h-4 mr-1.5" />
                               Documentation
                             </a>
                           </Button>
