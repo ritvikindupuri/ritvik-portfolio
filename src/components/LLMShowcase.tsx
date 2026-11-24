@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database, Cloud, Radar, ShieldCheck, Crosshair, Eye, Boxes, Bug, Shield, ArrowLeft, ArrowRight, Scan, Package, Siren, ShieldAlert, ShieldHalf, Waves, Box, Lock, Container, Sparkle, Footprints, EyeOff, CloudCog, Binary, Hexagon, Target, Fingerprint, LockKeyhole, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { agenticProjectDetails } from "@/data/agenticProjectDetails";
+import { CloudPilotIcon, StrataIcon, CirrusIcon, ContainmentIcon, SpectraIcon, AegisIcon, ThreatLensIcon, AetherIcon, KarmaIcon, ChaffIcon, TraceveilIcon } from "@/components/icons/AgenticProjectIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -598,62 +599,68 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
       gradient: 'from-red-500/20 to-red-600/10',
       shadow: 'shadow-red-500/30'
     };
+    if (title.includes('cloudpilot')) return { 
+      icon: CloudPilotIcon, 
+      color: '#06b6d4', // cyan (same color it previously got from the cloud fallback)
+      gradient: 'from-cyan-500/20 to-cyan-600/10',
+      shadow: 'shadow-cyan-500/30'
+    };
     if (title.includes('strata')) return { 
-      icon: CloudCog, 
+      icon: StrataIcon, 
       color: '#0ea5e9', // sky
       gradient: 'from-sky-500/20 to-sky-600/10',
       shadow: 'shadow-sky-500/30'
     };
     if (title.includes('cirrus')) return { 
-      icon: Shield, 
+      icon: CirrusIcon, 
       color: '#3b82f6', // blue
       gradient: 'from-blue-500/20 to-blue-600/10',
       shadow: 'shadow-blue-500/30'
     };
     if (title.includes('aegis')) return { 
-      icon: ShieldHalf, 
+      icon: AegisIcon, 
       color: '#6366f1', // indigo
       gradient: 'from-indigo-500/20 to-indigo-600/10',
       shadow: 'shadow-indigo-500/30'
     };
     if (title.includes('threatlens')) return { 
-      icon: Target, 
+      icon: ThreatLensIcon, 
       color: '#ec4899', // pink
       gradient: 'from-pink-500/20 to-pink-600/10',
       shadow: 'shadow-pink-500/30'
     };
     if (title.includes('aether')) return { 
-      icon: Waves, 
+      icon: AetherIcon, 
       color: '#a855f7', // purple
       gradient: 'from-purple-500/20 to-purple-600/10',
       shadow: 'shadow-purple-500/30'
     };
     if (title.includes('spectra')) return { 
-      icon: Waves, 
+      icon: SpectraIcon, 
       color: '#d946ef', // fuchsia
       gradient: 'from-fuchsia-500/20 to-fuchsia-600/10',
       shadow: 'shadow-fuchsia-500/30'
     };
     if (title.includes('containment')) return { 
-      icon: LockKeyhole, 
+      icon: ContainmentIcon, 
       color: '#059669', // emerald
       gradient: 'from-emerald-500/20 to-emerald-600/10',
       shadow: 'shadow-emerald-500/30'
     };
     if (title.includes('karma')) return { 
-      icon: Boxes, 
+      icon: KarmaIcon, 
       color: '#10b981', // green
       gradient: 'from-green-500/20 to-green-600/10',
       shadow: 'shadow-green-500/30'
     };
     if (title.includes('chaff')) return { 
-      icon: Sparkle, 
+      icon: ChaffIcon, 
       color: '#f97316', // orange
       gradient: 'from-orange-500/20 to-orange-600/10',
       shadow: 'shadow-orange-500/30'
     };
     if (title.includes('traceveil')) return { 
-      icon: EyeOff, 
+      icon: TraceveilIcon, 
       color: '#64748b', // slate
       gradient: 'from-slate-500/20 to-slate-600/10',
       shadow: 'shadow-slate-500/30'
