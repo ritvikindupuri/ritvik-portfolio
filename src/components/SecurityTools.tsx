@@ -33,8 +33,8 @@ const securityTools: SecurityTool[] = [
     name: "Lume Skill Detection",
     tagline: "Scans Claude skills for malicious intent before install",
     description: "Runs 35 offline checks for prompt injection, credential theft, and exfiltration patterns in skill files.",
-    platform: "Agensi",
-    tryUrl: "https://www.agensi.io/skills/lume-skill-detection",
+    platform: "Claude skill",
+    tryUrl: "https://lume---skill-detection.codeworker.workers.dev/",
     sourceUrl: "https://github.com/ritvikindupuri/Lume---Skill-detection",
     skills: ["Static Analysis", "AI Security", "OWASP"],
     icon: ScanSearch
@@ -43,7 +43,7 @@ const securityTools: SecurityTool[] = [
     name: "MCP Package Impersonation Auditor",
     tagline: "Audits installed MCP packages for supply-chain attacks",
     description: "Catches typosquats, wrong publishers, install scripts, and hidden data exfiltration in your MCP setup.",
-    platform: "Agensi",
+    platform: "Claude skill",
     tryUrl: "https://www.agensi.io/skills/mcp-package-impersonation-auditor",
     skills: ["Supply Chain", "MCP", "SAST"],
     icon: PackageSearch
@@ -52,7 +52,7 @@ const securityTools: SecurityTool[] = [
     name: "AWS IR Pack",
     tagline: "GuardDuty + CloudTrail incident response workflows",
     description: "Triages AWS threats with ready Athena queries, timelines, and confirmation-gated containment playbooks.",
-    platform: "Agensi",
+    platform: "Claude skill",
     tryUrl: "https://www.agensi.io/skills/aws-ir-pack-guardduty-cloudtrail-incident-response",
     skills: ["Incident Response", "AWS", "DFIR"],
     icon: Siren
@@ -137,7 +137,7 @@ export const SecurityTools = ({ isOwner }: SecurityToolsProps) => {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Try it
+                      {(tool.name === "AgentPot" || tool.name === "Lume Skill Detection") ? "Try it" : "Get skill"}
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </Button>
