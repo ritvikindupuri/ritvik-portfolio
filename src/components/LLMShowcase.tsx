@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database, Cloud, Radar, ShieldCheck, Crosshair, Eye, Boxes, Bug, Shield, ArrowLeft, ArrowRight, Scan, Package, Siren, ShieldAlert, ShieldHalf, Waves, Box, Lock, Container, Sparkle, Footprints, EyeOff, CloudCog, Binary, Hexagon, Target, Fingerprint, LockKeyhole, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { agenticProjectDetails } from "@/data/agenticProjectDetails";
-import { CloudPilotIcon, StrataIcon, CirrusIcon, ContainmentIcon, SpectraIcon, AegisIcon, ThreatLensIcon, AetherIcon, KarmaIcon, ChaffIcon, TraceveilIcon } from "@/components/icons/AgenticProjectIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -570,7 +569,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   };
 
   // Project signature icon and color mapping
-  const getProjectSignature = (project: LLMProject): { icon: any; color: string; gradient: string; shadow: string } => {
+  const getProjectSignature = (project: LLMProject): { icon: any; logo?: string; color: string; gradient: string; shadow: string } => {
     const title = project.title.toLowerCase();
     const description = project.description.toLowerCase();
     
@@ -600,67 +599,78 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
       shadow: 'shadow-red-500/30'
     };
     if (title.includes('cloudpilot')) return { 
-      icon: CloudPilotIcon, 
+      icon: Shield, 
+      logo: '/project-logos/cloudpilot.png', 
       color: '#06b6d4', // cyan (same color it previously got from the cloud fallback)
       gradient: 'from-cyan-500/20 to-cyan-600/10',
       shadow: 'shadow-cyan-500/30'
     };
     if (title.includes('strata')) return { 
-      icon: StrataIcon, 
+      icon: Shield, 
+      logo: '/project-logos/strata.png', 
       color: '#0ea5e9', // sky
       gradient: 'from-sky-500/20 to-sky-600/10',
       shadow: 'shadow-sky-500/30'
     };
     if (title.includes('cirrus')) return { 
-      icon: CirrusIcon, 
+      icon: Shield, 
+      logo: '/project-logos/cirrus.png', 
       color: '#3b82f6', // blue
       gradient: 'from-blue-500/20 to-blue-600/10',
       shadow: 'shadow-blue-500/30'
     };
     if (title.includes('aegis')) return { 
-      icon: AegisIcon, 
+      icon: Shield, 
+      logo: '/project-logos/aegis.png', 
       color: '#6366f1', // indigo
       gradient: 'from-indigo-500/20 to-indigo-600/10',
       shadow: 'shadow-indigo-500/30'
     };
     if (title.includes('threatlens')) return { 
-      icon: ThreatLensIcon, 
+      icon: Shield, 
+      logo: '/project-logos/threatlens.png', 
       color: '#ec4899', // pink
       gradient: 'from-pink-500/20 to-pink-600/10',
       shadow: 'shadow-pink-500/30'
     };
     if (title.includes('aether')) return { 
-      icon: AetherIcon, 
+      icon: Shield, 
+      logo: '/project-logos/aether.png', 
       color: '#a855f7', // purple
       gradient: 'from-purple-500/20 to-purple-600/10',
       shadow: 'shadow-purple-500/30'
     };
     if (title.includes('spectra')) return { 
-      icon: SpectraIcon, 
+      icon: Shield, 
+      logo: '/project-logos/spectra.png', 
       color: '#d946ef', // fuchsia
       gradient: 'from-fuchsia-500/20 to-fuchsia-600/10',
       shadow: 'shadow-fuchsia-500/30'
     };
     if (title.includes('containment')) return { 
-      icon: ContainmentIcon, 
+      icon: Shield, 
+      logo: '/project-logos/containment.png', 
       color: '#059669', // emerald
       gradient: 'from-emerald-500/20 to-emerald-600/10',
       shadow: 'shadow-emerald-500/30'
     };
     if (title.includes('karma')) return { 
-      icon: KarmaIcon, 
+      icon: Shield, 
+      logo: '/project-logos/karma.png', 
       color: '#10b981', // green
       gradient: 'from-green-500/20 to-green-600/10',
       shadow: 'shadow-green-500/30'
     };
     if (title.includes('chaff')) return { 
-      icon: ChaffIcon, 
+      icon: Shield, 
+      logo: '/project-logos/chaff.png', 
       color: '#f97316', // orange
       gradient: 'from-orange-500/20 to-orange-600/10',
       shadow: 'shadow-orange-500/30'
     };
     if (title.includes('traceveil')) return { 
-      icon: TraceveilIcon, 
+      icon: Shield, 
+      logo: '/project-logos/traceveil.png', 
       color: '#64748b', // slate
       gradient: 'from-slate-500/20 to-slate-600/10',
       shadow: 'shadow-slate-500/30'
@@ -846,7 +856,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                       className={`relative w-14 h-14 rounded-lg bg-gradient-to-br ${signature.gradient} backdrop-blur-sm flex items-center justify-center border`}
                       style={{ borderColor: signature.color + '40' }}
                     >
-                      <ProjectIcon className="w-7 h-7" style={{ color: signature.color }} />
+                      {signature.logo ? <img src={signature.logo} alt="" aria-hidden="true" draggable={false} loading="lazy" className="w-10 h-10 object-contain select-none pointer-events-none" /> : <ProjectIcon className="w-7 h-7" style={{ color: signature.color }} />}
                     </div>
                   </div>
                   <p className="text-xs font-medium text-center text-foreground leading-snug" style={{ textWrap: 'balance', wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -961,7 +971,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                     className={`relative w-12 h-12 rounded-lg bg-gradient-to-br ${signature.gradient} backdrop-blur-sm flex items-center justify-center border`}
                     style={{ borderColor: signature.color + '40' }}
                   >
-                    <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />
+                    {signature.logo ? <img src={signature.logo} alt="" aria-hidden="true" draggable={false} loading="lazy" className="w-9 h-9 object-contain select-none pointer-events-none" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
                   </div>
                 </div>
                 <p className="text-xs font-medium text-center text-foreground leading-snug" style={{ textWrap: 'balance', wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -996,7 +1006,7 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
                           borderColor: signature.color + '50'
                         }}
                       >
-                        <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />
+                        {signature.logo ? <img src={signature.logo} alt="" aria-hidden="true" draggable={false} loading="lazy" className="w-9 h-9 object-contain select-none pointer-events-none" /> : <ProjectIcon className="w-6 h-6" style={{ color: signature.color }} />}
                       </div>
                       <span className="text-left">{selectedProject.title}</span>
                     </SheetTitle>
