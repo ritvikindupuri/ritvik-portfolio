@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow } from "lucide-react";
+import { Sparkles, Plus, Github, ExternalLink, FileText, X, GripVertical, MoreVertical, ChevronDown, MessageSquare, Zap, Bot, Workflow, ChevronRight, Layers, GitBranch, Network, Database } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -270,6 +270,8 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
   const [editingProject, setEditingProject] = useState<LLMProject | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [showAll, setShowAll] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Get unique project types for filter
   const categories = ["all", ...new Set(projects.map(p => p.project_type).filter(Boolean))] as string[];
@@ -477,6 +479,29 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
     setFormData({ ...formData, technologies: formData.technologies.filter(t => t !== tech) });
   };
 
+  const toggleCard = (projectId: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
+  };
+
+  const getCategoryIcon = (projectType: string | null) => {
+    switch (projectType) {
+      case 'Agentic Workflow': return Workflow;
+      case 'Multi-Agent System': return Network;
+      case 'Tool-Use Agent': return Bot;
+      case 'RAG System': return Database;
+      case 'AI Agent': return Sparkles;
+      default: return Layers;
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -511,49 +536,217 @@ export const LLMShowcase = ({ isOwner }: LLMShowcaseProps) => {
         </div>
       )}
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={filteredProjects.map(p => p.id)} strategy={rectSortingStrategy}>
-          <div className="space-y-6">
-            {filteredProjects.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No projects in this category</p>
-            ) : filteredProjects.map((project) => (
-              <SortableLLMCard
-                key={project.id}
-                project={project}
-                isOwner={isOwner}
-                onEdit={() => {
-                  setEditingProject(project);
-                  // Check if stored values are custom (not in predefined lists)
-                  const isCustomProjectType = project.project_type && !projectTypes.includes(project.project_type);
-                  const isCustomProvider = project.llm_provider && !llmProviders.includes(project.llm_provider);
-                  const isCustomUseCase = project.use_case && !useCases.includes(project.use_case);
-                  
-                  setFormData({
-                    title: project.title,
-                    description: project.description,
-                    project_type: isCustomProjectType ? "Other" : (project.project_type || ""),
-                    project_type_custom: isCustomProjectType ? project.project_type : "",
-                    llm_provider: isCustomProvider ? "Other" : (project.llm_provider || ""),
-                    llm_provider_custom: isCustomProvider ? project.llm_provider : "",
-                    use_case: isCustomUseCase ? "Other" : (project.use_case || ""),
-                    use_case_custom: isCustomUseCase ? project.use_case : "",
-                    github_url: project.github_url || "",
-                    demo_url: project.demo_url || "",
-                    documentation_url: project.documentation_url || "",
-                    technologies: project.technologies || [],
-                  });
-                  setIsAddDialogOpen(true);
-                }}
-                onRemove={() => handleRemove(project.id)}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      {/* Projects Grid - SecurityTools Style */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+        {(showAll ? filteredProjects : filteredProjects.slice(0, 6)).map((project, index) => {
+          const CategoryIcon = getCategoryIcon(project.project_type);
+          const isExpanded = expandedCards.has(project.id);
+          
+          return (
+            <motion.div
+              key={project.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              className="group relative"
+            >
+              <div className="relative bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md border border-border/40 rounded-2xl overflow-hidden hover:border-accent/40 transition-all duration-500 hover:shadow-[0_0_40px_rgba(168,85,247,0.15)]">
+                <div className="h-0.5 bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
+                
+                <div className="p-6 space-y-4">
+                  {/* Icon and Edit Controls */}
+                  <div className="flex items-start justify-between">
+                    <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                      <CategoryIcon className="w-6 h-6 text-accent" />
+                    </div>
+                    
+                    {isOwner && (
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingProject(project);
+                            const isCustomProjectType = project.project_type && !projectTypes.includes(project.project_type);
+                            const isCustomProvider = project.llm_provider && !llmProviders.includes(project.llm_provider);
+                            const isCustomUseCase = project.use_case && !useCases.includes(project.use_case);
+                            
+                            setFormData({
+                              title: project.title,
+                              description: project.description,
+                              project_type: isCustomProjectType ? "Other" : (project.project_type || ""),
+                              project_type_custom: isCustomProjectType ? project.project_type : "",
+                              llm_provider: isCustomProvider ? "Other" : (project.llm_provider || ""),
+                              llm_provider_custom: isCustomProvider ? project.llm_provider : "",
+                              use_case: isCustomUseCase ? "Other" : (project.use_case || ""),
+                              use_case_custom: isCustomUseCase ? project.use_case : "",
+                              github_url: project.github_url || "",
+                              demo_url: project.demo_url || "",
+                              documentation_url: project.documentation_url || "",
+                              technologies: project.technologies || [],
+                            });
+                            setIsAddDialogOpen(true);
+                          }}
+                          className="bg-accent/20 hover:bg-accent/30 text-accent rounded-lg p-1.5 transition-colors"
+                          title="Edit"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        </button>
+                        <button
+                          onClick={() => handleRemove(project.id)}
+                          className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-lg p-1.5 transition-colors"
+                          title="Delete"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Title and Category Label */}
+                  <div className="space-y-2">
+                    <h4 className="text-xl font-bold text-foreground leading-tight">
+                      {project.title}
+                    </h4>
+                    {project.project_type && (
+                      <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
+                        {project.project_type}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* One-line description */}
+                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                    {project.description}
+                  </p>
+
+                  {/* Expand button for details */}
+                  <button
+                    onClick={() => toggleCard(project.id)}
+                    className="inline-flex items-center gap-1.5 text-xs text-accent hover:text-accent/80 transition-colors font-medium"
+                  >
+                    {isExpanded ? 'Hide details' : 'Show details'}
+                    <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                  </button>
+
+                  {/* Expandable details panel */}
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="space-y-3 pt-3 border-t border-border/30"
+                    >
+                      {/* Full description */}
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {project.description}
+                      </p>
+                      
+                      {/* LLM Provider */}
+                      {project.llm_provider && (
+                        <div className="text-xs text-muted-foreground">
+                          <span className="font-semibold">Provider:</span> {project.llm_provider}
+                        </div>
+                      )}
+                      
+                      {/* Use Case */}
+                      {project.use_case && (
+                        <div className="bg-accent/10 rounded-lg px-3 py-2 space-y-1">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1.5">
+                            <Zap className="w-3 h-3 text-accent/70" />
+                            Use Case
+                          </p>
+                          <p className="text-xs text-foreground/80">{project.use_case}</p>
+                        </div>
+                      )}
+                      
+                      {/* Tech tags */}
+                      {project.technologies && project.technologies.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {project.technologies.map((tech) => (
+                            <span
+                              key={tech}
+                              className="text-[11px] px-2.5 py-1 rounded-full bg-secondary/50 text-muted-foreground border border-border/50 font-medium"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Links - Always visible */}
+                  {(project.github_url || project.demo_url || project.documentation_url) && (
+                    <div className="flex gap-2 pt-2">
+                      {project.github_url && (
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-2"
+                        >
+                          <a href={project.github_url} target="_blank" rel="noopener noreferrer">
+                            <Github className="w-4 h-4" />
+                            Code
+                          </a>
+                        </Button>
+                      )}
+                      {project.demo_url && (
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-2"
+                        >
+                          <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-4 h-4" />
+                            Demo
+                          </a>
+                        </Button>
+                      )}
+                      {project.documentation_url && (
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-2"
+                        >
+                          <a href={project.documentation_url} target="_blank" rel="noopener noreferrer">
+                            <FileText className="w-4 h-4" />
+                            Docs
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Show All / Show Less Button */}
+      {filteredProjects.length > 6 && (
+        <div className="flex justify-center mt-8">
+          <Button
+            onClick={() => setShowAll(!showAll)}
+            variant="outline"
+            className="gap-2"
+          >
+            {showAll ? (
+              <>
+                Show less
+                <ChevronDown className="w-4 h-4 rotate-180" />
+              </>
+            ) : (
+              <>
+                Show all {filteredProjects.length} projects
+                <ChevronDown className="w-4 h-4" />
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
       {projects.length === 0 && !isOwner && (
         <div className="text-center py-12 text-muted-foreground">
