@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent
 ICON_DIR = ROOT / "icons"
 FONT_PATH = "/usr/share/fonts/truetype/sand-box/google/Inter/Inter-VariableFont_opsz,wght.ttf"
 
-W, H = 1680, 1080
+W, H = 2280, 1180
 INK = "#0F172A"
 MUTED = "#475569"
 GRAY = "#64748B"
@@ -23,10 +23,10 @@ BAND = "#F1F5F9"
 BAND_STROKE = "#E2E8F0"
 CARD = "#FFFFFF"
 CARD_STROKE = "#CBD5E1"
-ACCENT = "#334155"
 
-CARD_W, CARD_H = 200, 146
+CARD_W, CARD_H = 260, 174
 ICON = 58
+PILL_SIZE = 12
 
 
 def font(size: int, weight: int = 400) -> ImageFont.FreeTypeFont:
@@ -43,6 +43,28 @@ def font(size: int, weight: int = 400) -> ImageFont.FreeTypeFont:
 
 def text_w(s: str, size: int, weight: int = 400) -> float:
     return float(font(size, weight).getlength(s))
+
+
+def wrap_text(s: str, size: int, weight: int, max_w: float) -> list[str]:
+    if "\n" in s:
+        lines: list[str] = []
+        for part in s.split("\n"):
+            part = part.strip()
+            lines.extend(wrap_text(part, size, weight, max_w) if part else [""])
+        return lines
+    words = s.split()
+    lines: list[str] = []
+    cur = ""
+    for word in words:
+        trial = (cur + " " + word).strip()
+        if text_w(trial, size, weight) <= max_w or not cur:
+            cur = trial
+        else:
+            lines.append(cur)
+            cur = word
+    if cur:
+        lines.append(cur)
+    return lines or [s]
 
 
 def esc(s: str) -> str:
@@ -78,7 +100,7 @@ def defs() -> str:
         "slate": "#475569",
     }
     parts = [
-        '<defs>',
+        "<defs>",
         '<filter id="shadow" x="-12%" y="-12%" width="124%" height="136%">'
         '<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.10"/>'
         "</filter>",
@@ -104,15 +126,24 @@ def band(x, y, w, h, title) -> str:
 
 def card(cx, cy, icon_href, title, sub) -> str:
     x, y = cx - CARD_W / 2, cy - CARD_H / 2
-    return (
+    lines = wrap_text(sub, 13, 400, CARD_W - 28)
+    out = [
         f'<rect x="{x}" y="{y}" width="{CARD_W}" height="{CARD_H}" rx="14" fill="{CARD}" '
-        f'stroke="{CARD_STROKE}" stroke-width="2" filter="url(#shadow)"/>'
-        f'<image x="{cx - ICON / 2}" y="{y + 16}" width="{ICON}" height="{ICON}" href="{icon_href}"/>'
+        f'stroke="{CARD_STROKE}" stroke-width="2" filter="url(#shadow)"/>',
+        f'<image x="{cx - ICON / 2}" y="{y + 16}" width="{ICON}" height="{ICON}" href="{icon_href}"/>',
         f'<text x="{cx}" y="{y + 98}" text-anchor="middle" font-family="Inter" font-size="17" '
-        f'font-weight="700" fill="{INK}">{esc(title)}</text>'
-        f'<text x="{cx}" y="{y + 122}" text-anchor="middle" font-family="Inter" font-size="13" '
-        f'fill="{GRAY}">{esc(sub)}</text>'
-    )
+        f'font-weight="700" fill="{INK}">{esc(title)}</text>',
+    ]
+    if len(lines) == 1:
+        sub_ys = [y + 126]
+    else:
+        sub_ys = [y + 118 + i * 18 for i in range(len(lines))]
+    for line, sy in zip(lines, sub_ys):
+        out.append(
+            f'<text x="{cx}" y="{sy}" text-anchor="middle" font-family="Inter" font-size="13" '
+            f'fill="{GRAY}">{esc(line)}</text>'
+        )
+    return "".join(out)
 
 
 def path_d(pts, r=14) -> str:
@@ -139,15 +170,24 @@ def arrow(pts, color=LINE, marker="gray", width=2.2) -> str:
     )
 
 
-def pill(x, y, label, color="#475569") -> str:
-    tw = text_w(label, 11, 600)
-    pw, ph = tw + 18, 22
-    return (
-        f'<rect x="{x - pw / 2}" y="{y - ph / 2}" width="{pw}" height="{ph}" rx="{ph / 2}" '
+def pill(x, y, label, max_w: float = 240, color="#475569") -> str:
+    lines = wrap_text(label, PILL_SIZE, 600, max_w)
+    widths = [text_w(line, PILL_SIZE, 600) for line in lines]
+    pw = max(widths) + 20
+    line_h = 15
+    ph = 12 + line_h * len(lines)
+    top = y - ph / 2
+    out = [
+        f'<rect x="{x - pw / 2}" y="{top}" width="{pw}" height="{ph}" rx="{min(ph / 2, 13)}" '
         f'fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2"/>'
-        f'<text x="{x}" y="{y + 4}" text-anchor="middle" font-family="Inter" font-size="11" '
-        f'font-weight="600" fill="{color}">{esc(label)}</text>'
-    )
+    ]
+    start = top + 6 + 11
+    for i, line in enumerate(lines):
+        out.append(
+            f'<text x="{x}" y="{start + i * line_h}" text-anchor="middle" font-family="Inter" '
+            f'font-size="{PILL_SIZE}" font-weight="600" fill="{color}">{esc(line)}</text>'
+        )
+    return "".join(out)
 
 
 def build() -> str:
@@ -162,21 +202,21 @@ def build() -> str:
         "bolt": generic_uri(BOLT_SVG),
     }
 
-    # Bands
-    by, bh = 112, 890
-    gap = 28
-    mx = 36
+    by, bh = 118, 980
+    mx = 48
     inner = W - 2 * mx
-    w1, w2, w3, w4 = 250, 330, 440, 504
-    assert abs((w1 + w2 + w3 + w4 + 3 * gap) - inner) < 1, (w1 + w2 + w3 + w4 + 3 * gap, inner)
+    g12, g23, g34 = 124, 96, 96
+    w1, w2, w3, w4 = 340, 410, 560, 558
+    assert abs((w1 + w2 + w3 + w4 + g12 + g23 + g34) - inner) < 1, (
+        w1 + w2 + w3 + w4 + g12 + g23 + g34, inner
+    )
     x1 = mx
-    x2 = x1 + w1 + gap
-    x3 = x2 + w2 + gap
-    x4 = x3 + w3 + gap
+    x2 = x1 + w1 + g12
+    x3 = x2 + w2 + g23
+    x4 = x3 + w3 + g34
 
-    # Four evenly spaced service cards, vertically centered in the band
-    spacing = CARD_H + 36  # 182
-    stack_h = CARD_H * 4 + 36 * 3
+    spacing = CARD_H + 44
+    stack_h = CARD_H * 4 + 44 * 3
     stack_top = by + 64 + (bh - 64 - stack_h) / 2
     ys = [stack_top + CARD_H / 2 + i * spacing for i in range(4)]
     gh = (x4 + w4 / 2, ys[0])
@@ -185,7 +225,6 @@ def build() -> str:
     res = (x4 + w4 / 2, ys[3])
 
     db = (x3 + w3 / 2, gh[1])
-    # Edge Functions centered on the OpenAI-Gemini-Resend group
     edge = (x3 + w3 / 2, (oai[1] + res[1]) / 2)
     mid = (db[1] + edge[1]) / 2
     vis = (x1 + w1 / 2, mid)
@@ -195,7 +234,7 @@ def build() -> str:
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         f'<rect width="{W}" height="{H}" fill="#FFFFFF"/>',
         defs(),
-        f'<text x="{W/2}" y="52" text-anchor="middle" font-family="Inter" font-size="26" '
+        f'<text x="{W/2}" y="56" text-anchor="middle" font-family="Inter" font-size="26" '
         f'font-weight="700" fill="{INK}">Figure 1. Portfolio system architecture</text>',
         band(x1, by, w1, bh, "VISITOR"),
         band(x2, by, w2, bh, "HOSTING"),
@@ -203,7 +242,6 @@ def build() -> str:
         band(x4, by, w4, bh, "SERVICES"),
     ]
 
-    # Geometry helpers
     def right(c):
         return (c[0] + CARD_W / 2, c[1])
 
@@ -221,55 +259,50 @@ def build() -> str:
 
     # Visitor -> Pages
     parts.append(arrow([right(vis), left(pages)]))
-    parts.append(pill((right(vis)[0] + left(pages)[0]) / 2, vis[1] - 18, "open site"))
+    parts.append(pill((right(vis)[0] + left(pages)[0]) / 2, vis[1] - 22, "opens the live portfolio", max_w=220))
 
-    # Pages -> Database (up-right) and Pages -> Edge Functions (down-right)
+    # Pages -> Database and Pages -> Edge Functions
     mid_x = gap23
-    p_out_top = (right(pages)[0], pages[1] - 26)
-    p_out_bot = (right(pages)[0], pages[1] + 26)
+    p_out_top = (right(pages)[0], pages[1] - 28)
+    p_out_bot = (right(pages)[0], pages[1] + 28)
     db_in = left(db)
     edge_in = left(edge)
     parts.append(arrow([p_out_top, (mid_x, p_out_top[1]), (mid_x, db_in[1]), db_in]))
-    parts.append(pill(mid_x, (p_out_top[1] + db_in[1]) / 2, "load content"))
+    parts.append(pill(mid_x, (p_out_top[1] + db_in[1]) / 2, "loads projects,\nexperience, and docs", max_w=200))
     parts.append(arrow([p_out_bot, (mid_x, p_out_bot[1]), (mid_x, edge_in[1]), edge_in]))
-    parts.append(pill(mid_x, (p_out_bot[1] + edge_in[1]) / 2, "chat and contact"))
+    parts.append(pill(mid_x, (p_out_bot[1] + edge_in[1]) / 2, "sends chat and\ncontact requests", max_w=200))
 
-    # Edge Functions -> Database (retrieve)
+    # Edge Functions -> Database
     parts.append(arrow([top(edge), bottom(db)]))
-    parts.append(pill(edge[0] + 56, (bottom(db)[1] + top(edge)[1]) / 2, "retrieve"))
+    parts.append(pill(edge[0] + 78, (bottom(db)[1] + top(edge)[1]) / 2, "semantic search over\nportfolio content", max_w=200))
 
-    # GitHub -> Database (README text is indexed into the database)
+    # GitHub -> Database
     parts.append(arrow([left(gh), right(db)]))
-    parts.append(pill((right(db)[0] + left(gh)[0]) / 2, db[1] - 18, "index READMEs"))
+    parts.append(pill((right(db)[0] + left(gh)[0]) / 2, db[1] - 22, "indexes project README files", max_w=240))
 
-    # Shared spine from Edge Functions into the services column, then branch
-    # to OpenAI, Gemini, and Resend without overlapping shafts.
+    # Spine from Edge Functions to OpenAI, Gemini, and Resend
     spine_x = gap34
     e_out = right(edge)
     parts.append(arrow([e_out, (spine_x, e_out[1]), (spine_x, oai[1]), left(oai)]))
     parts.append(arrow([(spine_x, e_out[1]), (spine_x, gem[1]), left(gem)]))
     parts.append(arrow([(spine_x, e_out[1]), (spine_x, res[1]), left(res)]))
-    # Pills sit on unique segments, clear of the junction
-    parts.append(pill(spine_x, (e_out[1] + oai[1]) / 2, "embed"))
-    parts.append(pill((spine_x + left(gem)[0]) / 2, gem[1] - 18, "answer"))
-    parts.append(pill(spine_x, (e_out[1] + res[1]) / 2, "send email"))
+    parts.append(pill(spine_x, (e_out[1] + oai[1]) / 2, "embeds the chat question", max_w=180))
+    parts.append(pill((spine_x + left(gem)[0]) / 2, gem[1] - 22, "drafts the chatbot reply", max_w=200))
+    parts.append(pill(spine_x, (e_out[1] + res[1]) / 2, "delivers the contact message", max_w=180))
 
-    # Cards on top of arrows? No - arrows should be under cards, so cards come after arrows.
-    # I already inserted arrows first after bands. Now cards.
     parts.extend(
         [
-            card(*vis, icons["visitor"], "Visitor", "web browser"),
-            card(*pages, icons["cloudflarepages"], "Cloudflare Pages", "site and docs"),
-            card(*db, icons["supabase"], "Database", "content and files"),
-            card(*edge, icons["bolt"], "Edge Functions", "chat and contact"),
-            card(*gh, icons["github"], "GitHub", "project repos"),
-            card(*oai, icons["openai"], "OpenAI", "embeddings"),
-            card(*gem, icons["gemini"], "Gemini", "answers"),
-            card(*res, icons["resend"], "Resend", "email"),
+            card(*vis, icons["visitor"], "Visitor", "views the public site"),
+            card(*pages, icons["cloudflarepages"], "Cloudflare Pages", "serves the site\nand PDF docs"),
+            card(*db, icons["supabase"], "Database", "projects, experience,\ndocs, and resumes"),
+            card(*edge, icons["bolt"], "Edge Functions", "chatbot and contact form"),
+            card(*gh, icons["github"], "GitHub", "project repos and\nREADME files"),
+            card(*oai, icons["openai"], "OpenAI", "embeds chat questions"),
+            card(*gem, icons["gemini"], "Gemini", "writes chatbot replies"),
+            card(*res, icons["resend"], "Resend", "delivers contact messages"),
         ]
     )
 
-    # Footer attribution, centered
     foot = "Icons: Cloudflare Pages, Supabase, GitHub, OpenAI, Gemini, and Resend from Simple Icons (CC0)."
     parts.append(
         f'<text x="{W/2}" y="{H - 28}" text-anchor="middle" font-family="Inter" font-size="12" '
