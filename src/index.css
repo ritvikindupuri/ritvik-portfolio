@@ -359,7 +359,7 @@
 
 /* Cirrus: radar ping from the crosshair center */
 .logo-fx-cirrus-ping {
-  position: absolute; left: 49.8%; top: 53.7%; width: 12%; height: 12%; z-index: 2;
+  position: absolute; left: 50%; top: 53.85%; width: 12%; height: 12%; z-index: 2;
   border-radius: 9999px;
   border: 1.5px solid rgba(96, 165, 250, 0.9);
   transform: translate(-50%, -50%) scale(0.3);

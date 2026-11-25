@@ -98,7 +98,7 @@ export const LLMShowcase = () => {
     if (prefersReducedMotion || userHasControl || isDragging || filteredProjects.length === 0) return;
 
     autoRotateRef.current = setInterval(() => {
-      setCurrentRotation((prev) => prev + 360 / Math.max(filteredProjects.length, 1));
+      setCurrentRotation((prev) => prev - 360 / Math.max(filteredProjects.length, 1));
     }, 3000);
 
     return () => {
@@ -125,13 +125,15 @@ export const LLMShowcase = () => {
   const rotateLeft = () => {
     if (filteredProjects.length === 0) return;
     takeControl();
-    setCurrentRotation((prev) => prev - 360 / filteredProjects.length);
+    // Positive rotateY brings the left-hand card to center.
+    setCurrentRotation((prev) => prev + 360 / filteredProjects.length);
   };
 
   const rotateRight = () => {
     if (filteredProjects.length === 0) return;
     takeControl();
-    setCurrentRotation((prev) => prev + 360 / filteredProjects.length);
+    // Negative rotateY brings the right-hand card to center.
+    setCurrentRotation((prev) => prev - 360 / filteredProjects.length);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -444,7 +446,7 @@ export const LLMShowcase = () => {
           if (!prefersReducedMotion && !userHasControl && filteredProjects.length > 0) {
             if (autoRotateRef.current) clearInterval(autoRotateRef.current);
             autoRotateRef.current = setInterval(() => {
-              setCurrentRotation((prev) => prev + 360 / filteredProjects.length);
+              setCurrentRotation((prev) => prev - 360 / filteredProjects.length);
             }, 3000);
           }
         }}
