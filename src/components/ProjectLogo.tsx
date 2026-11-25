@@ -36,31 +36,20 @@ const ChaffMark = () => (
 
 
 const CirrusMark = () => (
-  // Official Cirrus cloud-and-crosshair, redrawn as a bold stroke mark so it holds weight at 40px.
-  <svg viewBox="-3 1 70 66" xmlns="http://www.w3.org/2000/svg" fill="none" className="w-full h-full" shapeRendering="geometricPrecision">
-  <g stroke="#60a5fa" strokeWidth="3.25" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M 16.50 22.07 A 15.50 15.50 0 0 1 28.25 6.96" />
-    <path d="M 35.75 6.96 A 15.50 15.50 0 0 1 47.50 22.07" />
-    <path d="M 16.50 22.07 A 16.00 16.00 0 0 0 18.00 54.00" />
-    <path d="M 47.50 22.07 A 16.00 16.00 0 0 1 46.00 54.00" />
-    <path d="M 18.00 54.00 L 26.5 54.00 L 26.5 57" />
-    <path d="M 46.00 54.00 L 37.5 54.00 L 37.5 57" />
-    <path d="M 48.45 43.50 A 19.00 19.00 0 0 1 41.50 50.45" />
-    <path d="M 22.50 50.45 A 19.00 19.00 0 0 1 15.55 43.50" />
-    <path d="M 15.55 24.50 A 19.00 19.00 0 0 1 22.50 17.55" />
-    <path d="M 41.50 17.55 A 19.00 19.00 0 0 1 48.45 24.50" />
-    <circle cx="32.0" cy="34.0" r="11" />
-    <path d="M 32.0 29.0 L 32.0 23.0" />
-    <path d="M 32.0 39.0 L 32.0 45.0" />
-    <path d="M 27.0 34.0 L 21.0 34.0" />
-    <path d="M 37.0 34.0 L 43.0 34.0" />
-    <path d="M 10.0 34.0 L 15.5 34.0" />
-    <path d="M 48.5 34.0 L 54.0 34.0" />
-    <path d="M 32.0 7.5 L 32.0 11.5" />
-    <path d="M 32.0 50.5 L 32.0 59" />
-  </g>
-  <circle cx="32.0" cy="34.0" r="2.75" fill="#60a5fa" />
-</svg>
+  // Official Cirrus mark from CIRRUS_Cloud_Audit (src/assets/cirrus-logo.png).
+  // Tight crop of the official 1024px asset, inverted for the dark tile the same
+  // way the app uses dark:invert. High-res srcset so the browser downscales;
+  // no CSS filter on the image itself (filters rasterize and soften in the 3D carousel).
+  <img
+    src="/project-logos/cirrus.png"
+    srcSet="/project-logos/cirrus.png 1x, /project-logos/cirrus@2x.png 2x, /project-logos/cirrus@3x.png 3x"
+    alt=""
+    width={80}
+    height={80}
+    draggable={false}
+    decoding="async"
+    className="logo-fx-img w-full h-full object-contain"
+  />
 );
 
 const KarmaMark = () => {
