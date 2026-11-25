@@ -1,7 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { ExternalLink, Github, Youtube } from "lucide-react";
+import { ExternalLink, FileText, Github, Youtube } from "lucide-react";
+import { docUrlForGithub } from "@/data/projectDocs";
 import { useEffect, useState } from "react";
 
 interface FeaturedProject {
@@ -62,8 +63,20 @@ const SortableFeaturedProject = ({ project, getYoutubeEmbedUrl }: SortableFeatur
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="View source code"
               >
                 <Github className="w-5 h-5 text-primary" />
+              </a>
+            )}
+            {docUrlForGithub(project.github_url) && (
+              <a
+                href={docUrlForGithub(project.github_url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="View documentation"
+              >
+                <FileText className="w-5 h-5 text-primary" />
               </a>
             )}
           </div>

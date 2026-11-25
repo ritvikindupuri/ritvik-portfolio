@@ -4,7 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Brain, Cloud, Container, ExternalLink, Github, Shield, Target } from "lucide-react";
+import { Brain, Cloud, Container, ExternalLink, FileText, Github, Shield, Target } from "lucide-react";
+import { docUrlForGithub } from "@/data/projectDocs";
 import { useEffect, useState } from "react";
 
 export const PROJECT_CATEGORIES = [
@@ -93,19 +94,35 @@ const SortableProject = ({ project, onProjectClick }: SortableProjectProps) => {
             ))}
           </div>
 
-          {/* GitHub Link */}
-          {project.github && (
-            <a
-              href={project.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => onProjectClick(project.title, project.github)}
-              className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-medium text-sm mt-auto group/link bg-primary/5 hover:bg-primary/10 px-5 py-3 rounded-xl border border-primary/20 hover:border-primary/40"
-            >
-              <Github className="w-5 h-5" />
-              <span>View Source Code</span>
-              <ExternalLink className="w-4 h-4" />
-            </a>
+          {/* GitHub and documentation links */}
+          {(project.github || docUrlForGithub(project.github)) && (
+            <div className="mt-auto space-y-3">
+              {project.github && (
+                <a
+                  href={project.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onProjectClick(project.title, project.github)}
+                  className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-medium text-sm group/link bg-primary/5 hover:bg-primary/10 px-5 py-3 rounded-xl border border-primary/20 hover:border-primary/40"
+                >
+                  <Github className="w-5 h-5" />
+                  <span>View Source Code</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+              {docUrlForGithub(project.github) && (
+                <a
+                  href={docUrlForGithub(project.github)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 text-primary hover:text-accent transition-colors font-medium text-sm group/link bg-primary/5 hover:bg-primary/10 px-5 py-3 rounded-xl border border-primary/20 hover:border-primary/40"
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>View documentation</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -161,7 +178,7 @@ const initialProjects: Record<string, Project[]> = {
   devsecops: [
     {
       id: "init-devsecops-1",
-      title: "OriginTrace — Runtime-to-Source DevSecOps",
+      title: "OriginTrace: Runtime-to-Source DevSecOps",
       type: "Personal",
       startMonth: "Sep 2026",
       endMonth: "Present",
