@@ -48,10 +48,24 @@ const PROFESSIONAL_SECTIONS = ['experience', 'skills', 'certifications', 'about'
 
 interface VisitorTrackerProviderProps {
   children: React.ReactNode;
-  isOwner: boolean;
 }
 
-export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProviderProps) => {
+// The portfolio has no sign-in. The owner can silence tracking and alerts for their own
+// browser by opening the site once with ?notrack=1 (undo with ?notrack=0).
+const trackingOptedOut = (): boolean => {
+  try {
+    const flag = new URLSearchParams(window.location.search).get('notrack');
+    if (flag === '1') localStorage.setItem('portfolio-no-track', '1');
+    if (flag === '0') localStorage.removeItem('portfolio-no-track');
+    return localStorage.getItem('portfolio-no-track') === '1';
+  } catch {
+    return false;
+  }
+};
+
+export const VisitorTrackerProvider = ({ children }: VisitorTrackerProviderProps) => {
+  const optedOutRef = useRef<boolean>(trackingOptedOut());
+  const trackingDisabled = optedOutRef.current;
   const activitiesRef = useRef<Activity[]>([]);
   const chatbotQueriesRef = useRef<string[]>([]);
   const sessionIdRef = useRef<string>(getSessionId());
@@ -122,10 +136,10 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
   const sendRecruiterAlert = useCallback(async (isHighScore: boolean = false) => {
     // For high score (70+), use separate flag to allow both alerts
     if (isHighScore) {
-      if (highScoreAlertSentRef.current || isOwner) return;
+      if (highScoreAlertSentRef.current || trackingDisabled) return;
       highScoreAlertSentRef.current = true;
     } else {
-      if (recruiterAlertSentRef.current || isOwner) return;
+      if (recruiterAlertSentRef.current || trackingDisabled) return;
       recruiterAlertSentRef.current = true;
     }
     
@@ -172,11 +186,11 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
         recruiterAlertSentRef.current = false;
       }
     }
-  }, [isOwner, calculateRecruiterScore, hasContactIntent]);
+  }, [trackingDisabled, calculateRecruiterScore, hasContactIntent]);
 
   // Send visitor alert email - defined before trackActivity to avoid circular dependency
   const sendVisitorAlert = useCallback(async () => {
-    if (alertSentRef.current || isOwner) return;
+    if (alertSentRef.current || trackingDisabled) return;
     alertSentRef.current = true;
 
     try {
@@ -200,11 +214,11 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
       console.error('[VisitorTracker] Failed to send visitor alert:', e);
       alertSentRef.current = false;
     }
-  }, [isOwner]);
+  }, [trackingDisabled]);
 
   // Track activity (only for guests)
   const trackActivity = useCallback((type: string, data: any = {}) => {
-    if (isOwner) return; // Don't track owner activity
+    if (trackingDisabled) return; // Owner opted out via ?notrack=1
 
     const activity: Activity = {
       type,
@@ -242,7 +256,7 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
     if (score >= 70 && !highScoreAlertSentRef.current) {
       sendRecruiterAlert(true);
     }
-  }, [isOwner, calculateRecruiterScore, sendRecruiterAlert, sendVisitorAlert]);
+  }, [trackingDisabled, calculateRecruiterScore, sendRecruiterAlert, sendVisitorAlert]);
 
   // Track chatbot query
   const trackChatbotQuery = useCallback((query: string) => {
@@ -288,14 +302,14 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
 
   // Track initial page view
   useEffect(() => {
-    if (!isOwner) {
+    if (!trackingDisabled) {
       trackActivity('page_view', { page: window.location.pathname });
     }
-  }, [isOwner, trackActivity]);
+  }, [trackingDisabled, trackActivity]);
 
   // Send alert when user leaves (if they had any activity and alert wasn't sent)
   useEffect(() => {
-    if (isOwner) return;
+    if (trackingDisabled) return;
 
     const handleBeforeUnload = () => {
       // Lower threshold - send if ANY activity and alert wasn't sent
@@ -322,7 +336,7 @@ export const VisitorTrackerProvider = ({ children, isOwner }: VisitorTrackerProv
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isOwner]);
+  }, [trackingDisabled]);
 
   return (
     <VisitorTrackerContext.Provider value={{

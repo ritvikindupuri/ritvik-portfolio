@@ -1,38 +1,30 @@
-import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User as UserIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import DOMPurify from "dompurify";
 import { useVisitorTracker } from "@/components/VisitorTrackerProvider";
 import { useChatbot } from "@/contexts/ChatbotContext";
+import { supabase } from "@/integrations/supabase/client";
+import DOMPurify from "dompurify";
+import { AnimatePresence, motion } from "framer-motion";
+import { Bot, MessageCircle, Send, Trash2, User as UserIcon, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
 
-interface PortfolioChatbotProps {
-  isOwner: boolean;
-}
-
-export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
+export const PortfolioChatbot = () => {
   const { trackChatbotQuery } = useVisitorTracker();
   const { isChatOpen, setIsChatOpen } = useChatbot();
-  
-  // Don't show chatbot to owner - check BEFORE any hooks
-  if (isOwner) {
-    return null;
-  }
 
   const initialMessage: Message = {
-    role: 'assistant',
-    content: "Hi! I'm here to answer questions about Ritvik Indupuri's background, skills, and experience. What would you like to know?",
-    timestamp: new Date()
+    role: "assistant",
+    content:
+      "Hi! I'm here to answer questions about Ritvik Indupuri's background, skills, and experience. What would you like to know?",
+    timestamp: new Date(),
   };
 
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
@@ -49,35 +41,35 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
 
   const handleClearChat = () => {
     setMessages([initialMessage]);
-    toast.success('Chat history cleared');
+    toast.success("Chat history cleared");
   };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
-      role: 'user',
+      role: "user",
       content: input.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     // Track the chatbot query for visitor analytics
     trackChatbotQuery(input.trim());
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
       // Build conversation history for context (exclude the message we just added)
-      const conversationHistory = messages.map(m => ({
+      const conversationHistory = messages.map((m) => ({
         role: m.role,
-        content: m.content
+        content: m.content,
       }));
 
       const chatBody = { message: userMessage.content, conversationHistory };
-      const { data, error } = await supabase.functions.invoke('portfolio-chatbot', {
-        body: chatBody
+      const { data, error } = await supabase.functions.invoke("portfolio-chatbot", {
+        body: chatBody,
       });
 
       if (error) {
@@ -86,27 +78,27 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
 
       if (data?.message) {
         const assistantMessage: Message = {
-          role: 'assistant',
+          role: "assistant",
           content: data.message,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
-        setMessages(prev => [...prev, assistantMessage]);
+        setMessages((prev) => [...prev, assistantMessage]);
       } else {
-        throw new Error('No response from chatbot');
+        throw new Error("No response from chatbot");
       }
     } catch (error) {
-      console.error('Chatbot error:', error);
-      toast.error('Failed to get response. Please try again.');
-      
+      console.error("Chatbot error:", error);
+      toast.error("Failed to get response. Please try again.");
+
       // Remove the user message on error
-      setMessages(prev => prev.filter(m => m !== userMessage));
+      setMessages((prev) => prev.filter((m) => m !== userMessage));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -165,12 +157,7 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
-                <Button
-                  onClick={() => setIsChatOpen(false)}
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                >
+                <Button onClick={() => setIsChatOpen(false)} variant="ghost" size="sm" className="h-8 w-8 p-0">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -185,62 +172,61 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className={`flex gap-3 ${
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
+                    className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {message.role === 'assistant' && (
+                    {message.role === "assistant" && (
                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                         <Bot className="w-4 h-4 text-primary" />
                       </div>
                     )}
                     <div
                       className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-secondary-foreground'
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground"
                       }`}
                     >
-                      <div 
+                      <div
                         className="text-sm leading-relaxed [&>p]:mb-3 [&>p:last-child]:mb-0 [&_br]:block [&_br]:my-1 [&_strong]:font-semibold [&_ul]:space-y-2 [&_ul]:mt-2"
-                        dangerouslySetInnerHTML={{ 
+                        dangerouslySetInnerHTML={{
                           __html: DOMPurify.sanitize(
                             message.content
                               // Convert **text** to <strong>text</strong>
-                              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                              .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
                               // Split by double newlines for paragraphs
-                              .split('\n\n')
-                              .map(p => {
+                              .split("\n\n")
+                              .map((p) => {
                                 // Check if paragraph contains bullet points
-                                if (p.includes('•')) {
-                                  const lines = p.split('\n');
-                                  const bullets = lines.filter(l => l.trim().startsWith('•'));
-                                  const nonBullets = lines.filter(l => !l.trim().startsWith('•'));
-                                  
-                                  let html = '';
+                                if (p.includes("•")) {
+                                  const lines = p.split("\n");
+                                  const bullets = lines.filter((l) => l.trim().startsWith("•"));
+                                  const nonBullets = lines.filter((l) => !l.trim().startsWith("•"));
+
+                                  let html = "";
                                   if (nonBullets.length > 0) {
-                                    html += `<p>${nonBullets.join('<br>')}</p>`;
+                                    html += `<p>${nonBullets.join("<br>")}</p>`;
                                   }
                                   if (bullets.length > 0) {
-                                    html += '<ul>' + bullets.map(b => 
-                                      `<li>${b.replace(/^•\s*/, '')}</li>`
-                                    ).join('') + '</ul>';
+                                    html +=
+                                      "<ul>" +
+                                      bullets.map((b) => `<li>${b.replace(/^•\s*/, "")}</li>`).join("") +
+                                      "</ul>";
                                   }
                                   return html;
                                 }
                                 // Regular paragraph with line breaks
-                                return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+                                return `<p>${p.replace(/\n/g, "<br>")}</p>`;
                               })
-                              .join(''),
+                              .join(""),
                             {
-                              ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'br', 'p', 'ul', 'ol', 'li'],
-                              ALLOWED_ATTR: []
-                            }
-                          )
+                              ALLOWED_TAGS: ["b", "strong", "i", "em", "br", "p", "ul", "ol", "li"],
+                              ALLOWED_ATTR: [],
+                            },
+                          ),
                         }}
                       />
                     </div>
-                    {message.role === 'user' && (
+                    {message.role === "user" && (
                       <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
                         <UserIcon className="w-4 h-4 text-accent" />
                       </div>
@@ -248,19 +234,24 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                   </motion.div>
                 ))}
                 {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex gap-3 justify-start"
-                  >
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 justify-start">
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                       <Bot className="w-4 h-4 text-primary" />
                     </div>
                     <div className="bg-secondary text-secondary-foreground rounded-2xl px-4 py-2">
                       <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div
+                          className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        />
                       </div>
                     </div>
                   </motion.div>
@@ -280,18 +271,11 @@ export const PortfolioChatbot = ({ isOwner }: PortfolioChatbotProps) => {
                   maxLength={2000}
                   className="flex-1 bg-background border-border focus:border-primary"
                 />
-                <Button
-                  onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
-                  size="sm"
-                  className="px-3"
-                >
+                <Button onClick={handleSend} disabled={!input.trim() || isLoading} size="sm" className="px-3">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                AI-powered assistant • Answers may vary
-              </p>
+              <p className="text-xs text-muted-foreground mt-2 text-center">AI-powered assistant • Answers may vary</p>
             </div>
           </motion.div>
         )}

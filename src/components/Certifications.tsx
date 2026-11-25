@@ -1,32 +1,7 @@
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
-import { Award, Plus, Upload, X, GripVertical, Sparkles, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-
-interface CertificationsProps {
-  isOwner: boolean;
-}
+import { motion } from "framer-motion";
+import { Award } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface Certification {
   id: string;
@@ -41,81 +16,61 @@ interface Certification {
 }
 
 // Generate professional description based on certification name
-const generateCertDescription = (name: string, issuer?: string): string => {
+const generateCertDescription = (name: string): string => {
   const nameLower = name.toLowerCase();
-  
-  if (nameLower.includes('cybersecurity') || nameLower.includes('cc') || nameLower.includes('isc2')) {
+
+  if (nameLower.includes("cybersecurity") || nameLower.includes("cc") || nameLower.includes("isc2")) {
     return "Validates foundational knowledge in cybersecurity principles, incident response, and security operations.";
   }
-  if (nameLower.includes('security+') || nameLower.includes('comptia security')) {
+  if (nameLower.includes("security+") || nameLower.includes("comptia security")) {
     return "Industry-recognized certification demonstrating core security skills and best practices.";
   }
-  if (nameLower.includes('network+')) {
+  if (nameLower.includes("network+")) {
     return "Validates networking concepts, infrastructure, and troubleshooting capabilities.";
   }
-  if (nameLower.includes('aws') || nameLower.includes('amazon')) {
+  if (nameLower.includes("aws") || nameLower.includes("amazon")) {
     return "Demonstrates proficiency in Amazon Web Services cloud architecture and deployment.";
   }
-  if (nameLower.includes('azure') || nameLower.includes('microsoft')) {
+  if (nameLower.includes("azure") || nameLower.includes("microsoft")) {
     return "Certifies expertise in Microsoft Azure cloud services and solutions.";
   }
-  if (nameLower.includes('google') || nameLower.includes('gcp')) {
+  if (nameLower.includes("google") || nameLower.includes("gcp")) {
     return "Validates skills in Google Cloud Platform technologies and services.";
   }
-  if (nameLower.includes('cissp')) {
+  if (nameLower.includes("cissp")) {
     return "Premier certification for security professionals covering comprehensive security domains.";
   }
-  if (nameLower.includes('ceh') || nameLower.includes('ethical hacker')) {
+  if (nameLower.includes("ceh") || nameLower.includes("ethical hacker")) {
     return "Demonstrates advanced penetration testing and ethical hacking methodologies.";
   }
-  if (nameLower.includes('python') || nameLower.includes('programming')) {
+  if (nameLower.includes("python") || nameLower.includes("programming")) {
     return "Validates programming proficiency and software development best practices.";
   }
-  if (nameLower.includes('machine learning') || nameLower.includes('ml') || nameLower.includes('ai')) {
+  if (nameLower.includes("machine learning") || nameLower.includes("ml") || nameLower.includes("ai")) {
     return "Certifies expertise in machine learning algorithms and AI implementation.";
   }
-  if (nameLower.includes('data')) {
+  if (nameLower.includes("data")) {
     return "Demonstrates proficiency in data analysis, management, and visualization.";
   }
-  
-  return `Professional certification validating expertise in ${name.split(' ').slice(0, 3).join(' ')}.`;
-}
+
+  return `Professional certification validating expertise in ${name.split(" ").slice(0, 3).join(" ")}.`;
+};
 
 interface SortableCertProps {
   cert: Certification;
   index: number;
-  isOwner: boolean;
-  onEdit: () => void;
-  onRemove: () => void;
 }
 
-const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: cert.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
+const SortableCert = ({ cert, index }: SortableCertProps) => {
   return (
     <motion.div
-      ref={setNodeRef}
-      style={style}
       initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
       whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-      transition={{ 
-        delay: index * 0.15, 
+      transition={{
+        delay: index * 0.15,
         duration: 0.6,
         type: "spring",
-        stiffness: 100
+        stiffness: 100,
       }}
       viewport={{ once: true }}
       className="group relative"
@@ -125,62 +80,39 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
           className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/20 via-primary/20 to-accent/20 blur-2xl"
           animate={{
             opacity: [0.3, 0.6, 0.3],
-            scale: [1, 1.05, 1]
+            scale: [1, 1.05, 1],
           }}
           transition={{
             duration: 3,
             repeat: Infinity,
-            delay: index * 0.5
+            delay: index * 0.5,
           }}
         />
-        
+
         <motion.div
           className="relative h-full bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl border-2 border-accent/30 rounded-3xl p-8 shadow-2xl overflow-visible"
-          whileHover={{ 
+          whileHover={{
             rotateY: 5,
             rotateX: 5,
             scale: 1.05,
-            borderColor: "hsl(var(--accent) / 0.6)"
+            borderColor: "hsl(var(--accent) / 0.6)",
           }}
           transition={{ duration: 0.3 }}
           style={{
-            transformStyle: "preserve-3d"
+            transformStyle: "preserve-3d",
           }}
         >
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-4 right-4 w-32 h-32 border border-accent rounded-full" />
             <div className="absolute bottom-4 left-4 w-24 h-24 border border-primary rounded-full" />
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-accent/50" 
-              style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }} 
+            <div
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-accent/50"
+              style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}
             />
           </div>
 
-          {isOwner && (
-            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
-              <button
-                {...attributes}
-                {...listeners}
-                className="p-2 bg-background/80 backdrop-blur-sm rounded-lg hover:bg-background transition-colors cursor-grab active:cursor-grabbing"
-              >
-                <GripVertical className="w-5 h-5 text-muted-foreground" />
-              </button>
-              <button
-                onClick={onEdit}
-                className="bg-primary/20 hover:bg-primary/30 text-primary rounded-xl p-2.5 backdrop-blur-sm"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-              </button>
-              <button
-                onClick={onRemove}
-                className="bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl p-2.5 backdrop-blur-sm"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-          
           <div className="relative z-10 h-full flex flex-col items-center justify-between text-center">
-            <motion.div 
+            <motion.div
               className="relative mb-4"
               whileHover={{ scale: 1.1, rotate: 360 }}
               transition={{ duration: 0.6 }}
@@ -189,16 +121,16 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/30 to-transparent"
                   animate={{
-                    y: ["-100%", "200%"]
+                    y: ["-100%", "200%"],
                   }}
                   transition={{
                     duration: 2,
                     repeat: Infinity,
                     repeatDelay: 1,
-                    ease: "linear"
+                    ease: "linear",
                   }}
                 />
-                {cert.logo.startsWith('data:') ? (
+                {cert.logo.startsWith("data:") ? (
                   <img src={cert.logo} alt={cert.name} className="w-14 h-14 object-contain relative z-10" />
                 ) : (
                   <span className="text-4xl relative z-10">{cert.logo}</span>
@@ -210,22 +142,18 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
               <h3 className="text-xl font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent leading-tight px-2">
                 {cert.name}
               </h3>
-              
-              {cert.description && (
-                <p className="text-xs text-muted-foreground/80 px-2">
-                  {cert.description}
-                </p>
-              )}
-              
-              <motion.div 
+
+              {cert.description && <p className="text-xs text-muted-foreground/80 px-2">{cert.description}</p>}
+
+              <motion.div
                 className="w-16 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto rounded-full"
                 animate={{
-                  width: ["64px", "96px", "64px"]
+                  width: ["64px", "96px", "64px"],
                 }}
                 transition={{
                   duration: 2,
                   repeat: Infinity,
-                  ease: "easeInOut"
+                  ease: "easeInOut",
                 }}
               />
             </div>
@@ -240,19 +168,33 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
                     </>
                   )}
                   {cert.credentialUrl && (
-                    <a 
+                    <a
                       href={cert.credentialUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 mt-2 text-xs text-accent hover:text-accent/80 transition-colors font-medium"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
                       Verify Credential
                     </a>
                   )}
                 </div>
               )}
-              
+
               {(cert.issueDate || cert.expirationDate) && (
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {cert.issueDate && (
@@ -284,247 +226,44 @@ const SortableCert = ({ cert, index, isOwner, onEdit, onRemove }: SortableCertPr
 
 const initialCertifications: Certification[] = [];
 
-export const Certifications = ({ isOwner }: CertificationsProps) => {
+export const Certifications = () => {
   const [certifications, setCertifications] = useState<Certification[]>(initialCertifications);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingCert, setEditingCert] = useState<string | null>(null);
-  const [newCert, setNewCert] = useState({
-    name: "",
-    logo: "",
-    credentialId: "",
-    credentialUrl: "",
-    issueDate: "",
-    expirationDate: "",
-    description: "",
-  });
-  const [uploadedLogo, setUploadedLogo] = useState<string>("");
-  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
-
-  const handleGenerateDescription = async () => {
-    if (!newCert.name) {
-      toast.error("Please enter a certification name first");
-      return;
-    }
-    
-    setIsGeneratingDesc(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-cert-description', {
-        body: { certName: newCert.name, issuer: "Certification Issuer" }
-      });
-      
-      if (error) throw error;
-      
-      if (data?.description) {
-        setNewCert(prev => ({ ...prev, description: data.description }));
-        toast.success("Description generated!");
-      }
-    } catch (error) {
-      console.error('Error generating description:', error);
-      toast.error("Failed to generate description");
-    } finally {
-      setIsGeneratingDesc(false);
-    }
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
   useEffect(() => {
     fetchCertifications();
   }, []);
 
   const fetchCertifications = async () => {
     const { data, error } = await supabase
-      .from('certifications')
-      .select('*')
-      .order('display_order', { ascending: true });
+      .from("certifications")
+      .select("*")
+      .order("display_order", { ascending: true });
 
     if (error) {
-      console.error('Error fetching certifications:', error);
+      console.error("Error fetching certifications:", error);
       return;
     }
 
     if (data && data.length > 0) {
-      const certs = data.map(cert => ({
+      const certs = data.map((cert) => ({
         id: cert.id,
         name: cert.name,
         logo: cert.image_url || "🏆",
-        credentialId: cert.credential_url?.startsWith('http') ? '' : (cert.credential_url || ""),
-        credentialUrl: cert.credential_url?.startsWith('http') ? cert.credential_url : "",
-        issueDate: cert.date ? new Date(cert.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
-        expirationDate: cert.expiration_date ? new Date(cert.expiration_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
+        credentialId: cert.credential_url?.startsWith("http") ? "" : cert.credential_url || "",
+        credentialUrl: cert.credential_url?.startsWith("http") ? cert.credential_url : "",
+        issueDate: cert.date
+          ? new Date(cert.date).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+          : "",
+        expirationDate: cert.expiration_date
+          ? new Date(cert.expiration_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+          : "",
         display_order: cert.display_order,
-        description: (cert as any).description || generateCertDescription(cert.name, cert.issuer)
+        description: (cert as any).description || generateCertDescription(cert.name),
       }));
       setCertifications(certs);
     }
   };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = certifications.findIndex(cert => cert.id === active.id);
-    const newIndex = certifications.findIndex(cert => cert.id === over.id);
-
-    const newCerts = arrayMove(certifications, oldIndex, newIndex);
-    setCertifications(newCerts);
-
-    try {
-      const updates = newCerts.map((cert, index) => 
-        supabase
-          .from('certifications')
-          .update({ display_order: index })
-          .eq('id', cert.id)
-      );
-      
-      await Promise.all(updates);
-    } catch (error) {
-      console.error('Error updating certification order:', error);
-      toast.error('Failed to save order');
-      fetchCertifications();
-    }
-  };
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedLogo(reader.result as string);
-        setNewCert({ ...newCert, logo: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAddCert = async () => {
-    if (!newCert.name || !newCert.logo || !newCert.issueDate) {
-      toast.error("Please fill in name, logo, and issue date");
-      return;
-    }
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Convert issueDate to YYYY-MM-DD format
-    let dateValue = newCert.issueDate;
-    if (!dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      // Try to parse common formats like "Jan 2024"
-      try {
-        const parsedDate = new Date(newCert.issueDate);
-        if (!isNaN(parsedDate.getTime())) {
-          dateValue = parsedDate.toISOString().split('T')[0];
-        } else {
-          toast.error("Please enter a valid date");
-          return;
-        }
-      } catch {
-        toast.error("Please enter a valid date");
-        return;
-      }
-    }
-
-    // Convert expirationDate to YYYY-MM-DD format if provided
-    let expirationDateValue = null;
-    if (newCert.expirationDate) {
-      if (newCert.expirationDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        expirationDateValue = newCert.expirationDate;
-      } else {
-        try {
-          const parsedExpDate = new Date(newCert.expirationDate);
-          if (!isNaN(parsedExpDate.getTime())) {
-            expirationDateValue = parsedExpDate.toISOString().split('T')[0];
-          }
-        } catch {
-          // If expiration date is invalid, just skip it
-          expirationDateValue = null;
-        }
-      }
-    }
-
-    // Build credential_url - prioritize URL, fallback to ID
-    const credentialUrlValue = newCert.credentialUrl || newCert.credentialId || null;
-
-    if (editingCert) {
-      // Update existing certification
-      const { error } = await supabase
-        .from('certifications')
-        .update({
-          name: newCert.name,
-          image_url: newCert.logo,
-          credential_url: credentialUrlValue,
-          date: dateValue,
-          expiration_date: expirationDateValue,
-          issuer: "Certification Issuer",
-          description: newCert.description || null
-        } as any)
-        .eq('user_id', user.id)
-        .eq('name', editingCert);
-
-      if (error) {
-        toast.error("Failed to update certification");
-        console.error('Error updating certification:', error);
-        return;
-      }
-
-      await fetchCertifications();
-      toast.success("Certification updated successfully");
-    } else {
-      // Insert new certification
-      const { error } = await supabase
-        .from('certifications')
-        .insert({
-          user_id: user.id,
-          name: newCert.name,
-          issuer: "Certification Issuer",
-          date: dateValue,
-          expiration_date: expirationDateValue,
-          image_url: newCert.logo,
-          credential_url: credentialUrlValue,
-          description: newCert.description || null
-        } as any);
-
-      if (error) {
-        toast.error("Failed to add certification");
-        console.error('Error adding certification:', error);
-        return;
-      }
-
-      await fetchCertifications();
-      toast.success("Certification added successfully");
-    }
-    
-    setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "", description: "" });
-    setUploadedLogo("");
-    setEditingCert(null);
-    setIsAddDialogOpen(false);
-  };
-
-  const handleRemoveCert = async (certName: string) => {
-    const { error } = await supabase
-      .from('certifications')
-      .delete()
-      .eq('name', certName);
-
-    if (error) {
-      toast.error("Failed to remove certification");
-      console.error('Error removing certification:', error);
-      return;
-    }
-
-    setCertifications(certifications.filter((c) => c.name !== certName));
-    toast.success(`Removed ${certName} certification`);
-  };
-
   return (
     <section className="py-32 px-4 bg-background relative overflow-hidden">
-      
       <div className="container mx-auto max-w-7xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -542,9 +281,7 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
             >
               <Award className="w-10 h-10 text-accent" />
             </motion.div>
-            <h2 className="text-6xl md:text-7xl font-bold font-sans text-gradient-cyber">
-              Certifications
-            </h2>
+            <h2 className="text-6xl md:text-7xl font-bold font-sans text-gradient-cyber">Certifications</h2>
             <div className="w-32 h-1.5 bg-gradient-to-r from-primary to-accent mx-auto rounded-full shadow-glow" />
           </div>
 
@@ -552,199 +289,11 @@ export const Certifications = ({ isOwner }: CertificationsProps) => {
           <div className="relative max-w-6xl mx-auto">
             {/* Main certification showcase */}
             <div className="flex flex-wrap justify-center items-center gap-8 lg:gap-12">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={certifications.map(c => c.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {certifications.map((cert, index) => (
-                    <SortableCert
-                      key={cert.id}
-                      cert={cert}
-                      index={index}
-                      isOwner={isOwner}
-                      onEdit={() => {
-                        setEditingCert(cert.name);
-                        setNewCert({
-                          name: cert.name,
-                          logo: cert.logo,
-                          credentialId: cert.credentialId,
-                          credentialUrl: cert.credentialUrl,
-                          issueDate: cert.issueDate,
-                          expirationDate: cert.expirationDate,
-                          description: cert.description || ""
-                        });
-                        setUploadedLogo(cert.logo);
-                        setIsAddDialogOpen(true);
-                      }}
-                      onRemove={() => handleRemoveCert(cert.name)}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
-
-              {/* Add Certification Button - Owner Only */}
-              {isOwner && (
-                <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-                  setIsAddDialogOpen(open);
-                  if (!open) {
-                    setEditingCert(null);
-                    setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "", description: "" });
-                    setUploadedLogo("");
-                  }
-                }}>
-                  <DialogTrigger asChild>
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: certifications.length * 0.15, duration: 0.6 }}
-                      viewport={{ once: true }}
-                      onClick={() => {
-                        setEditingCert(null);
-                        setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "", description: "" });
-                        setUploadedLogo("");
-                        setIsAddDialogOpen(true);
-                      }}
-                      className="relative w-72 h-80 border-2 border-dashed border-accent/30 hover:border-accent/60 rounded-3xl flex flex-col items-center justify-center gap-6 group hover:bg-accent/5 transition-all duration-300"
-                    >
-                      <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-all group-hover:scale-110">
-                        <Plus className="w-8 h-8 text-accent" />
-                      </div>
-                      <span className="text-base font-semibold text-muted-foreground group-hover:text-accent transition-colors">
-                        Add New Certification
-                      </span>
-                    </motion.button>
-                  </DialogTrigger>
-                  
-                  <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{editingCert ? 'Edit' : 'Add New'} Certification</DialogTitle>
-                    </DialogHeader>
-                    
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Certification Name</label>
-                        <Input
-                          placeholder="e.g., CISSP"
-                          value={newCert.name}
-                          onChange={(e) => setNewCert({ ...newCert, name: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Logo</label>
-                        <div className="flex gap-3">
-                          {uploadedLogo && (
-                            <div className="w-16 h-16 rounded-lg border-2 border-accent overflow-hidden">
-                              <img src={uploadedLogo} alt="Preview" className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          <label className="flex-1 cursor-pointer">
-                            <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-accent/50 transition-colors flex items-center justify-center gap-2">
-                              <Upload className="w-5 h-5 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">
-                                {uploadedLogo ? "Change Logo" : "Upload Logo"}
-                              </span>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleLogoUpload}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Credential ID (optional)</label>
-                        <Input
-                          placeholder="e.g., CERT-2024-XXX"
-                          value={newCert.credentialId}
-                          onChange={(e) => setNewCert({ ...newCert, credentialId: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Credential URL (optional)</label>
-                        <Input
-                          placeholder="https://verify.certification.org/..."
-                          value={newCert.credentialUrl}
-                          onChange={(e) => setNewCert({ ...newCert, credentialUrl: e.target.value })}
-                        />
-                        <p className="text-xs text-muted-foreground">Link to verify the certification</p>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Issue Date *</label>
-                        <Input
-                          type="date"
-                          value={newCert.issueDate}
-                          onChange={(e) => setNewCert({ ...newCert, issueDate: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Expiration Date (optional)</label>
-                        <Input
-                          type="date"
-                          value={newCert.expirationDate}
-                          onChange={(e) => setNewCert({ ...newCert, expirationDate: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2 col-span-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">Description (optional)</label>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleGenerateDescription}
-                            disabled={!newCert.name || isGeneratingDesc}
-                            className="h-7 text-xs gap-1"
-                          >
-                            {isGeneratingDesc ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Sparkles className="w-3 h-3" />
-                            )}
-                            {isGeneratingDesc ? "Generating..." : "Generate with AI"}
-                          </Button>
-                        </div>
-                        <Input
-                          placeholder="Professional description of this certification..."
-                          value={newCert.description}
-                          onChange={(e) => setNewCert({ ...newCert, description: e.target.value })}
-                        />
-                        <p className="text-xs text-muted-foreground">Leave empty to auto-generate based on certification name</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end gap-3">
-                      <Button variant="outline" onClick={() => {
-                        setIsAddDialogOpen(false);
-                        setEditingCert(null);
-                        setNewCert({ name: "", logo: "", credentialId: "", credentialUrl: "", issueDate: "", expirationDate: "", description: "" });
-                        setUploadedLogo("");
-                      }}>
-                        Cancel
-                      </Button>
-                      <Button 
-                        onClick={handleAddCert} 
-                        disabled={!newCert.name || !newCert.logo || !newCert.issueDate}
-                        type="button"
-                      >
-                        {editingCert ? 'Update Certification' : 'Add Certification'}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+              <>
+                {certifications.map((cert, index) => (
+                  <SortableCert key={cert.id} cert={cert} index={index} />
+                ))}
+              </>
             </div>
           </div>
         </motion.div>

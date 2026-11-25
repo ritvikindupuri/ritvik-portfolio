@@ -1,15 +1,11 @@
-import { motion } from "framer-motion";
 import { ResumeManager } from "@/components/ResumeManager";
+import { motion } from "framer-motion";
 
-interface ResumeSectionProps {
-  isOwner: boolean;
-}
-
-export const ResumeSection = ({ isOwner }: ResumeSectionProps) => {
+export const ResumeSection = () => {
   return (
     <section className="py-16 px-4 relative overflow-hidden bg-gradient-to-b from-background via-card/20 to-background">
       <div className="absolute inset-0 neural-grid opacity-5" />
-      
+
       <div className="container mx-auto max-w-4xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -22,16 +18,14 @@ export const ResumeSection = ({ isOwner }: ResumeSectionProps) => {
             <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20">
               Resume
             </span>
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              Download My Resume
-            </h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">Download My Resume</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
               View or download my latest resume for a detailed overview of my skills and experience
             </p>
           </div>
-          
+
           <div className="flex justify-center">
-            <ResumeManager isOwner={isOwner} />
+            <ResumeManager />
           </div>
         </motion.div>
       </div>
