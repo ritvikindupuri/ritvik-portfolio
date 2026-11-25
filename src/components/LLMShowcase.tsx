@@ -76,6 +76,12 @@ export const LLMShowcase = () => {
     }
   };
 
+  // 3D layers often rasterize at 1× CSS pixels (and perspective then enlarges the front card ~1.43×),
+  // which is why every icon looks soft. Render the coverflow at 2× and scale it back so textures stay sharp.
+  const CAROUSEL_RASTER = 2;
+  const CAROUSEL_PERSPECTIVE = 1000 * CAROUSEL_RASTER;
+  const CAROUSEL_RADIUS = 300 * CAROUSEL_RASTER;
+
   // Get unique project types for filter
   const categories = ["all", ...new Set(projects.map((p) => p.project_type).filter(Boolean))] as string[];
 
@@ -429,7 +435,7 @@ export const LLMShowcase = () => {
       {/* 3D Carousel Gallery - Desktop */}
       <div
         className="hidden md:block relative max-w-5xl mx-auto"
-        style={{ perspective: "1000px", height: "500px" }}
+        style={{ height: "500px" }}
         onMouseEnter={() => {
           if (autoRotateRef.current) clearInterval(autoRotateRef.current);
         }}
@@ -444,13 +450,22 @@ export const LLMShowcase = () => {
         }}
       >
         <div
-          ref={carouselRef}
-          className="absolute inset-0 flex items-center justify-center"
+          className="absolute overflow-visible"
           style={{
-            transformStyle: "preserve-3d",
-            transform: `rotateY(${currentRotation}deg)`,
-            transition: isDragging ? "none" : "transform 0.5s ease-out",
+            inset: `-${(CAROUSEL_RASTER - 1) * 50}%`,
+            transform: `scale(${1 / CAROUSEL_RASTER})`,
+            transformOrigin: "center center",
           }}
+        >
+          <div className="absolute inset-0" style={{ perspective: `${CAROUSEL_PERSPECTIVE}px` }}>
+            <div
+              ref={carouselRef}
+              className="absolute inset-0 flex items-center justify-center"
+              style={{
+                transformStyle: "preserve-3d",
+                transform: `rotateY(${currentRotation}deg)`,
+                transition: isDragging ? "none" : "transform 0.5s ease-out",
+              }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -463,7 +478,7 @@ export const LLMShowcase = () => {
             const signature = getProjectSignature(project);
             const ProjectIcon = signature.icon;
             const angle = (360 / filteredProjects.length) * index;
-            const radius = 300;
+            const radius = CAROUSEL_RADIUS;
 
             return (
               <div
@@ -485,7 +500,7 @@ export const LLMShowcase = () => {
               >
                 <motion.div
                   whileHover={{ scale: 1.1 }}
-                  className={`group w-32 h-32 rounded-2xl bg-card/80 backdrop-blur-md border-2 transition-all duration-300 shadow-lg hover:shadow-2xl flex flex-col items-center justify-center gap-3 p-4 ${signature.shadow}`}
+                  className={`group w-64 h-64 rounded-[2rem] bg-card/80 backdrop-blur-md border-4 transition-all duration-300 shadow-lg hover:shadow-2xl flex flex-col items-center justify-center gap-6 p-8 ${signature.shadow}`}
                   style={{
                     borderColor: signature.color + "80",
                   }}
@@ -493,18 +508,18 @@ export const LLMShowcase = () => {
                   {/* Layered icon treatment - hexagon badge with gradient ring and glow */}
                   <div className="relative">
                     <div
-                      className="relative w-14 h-14 rounded-lg bg-white/[0.04] flex items-center justify-center border"
+                      className="relative w-28 h-28 rounded-2xl bg-white/[0.04] flex items-center justify-center border-2"
                       style={{ borderColor: signature.color + "40" }}
                     >
                       {signature.logo ? (
-                        <ProjectLogo src={signature.logo} className="w-10 h-10" />
+                        <ProjectLogo src={signature.logo} className="w-20 h-20" />
                       ) : (
-                        <ProjectIcon className="w-7 h-7" style={{ color: signature.color }} />
+                        <ProjectIcon className="w-14 h-14" style={{ color: signature.color }} />
                       )}
                     </div>
                   </div>
                   <p
-                    className="text-xs font-medium text-center text-foreground leading-snug"
+                    className="text-2xl font-medium text-center text-foreground leading-snug"
                     style={{
                       textWrap: "balance",
                       wordBreak: "break-word",
@@ -520,6 +535,8 @@ export const LLMShowcase = () => {
               </div>
             );
           })}
+            </div>
+          </div>
         </div>
 
         {/* Arrow Navigation Buttons */}

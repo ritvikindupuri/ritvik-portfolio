@@ -296,20 +296,56 @@
   border-top-color: hsl(230 25% 9%);
 }
 /* ---------- Agentic Security Systems: per-logo effects (ProjectLogo.tsx) ---------- */
-.logo-fx { --fx: 1; }
+.logo-fx { --fx: 1; overflow: visible; }
 .group:hover .logo-fx, .group:focus-visible .logo-fx { --fx: 1.7; }
 
+/* Glow lives on a ::before layer so filter: drop-shadow never rasterizes (and softens) the logo itself. */
 @keyframes logo-fx-glow {
-  0%, 100% { filter: drop-shadow(0 0 calc(1px * var(--fx)) var(--fx-glow)); }
-  50% { filter: drop-shadow(0 0 calc(4px * var(--fx)) var(--fx-glow)); }
+  0%, 100% { opacity: calc(0.45 * var(--fx)); transform: translate(-50%, -50%) scale(0.9); }
+  50% { opacity: calc(0.95 * var(--fx)); transform: translate(-50%, -50%) scale(1.15); }
 }
-.logo-fx-cloudpilot .logo-fx-img { --fx-glow: rgba(255, 153, 0, 0.6); animation: logo-fx-glow 3.2s ease-in-out infinite; }
-.logo-fx-spectra .logo-fx-img { --fx-glow: rgba(196, 70, 237, 0.65); animation: logo-fx-glow 3.8s ease-in-out infinite; }
-.logo-fx-traceveil .logo-fx-img { --fx-glow: rgba(20, 220, 195, 0.55); animation: logo-fx-glow 4.2s ease-in-out infinite; }
+.logo-fx-cloudpilot { --fx-glow: rgba(255, 153, 0, 0.6); }
+.logo-fx-spectra { --fx-glow: rgba(196, 70, 237, 0.65); }
+.logo-fx-traceveil { --fx-glow: rgba(20, 220, 195, 0.55); }
+.logo-fx-aether { --fx-glow: rgba(255, 45, 45, 0.5); }
+.logo-fx-karma { --fx-glow: rgba(50, 108, 229, 0.45); }
+.logo-fx-containment { --fx-glow: rgba(251, 191, 36, 0.45); }
+.logo-fx-threatlens { --fx-glow: rgba(56, 189, 248, 0.5); }
+.logo-fx-cloudpilot::before,
+.logo-fx-spectra::before,
+.logo-fx-traceveil::before,
+.logo-fx-aether::before,
+.logo-fx-karma::before,
+.logo-fx-containment::before,
+.logo-fx-threatlens::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 85%;
+  height: 85%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--fx-glow) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: logo-fx-glow 3.2s ease-in-out infinite;
+}
+.logo-fx-spectra::before { animation-duration: 3.8s; }
+.logo-fx-traceveil::before { animation-duration: 4.2s; }
+.logo-fx-aether::before { animation-duration: 2s; }
+.logo-fx-karma::before { animation-duration: 4s; }
+.logo-fx-containment::before { animation-duration: 3s; }
+.logo-fx-threatlens::before { animation-duration: 5s; }
+.logo-fx-img,
+.logo-fx svg,
+.logo-fx-karma-mark {
+  position: relative;
+  z-index: 1;
+}
 
 /* STRATA: inner core glow pulse */
 .logo-fx-strata-core {
-  position: absolute; left: 50%; top: 50%; width: 30%; height: 30%;
+  position: absolute; left: 50%; top: 50%; width: 30%; height: 30%; z-index: 2;
   transform: translate(-50%, -50%);
   border-radius: 9999px;
   background: radial-gradient(circle, rgba(255, 224, 150, 0.95) 0%, rgba(255, 210, 130, 0.35) 45%, rgba(255, 210, 130, 0) 70%);
@@ -323,7 +359,7 @@
 
 /* Cirrus: radar ping from the crosshair center */
 .logo-fx-cirrus-ping {
-  position: absolute; left: 49.8%; top: 53.7%; width: 12%; height: 12%;
+  position: absolute; left: 49.8%; top: 53.7%; width: 12%; height: 12%; z-index: 2;
   border-radius: 9999px;
   border: 1.5px solid rgba(96, 165, 250, 0.9);
   transform: translate(-50%, -50%) scale(0.3);
@@ -338,13 +374,13 @@
 /* Containment: gentle bob */
 .logo-fx-containment .logo-fx-img { animation: logo-fx-bob 3s ease-in-out infinite; }
 @keyframes logo-fx-bob {
-  0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 0 rgba(251, 191, 36, 0)); }
-  50% { transform: translateY(calc(-1.5px * var(--fx))); filter: drop-shadow(0 0 calc(2px * var(--fx)) rgba(251, 191, 36, 0.45)); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(calc(-1.5px * var(--fx))); }
 }
 
 /* AEGIS: sheen sweep masked to the shield */
 .logo-fx-aegis-sheen {
-  position: absolute; inset: 0;
+  position: absolute; inset: 0; z-index: 2;
   -webkit-mask-image: var(--logo-mask); mask-image: var(--logo-mask);
   -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
   background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.55) 50%, transparent 62%);
@@ -360,7 +396,7 @@
 
 /* AEGIS: soft amber pulse ring around the exploited-CVE alert badge */
 .logo-fx-aegis-badge {
-  position: absolute; left: 74.9%; top: 21.1%; width: 27%; height: 27%;
+  position: absolute; left: 74.9%; top: 21.1%; width: 27%; height: 27%; z-index: 2;
   border-radius: 9999px;
   border: 1.5px solid rgba(245, 158, 11, 0.85);
   transform: translate(-50%, -50%) scale(0.9);
@@ -375,17 +411,15 @@
 /* ThreatLens: slow lens tilt with a soft shimmer */
 .logo-fx-threatlens .logo-fx-img { animation: logo-fx-tilt 5s ease-in-out infinite; }
 @keyframes logo-fx-tilt {
-  0%, 100% { transform: rotate(calc(-3deg * var(--fx))); filter: brightness(1); }
-  50% { transform: rotate(calc(3deg * var(--fx))); filter: brightness(calc(1 + 0.08 * var(--fx))) drop-shadow(0 0 calc(2px * var(--fx)) rgba(56, 189, 248, 0.5)); }
+  0%, 100% { transform: rotate(calc(-3deg * var(--fx))); }
+  50% { transform: rotate(calc(3deg * var(--fx))); }
 }
 
 /* AETHER: the app's own 2s core pulse, plus a faint hex glow */
 .logo-fx-aether-dot { animation: logo-fx-aether-pulse 2s ease-in-out infinite; }
 @keyframes logo-fx-aether-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-.logo-fx-aether svg { --fx-glow: rgba(255, 45, 45, 0.5); animation: logo-fx-glow 2s ease-in-out infinite; }
 
 /* KARMA: the two helm segments rotate slowly around the static core, with a soft blue glow */
-.logo-fx-karma .logo-fx-karma-mark { --fx-glow: rgba(50, 108, 229, 0.45); animation: logo-fx-glow 4s ease-in-out infinite; }
 .logo-fx-karma-ring { transform-box: view-box; transform-origin: 50px 50px; animation: logo-fx-spin 18s linear infinite; }
 @keyframes logo-fx-spin { to { transform: rotate(360deg); } }
 
@@ -398,7 +432,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo-fx, .logo-fx *, .logo-fx-img, .logo-fx-karma-ring { animation: none !important; }
+  .logo-fx, .logo-fx *, .logo-fx-img, .logo-fx-karma-ring, .logo-fx::before { animation: none !important; }
   .logo-fx-cirrus-ping, .logo-fx-aegis-sheen, .logo-fx-aegis-badge { display: none; }
+  .logo-fx-cloudpilot::before,
+  .logo-fx-spectra::before,
+  .logo-fx-traceveil::before,
+  .logo-fx-aether::before,
+  .logo-fx-karma::before,
+  .logo-fx-containment::before,
+  .logo-fx-threatlens::before { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
   .logo-fx-strata-core { opacity: 0.3; }
 }
