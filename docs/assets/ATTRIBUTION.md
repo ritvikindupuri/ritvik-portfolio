@@ -12,4 +12,5 @@ domain under CC0:
 - Resend
 
 Visitor and Edge Functions icons are simple generic marks drawn for this
-diagram. The header logo is the site favicon from `public/favicon.ico`.
+diagram. The header logo and site favicon are an original RI monogram for
+this portfolio, not a third-party brand mark.
