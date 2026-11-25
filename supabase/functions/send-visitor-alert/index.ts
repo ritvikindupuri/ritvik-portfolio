@@ -8,6 +8,7 @@ import {
   logRateLimitEvent,
   RATE_LIMIT_CONFIGS 
 } from "../_shared/cors-rate-limit.ts";
+import { ALERT_WEBHOOK_URL, postAlertWebhook } from "../_shared/alert-webhook.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -84,6 +85,44 @@ const handler = async (req: Request): Promise<Response> => {
     // Get actual IP from request headers (use shared utility)
     const ipAddress = clientIP;
 
+    if (!session_id || typeof session_id !== "string") {
+      return new Response(JSON.stringify({ error: "session_id is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Claim this session before any webhook/email so concurrent invokes
+    // (threshold send + beforeunload beacon, remounts, retries) cannot double-post.
+    const { data: claimed, error: claimError } = await supabase
+      .from("visitor_alert_sends")
+      .insert({ session_id, ip_address: ipAddress === "unknown" ? null : ipAddress })
+      .select("session_id")
+      .maybeSingle();
+
+    const alreadySent =
+      claimError?.code === "23505" ||
+      (typeof claimError?.message === "string" && claimError.message.toLowerCase().includes("duplicate")) ||
+      (!claimed && !claimError);
+
+    if (alreadySent) {
+      console.log("Skipping visitor alert; already sent for session:", session_id);
+      return new Response(JSON.stringify({ success: true, skipped: true, reason: "already_alerted" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (claimError) {
+      console.error("Error claiming visitor alert send:", claimError);
+      return new Response(JSON.stringify({ error: "Failed to claim alert slot", skipped: true }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     console.log("Sending visitor alert for session:", session_id, "IP:", ipAddress);
     // Get location from IP
     const location = await getLocationFromIP(ipAddress);
@@ -91,7 +130,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Update visitor_activity records with the IP address
     if (ipAddress !== 'unknown') {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       const { error: updateError } = await supabase
         .from('visitor_activity')
         .update({ ip_address: ipAddress })
@@ -103,6 +141,31 @@ const handler = async (req: Request): Promise<Response> => {
       } else {
         console.log("Updated visitor activity with IP:", ipAddress);
       }
+    }
+
+    // Webhook delivery (preferred when configured): same data as the email, as JSON.
+    if (ALERT_WEBHOOK_URL) {
+      await postAlertWebhook("visitor_alert", {
+        session_id,
+        ip_address: ipAddress,
+        location: location ? { city: location.city, country: location.country } : null,
+        location_label: locationStr,
+        email: email || null,
+        stats: {
+          total_activities: activities.length,
+          resume_views: activities.filter(a => a.type === 'resume_view').length,
+          resume_downloads: activities.filter(a => a.type === 'resume_download').length,
+          project_views: activities.filter(a => a.type === 'project_view').length,
+          chatbot_queries: chatbot_queries?.length || 0,
+        },
+        activities: activities.map(a => ({ type: a.type, label: formatActivityType(a.type), data: a.data ?? null, timestamp: a.timestamp })),
+        chatbot_queries: chatbot_queries || [],
+        subject: `Portfolio Visitor: ${locationStr}${email ? ` - ${email}` : ''}`,
+      });
+      return new Response(JSON.stringify({ success: true, delivery: "webhook" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     if (!RESEND_API_KEY) {

@@ -30,6 +30,22 @@ const getSessionId = (): string => {
   return sessionId;
 };
 
+const ALERT_SENT_KEY = 'visitor_alert_sent';
+const hasAlertBeenSent = (sessionId: string): boolean => {
+  try {
+    return sessionStorage.getItem(ALERT_SENT_KEY) === sessionId;
+  } catch {
+    return false;
+  }
+};
+const markAlertSent = (sessionId: string) => {
+  try {
+    sessionStorage.setItem(ALERT_SENT_KEY, sessionId);
+  } catch {
+    /* ignore quota / private-mode failures */
+  }
+};
+
 // Recruiter likelihood keywords
 const RECRUITER_KEYWORDS = [
   'experience', 'resume', 'skills', 'work', 'projects', 'contact', 
@@ -69,7 +85,7 @@ export const VisitorTrackerProvider = ({ children }: VisitorTrackerProviderProps
   const activitiesRef = useRef<Activity[]>([]);
   const chatbotQueriesRef = useRef<string[]>([]);
   const sessionIdRef = useRef<string>(getSessionId());
-  const alertSentRef = useRef<boolean>(false);
+  const alertSentRef = useRef<boolean>(hasAlertBeenSent(sessionIdRef.current));
   const recruiterAlertSentRef = useRef<boolean>(false);
   const activityCountRef = useRef<number>(0);
   const sessionStartRef = useRef<Date>(new Date());
@@ -190,8 +206,9 @@ export const VisitorTrackerProvider = ({ children }: VisitorTrackerProviderProps
 
   // Send visitor alert email - defined before trackActivity to avoid circular dependency
   const sendVisitorAlert = useCallback(async () => {
-    if (alertSentRef.current || trackingDisabled) return;
+    if (alertSentRef.current || hasAlertBeenSent(sessionIdRef.current) || trackingDisabled) return;
     alertSentRef.current = true;
+    markAlertSent(sessionIdRef.current);
 
     try {
       console.log('[VisitorTracker] Sending visitor alert for session:', sessionIdRef.current);
@@ -312,9 +329,12 @@ export const VisitorTrackerProvider = ({ children }: VisitorTrackerProviderProps
     if (trackingDisabled) return;
 
     const handleBeforeUnload = () => {
-      // Lower threshold - send if ANY activity and alert wasn't sent
-      if (activitiesRef.current.length >= 1 && !alertSentRef.current) {
-        // Use sendBeacon for reliability on page unload
+      // Only send on unload if an alert was not already sent for this session.
+      // visibilitychange / pagehide are intentionally not registered — they
+      // fire in addition to beforeunload in some browsers and would duplicate.
+      if (activitiesRef.current.length >= 1 && !alertSentRef.current && !hasAlertBeenSent(sessionIdRef.current)) {
+        alertSentRef.current = true;
+        markAlertSent(sessionIdRef.current);
         const data = JSON.stringify({
           session_id: sessionIdRef.current,
           ip_address: 'Captured server-side',
@@ -323,12 +343,6 @@ export const VisitorTrackerProvider = ({ children }: VisitorTrackerProviderProps
         });
         
         const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-visitor-alert`;
-        const headers = {
-          'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || ''
-        };
-        
-        // Create FormData with proper headers for sendBeacon
         navigator.sendBeacon(url, new Blob([data], { type: 'application/json' }));
         console.log('[VisitorTracker] Sent beacon alert on page unload');
       }
