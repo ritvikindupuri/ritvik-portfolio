@@ -3,7 +3,7 @@
  * Data verified against each project's source code (not just its README).
  * 
  * Key features: 3-4 concrete bullets of what each project actually does
- * Architecture: One plain-language sentence on how it's built
+ * Architecture: 1-2 plain-language sentences that follow the diagram, start to finish
  */
 
 export interface ProjectDetails {
@@ -19,7 +19,7 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Claude safety-gate judge reviews every mutating AWS call and fails closed; changes also need a hash-bound human approval clicked in the UI before the executor runs them",
       "Optional in-VPC Lambda flags risky security-group and S3-policy changes from CloudTrail via EventBridge in real time; automatic remediation is scaffolded but not yet implemented"
     ],
-    architecture: "React 18 + Vite dashboard on Supabase Edge Functions (Deno); Claude Sonnet 5 / Opus 5 orchestrate AWS API calls with temporary STS credentials; audit logs go to CloudWatch Logs and an S3 Object Lock (WORM) archive; optional in-VPC Lambda for event-driven detection"
+    architecture: "A React dashboard sends each request to Supabase Edge Functions, where a Claude agent (Sonnet 5 or Opus 5) decides which AWS calls to make. Any change is checked by a safety judge and approved by a person before it runs with temporary AWS credentials, and every action is logged to CloudWatch and a write-once S3 archive."
   },
 
   "STRATA: Autonomous Cloud Intrusion Detection System": {
@@ -29,7 +29,7 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Containment agent proposes deactivating compromised IAM access keys and waits for analyst approval before calling iam:UpdateAccessKey; requests expire after 1 hour",
       "Full agent reasoning, CLI commands, and telemetry stream live to the dashboard; every action is timestamped and attributed"
     ],
-    architecture: "React 19 + TanStack Start on Cloudflare Workers; a four-stage agent pipeline (Rule Architect, Telemetry Sync and Triage, Containment, Incident Reporter) runs on Gemini 2.5 Flash and GPT-5; state persisted in Supabase PostgreSQL with AES-256-GCM-encrypted AWS secrets and optional Elasticsearch import"
+    architecture: "A dashboard on Cloudflare Workers pulls in CloudTrail and GuardDuty events, which an AI pipeline triages with Gemini 2.5 Flash before GPT-5 writes detection rules and reports. If an IAM access key looks compromised, an analyst approves disabling it, and all state lives in Supabase with AWS secrets encrypted."
   },
 
   "Cirrus: Autonomous Zero-Trust Cloud Security Auditor": {
@@ -39,7 +39,7 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Each AI-generated CloudFormation fix is previewed as a change set with a before/after resource diff, and every deployment appears in a per-resource history",
       "Live agent timeline streams agent thoughts and tool outputs via Supabase Realtime as each scan runs"
     ],
-    architecture: "TanStack Start (React 19) web app with Supabase backend; Gemini 3.5 Flash drives read-only AWS SDK queries via temporary credentials; CloudFormation remediation playbooks deploy with capability acknowledgment gates; RLS isolates each organization's records"
+    architecture: "From the web app, Gemini 3.5 Flash agents audit IAM, S3 and EC2 using read-only AWS access with temporary credentials. Each fix is a CloudFormation change that an operator previews and approves before it deploys, while Supabase keeps every organization's data separate and streams scan progress live."
   },
 
   "Containment: AI Agent Security Firewall": {
@@ -49,17 +49,17 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Optional AI advisory layer (Claude Opus 5 / Sonnet 5.5) provides second opinions and plain-English risk explanations without ever overriding deterministic rules",
       "Human-in-the-loop approval queue pauses runs on risky actions and shows AI-suggested preconditions before execution resumes"
     ],
-    architecture: "React 19 + TanStack Start frontend with server functions; deterministic policy engine intercepts proposed shell commands, filesystem access, and network requests; approved actions execute inside hardened Kubernetes sandbox pods (a non-isolated local fallback exists for development); Supabase stores policies, approval decisions, and audit logs"
+    architecture: "Every shell command, file access or network request an AI agent proposes is checked by a deterministic policy engine, with Claude giving an optional second opinion that never overrides the rules. Risky actions wait for a human, approved ones run in a locked-down Kubernetes sandbox pod, and Supabase keeps the policies, decisions and audit log."
   },
 
   "Spectra AI: Security Assessment, Orchestrated.": {
     keyFeatures: [
       "Real server-side Nmap service detection, Nikto/ZAP/Katana/Nuclei web checks, Semgrep source analysis, Trivy container scans, Prowler cloud posture, and Promptfoo AI red-teaming",
-      "Deterministic authorization gate blocks public IP targets by default, requires env flags for active and cloud scans, and enforces a verified-target allowlist; Gemini 3.6 Flash only drafts the scope text",
+      "Deterministic authorization gate blocks public IP targets by default, requires env flags for active and cloud scans, and enforces a verified-target allowlist; Gemini only drafts the scope text",
       "Ephemeral hardened Docker containers (spectra-scanner:latest, Kali base) run each scan with capabilities dropped, a read-only rootfs and no-new-privileges; the UI shows an animated boot view",
-      "Gemini 2.5 Flash Analysis Agent is prompted to verify each finding against raw tool evidence to reduce false positives, emitting structured findings with severity and remediation"
+      "Gemini 3 Flash Analysis Agent is prompted to verify each finding against raw tool evidence to reduce false positives, emitting structured findings with severity and remediation"
     ],
-    architecture: "Next.js 15 + React 18 dashboard; Gemini 2.5 Flash coordinates Nmap, Nikto, ZAP, Katana, Nuclei, Trivy, Semgrep, Schemathesis, Prowler, and Promptfoo inside ephemeral spectra-scanner Docker containers (falling back to host execution when Docker is unavailable); optional Supabase for multi-tenant RBAC and verified target allowlists"
+    architecture: "Scans start from a Next.js dashboard, and a scope check blocks any target that is not on the verified allowlist. Gemini 3 Flash then runs tools like Nmap, ZAP, Nuclei, Trivy and Semgrep in throwaway Docker containers and turns the output into a findings report, with Supabase as an optional add-on for team roles."
   },
 
   "AEGIS.ai: AI-Native Security Platform": {
@@ -69,7 +69,7 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Four specialized AI agents (SENTINEL, CODEX, AEGIS, ASSIST) use NVD CVE and CISA KEV context to guide developers through triage, code audits, threat modeling, and remediation",
       "Daily watch list of repos scanned by the scheduled-github-scan Edge Function when triggered by an external cron; a 0-100 security score is recalculated in SQL as vulnerabilities are found or resolved"
     ],
-    architecture: "React 18 + Vite dashboard; Supabase Edge Functions (Deno) run code-scanner and github-scanner powered by Gemini 2.5 Flash and GPT-5; findings, scan history, and security stats persist in Supabase PostgreSQL; automated CSV/JSON exports and AI-generated auto_fix patches"
+    architecture: "Code or a GitHub repo submitted in the dashboard goes to Supabase Edge Functions, which analyze it with Gemini 2.5 Flash and GPT-5. Findings and scan history are saved in Supabase and can be exported as CSV or JSON along with AI-suggested fix patches."
   },
 
   "ThreatLens: Automated Threat Intelligence & Attack Surface Mapping Platform": {
@@ -79,7 +79,7 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Real CVE vulnerability detection: detected technology stacks queried against NIST NVD 2.0 database to surface published CVEs, CVSS scores, and official advisories",
       "Elasticsearch enterprise search (⌘K) auto-syncs scans, findings, and audit logs to Elastic Cloud for sub-second search and Kibana threat analytics"
     ],
-    architecture: "React 18 + Vite dashboard; Firecrawl API maps targets up to 200 URLs; Gemini 3 Flash Preview powers policy evaluation, AI analyst chatbot, and threat report generation; findings and scans persist in Supabase; optional Elasticsearch sync for sub-second search across threatlens-scans, threatlens-findings, and threatlens-audit indices"
+    architecture: "You enter a target domain and an AI policy check approves it, blocks it or flags it for review. Approved sites are mapped by Firecrawl (up to 200 URLs), Gemini writes the analysis and threat report, and results are saved in Supabase with optional Elasticsearch sync for fast search."
   },
 
   "AETHER: Autonomous Security Orchestrator": {
@@ -89,7 +89,7 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Network containment via the Falcon API: the agent pauses on contain_host and waits for analyst approval before isolating the host",
       "MCP-style tool interface (an in-process tool server modeled on MCP's list/call pattern) connects Gemini 3 Pro reasoning to the CrowdStrike Falcon REST API (OAuth2)"
     ],
-    architecture: "Browser-only React 19 + Vite app; a Gemini 3 Pro Preview agent uses function calling to dispatch six tools on an in-process, MCP-style CrowdStrike tool server, which calls the Falcon API through a CORS proxy; raw telemetry is returned as observations and synthesized into reports"
+    architecture: "The whole app runs in the browser, where a Gemini 3 Pro agent calls six CrowdStrike tools on a built-in MCP-style tool server that talks to the Falcon API through a CORS proxy. Isolating a host waits for analyst approval, and the raw telemetry is turned into a written report."
   },
 
   "KARMA: Kubernetes Attack & Remediation Mapping Agent": {
@@ -99,7 +99,7 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Claude Sonnet 4 reasons through High/Critical incidents and executes kubectl fixes one command per step, without a human approval step",
       "Every agent shows transparent execution: thinking → command → output, repeated for every step; detection alerts queue incidents for remediation"
     ],
-    architecture: "Python CLI plus an optional FastAPI + React dashboard orchestrate attack modules via Kubernetes Python client; Claude Sonnet 4 ingests incident telemetry and synthesizes kubectl remediation commands executed via subprocess; real Kind cluster (3 nodes: 1 control plane + 2 workers) with intentionally vulnerable RBAC and test secrets"
+    architecture: "A Python CLI or optional web dashboard launches 10 MITRE ATT&CK attacks against a deliberately vulnerable three-node Kind cluster. Kubernetes watch rules detect them, and Claude Sonnet 4 works through each serious incident and applies kubectl fixes one command at a time, with no human approval step."
   },
 
   "Chaff: Autonomous Bot-Traffic Analyst": {
@@ -109,7 +109,7 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Firecrawl scans the site during onboarding to detect its stack and exposed admin/login/API paths; honeypots are unique decoy trap URLs, and any visit is flagged as a bot",
       "MCP endpoint exposes four tools (known-bot checks, campaign lookup, recent campaigns, fingerprint lookup) for external MCP clients"
     ],
-    architecture: "React + Vite + TanStack (Router, Query, Start) frontend; TanStack Server Functions orchestrate Gemini 3 Flash Preview agent with native tools (search_logs, sample_requests, record_threat); Supabase stores threats, campaigns, and block rules exportable to 7 targets (Cloudflare, nginx, Caddy, HAProxy, AWS WAF, iptables, Fastly); Firecrawl powers onboarding site scans"
+    architecture: "A Gemini agent running in TanStack Start server functions searches and samples customer traffic in Elasticsearch to spot bots. Confirmed threats and campaigns are saved in Supabase and can be exported as block rules for seven targets, including Cloudflare, nginx and AWS WAF."
   },
 
   "Traceveil: Evidence-First Security Graph and Agentic Defense": {
@@ -119,6 +119,6 @@ export const agenticProjectDetails: Record<string, ProjectDetails> = {
       "Architecture diagram threat modeling: upload draw.io XML, Packet Tracer topology exports (JSON/XML), or describe architectures in natural language; exports hardened draw.io files",
       "MCP guardrails auditor inspects tool manifests and execution transcripts to catch prompt injection, tool poisoning, and parameter escalation with fail-closed proxy relay"
     ],
-    architecture: "TanStack Start (React 19) with server functions; analyzes repositories (GitHub API tree), live HTTPS endpoints, or topology diagrams, with Gemini 1.5 Pro for tenant-isolation chat; deterministic rules bind evidence to graph entities; self-contained JSON file store with atomic writes, scrypt password hashing, and AES-256-GCM for GitHub PATs"
+    architecture: "Traceveil takes a code repo, a live URL or an architecture diagram and runs deterministic rules on the server, so every part of its security graph is tied to real evidence. Gemini 1.5 Pro handles the tenant-isolation chat, and data is kept in a local JSON store with GitHub tokens encrypted."
   }
 };

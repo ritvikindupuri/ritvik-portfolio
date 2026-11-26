@@ -70,7 +70,7 @@ export const agenticArchitectureFlows: { match: string; nodes: FlowNode[] }[] = 
     nodes: [
       { icon: Monitor, label: "Dashboard", sub: "Next.js 15" },
       { icon: ShieldCheck, label: "Scope gate", sub: "Verified allowlist" },
-      { icon: BrainCircuit, label: "Gemini planner", sub: "2.5 Flash" },
+      { icon: BrainCircuit, label: "Gemini planner", sub: "3 Flash" },
       { icon: Container, label: "Scanner containers", sub: "Nmap · ZAP · Nuclei…" },
       { icon: FileText, label: "Findings report", sub: "Correlated results" },
       { icon: Database, label: "Supabase", sub: "Optional RBAC" },

@@ -687,7 +687,7 @@ export const LLMShowcase = () => {
                             return flow ? (
                               <>
                                 <ArchitectureFlow nodes={flow} color={signature.color} />
-                                <p className="text-xs text-muted-foreground/80 leading-relaxed mt-3">
+                                <p className="text-sm text-muted-foreground leading-relaxed mt-4 max-w-3xl">
                                   {agenticProjectDetails[selectedProject.title].architecture}
                                 </p>
                               </>
