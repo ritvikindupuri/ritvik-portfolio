@@ -62,7 +62,7 @@ interface ProjectLink {
 
 const SECURITY_SUBCATEGORY_ORDER = [
   "Cloud & AWS Security",
-  "Container & Kubernetes",
+  "Container & Kubernetes Security",
   "Code & Supply Chain",
   "Offensive & Pentesting",
   "Detection & Monitoring",
