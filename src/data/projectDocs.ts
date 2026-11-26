@@ -20,6 +20,7 @@ const docsByGithub: Record<string, string> = {
   "https://github.com/ritvikindupuri/Aegis.ai": "/docs/aegis.pdf",
   "https://github.com/ritvikindupuri/Blastline-AI": "/docs/blastline.pdf",
   "https://github.com/ritvikindupuri/aws-cloud-dfir": "/docs/aws-cloud-dfir.pdf",
+  "https://github.com/ritvikindupuri/Chaff": "/docs/chaff.pdf",
 };
 
 export function docUrlForGithub(url?: string | null): string | undefined {
