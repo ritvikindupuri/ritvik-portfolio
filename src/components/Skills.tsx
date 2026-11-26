@@ -68,6 +68,15 @@ const SECURITY_SUBCATEGORY_ORDER = [
   "Detection & Monitoring",
 ];
 
+// Wide marks look small in the default 64px square. Give them the same height
+// as neighbors and let width follow the artwork, capped so cards stay aligned.
+const WIDE_SKILL_ICONS: Record<string, { wrap: string; img: string }> = {
+  Pacu: {
+    wrap: "w-[6.5rem] h-20 max-w-full flex items-center justify-center flex-shrink-0 overflow-visible",
+    img: "h-16 w-auto max-w-[6.5rem] object-contain",
+  },
+};
+
 interface Skill {
   id: string;
   name: string;
@@ -110,9 +119,18 @@ const SortableSkill = ({ skill, getLevelColor }: SortableSkillProps) => {
       <div className="relative bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-6 hover:border-primary/50 transition-all duration-300 flex flex-col items-center text-center shadow-lg">
         <div className="flex flex-col items-center gap-4 w-full">
           {/* Logo */}
-          <div className="w-20 h-20 flex items-center justify-center flex-shrink-0">
+          <div
+            className={
+              WIDE_SKILL_ICONS[skill.name]?.wrap ??
+              "w-20 h-20 flex items-center justify-center flex-shrink-0"
+            }
+          >
             {skill.logo && typeof skill.logo === "string" && skill.logo.startsWith("data:") ? (
-              <img src={skill.logo} alt={skill.name} className="w-16 h-16 object-contain" />
+              <img
+                src={skill.logo}
+                alt={skill.name}
+                className={WIDE_SKILL_ICONS[skill.name]?.img ?? "w-16 h-16 object-contain"}
+              />
             ) : (
               <span className="text-5xl leading-none">{skill.logo}</span>
             )}
