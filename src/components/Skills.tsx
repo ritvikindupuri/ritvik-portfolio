@@ -60,6 +60,14 @@ interface ProjectLink {
   url: string;
 }
 
+const SECURITY_SUBCATEGORY_ORDER = [
+  "Cloud & AWS Security",
+  "Container & Kubernetes",
+  "Code & Supply Chain",
+  "Offensive & Pentesting",
+  "Detection & Monitoring",
+];
+
 interface Skill {
   id: string;
   name: string;
@@ -69,6 +77,26 @@ interface Skill {
   link: string;
   projectLinks: ProjectLink[];
   display_order?: number;
+  subcategory?: string | null;
+}
+
+
+function getSecurityFilterChips(skills: Skill[]) {
+  const counts = new Map<string, number>();
+  for (const skill of skills) {
+    if (skill.subcategory) {
+      counts.set(skill.subcategory, (counts.get(skill.subcategory) || 0) + 1);
+    }
+  }
+
+  return [
+    { id: "all", label: "All", count: skills.length },
+    ...SECURITY_SUBCATEGORY_ORDER.filter((name) => counts.has(name)).map((name) => ({
+      id: name,
+      label: name,
+      count: counts.get(name) || 0,
+    })),
+  ];
 }
 
 interface SortableSkillProps {
@@ -128,6 +156,7 @@ const SortableSkill = ({ skill, getLevelColor }: SortableSkillProps) => {
 
 export const Skills = () => {
   const [activeTab, setActiveTab] = useState("programming");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("all");
   const [skillCategories, setSkillCategories] = useState(initialSkillCategories);
   useEffect(() => {
     fetchSkills();
@@ -154,6 +183,7 @@ export const Skills = () => {
             link: skill.link ?? "",
             projectLinks: (skill.project_links as ProjectLink[]) || [],
             display_order: skill.display_order,
+            subcategory: skill.subcategory ?? null,
           })),
       }));
       setSkillCategories(categorizedSkills);
@@ -216,20 +246,62 @@ export const Skills = () => {
               {skillCategories.map((category) => (
                 <TabsContent key={category.id} value={category.id} className="space-y-8">
                   <>
+                    {category.id === "security" && category.skills.length > 0 && (
+                      <div
+                        className="flex justify-center mt-4"
+                        role="group"
+                        aria-label="Filter cybersecurity tools"
+                      >
+                        <div className="flex flex-wrap justify-center gap-2 max-w-full px-1">
+                          {getSecurityFilterChips(category.skills).map((chip) => {
+                            const selected = selectedSubcategory === chip.id;
+                            return (
+                              <button
+                                key={chip.id}
+                                type="button"
+                                aria-pressed={selected}
+                                onClick={() => setSelectedSubcategory(chip.id)}
+                                className={`inline-flex items-center gap-2 shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-full border transition-all duration-200 ${
+                                  selected
+                                    ? "bg-primary/20 text-primary border-primary/40 shadow-lg"
+                                    : "bg-card/40 text-muted-foreground border-border/50 hover:text-foreground hover:bg-primary/10 hover:border-primary/30"
+                                }`}
+                              >
+                                <span>{chip.label}</span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                    selected ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground"
+                                  }`}
+                                >
+                                  {chip.count}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     <motion.div
-                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mt-10"
+                      key={`${category.id}-${category.id === "security" ? selectedSubcategory : "all"}`}
+                      className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 ${
+                        category.id === "security" ? "mt-6" : "mt-10"
+                      }`}
                       initial="hidden"
+                      animate="visible"
                       whileInView="visible"
                       viewport={{ once: true, margin: "-50px" }}
                       variants={{
                         hidden: { opacity: 0 },
                         visible: {
                           opacity: 1,
-                          transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+                          transition: { staggerChildren: 0.08, delayChildren: 0.04 },
                         },
                       }}
                     >
-                      {category.skills.map((skill) => (
+                      {(category.id === "security" && selectedSubcategory !== "all"
+                        ? category.skills.filter((skill) => skill.subcategory === selectedSubcategory)
+                        : category.skills
+                      ).map((skill) => (
                         <motion.div
                           key={skill.id}
                           variants={{

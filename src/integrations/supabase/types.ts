@@ -791,6 +791,7 @@ export type Database = {
           link: string | null
           name: string
           project_links: Json | null
+          subcategory: string | null
           user_id: string
         }
         Insert: {
@@ -805,6 +806,7 @@ export type Database = {
           link?: string | null
           name: string
           project_links?: Json | null
+          subcategory?: string | null
           user_id: string
         }
         Update: {
@@ -819,6 +821,7 @@ export type Database = {
           link?: string | null
           name?: string
           project_links?: Json | null
+          subcategory?: string | null
           user_id?: string
         }
         Relationships: []
