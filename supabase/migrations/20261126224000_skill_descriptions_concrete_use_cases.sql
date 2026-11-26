@@ -1,0 +1,41 @@
+-- Rewrite vague skill descriptions so each names a concrete use case
+-- (problem solved and setting), grounded in real repos. Match by name. No rows deleted.
+
+UPDATE public.skills SET description = $d0$Used Claude to review AWS and host security findings and suggest remediations.$d0$ WHERE name = ' Claude';
+UPDATE public.skills SET description = $d1$Used Gemini to run agentic pentests and model threats against cloud applications.$d1$ WHERE name = 'Google Gemini';
+UPDATE public.skills SET description = $d2$Used OpenAI models to review application code and red-team prompts in security tooling.$d2$ WHERE name = 'OpenAI';
+UPDATE public.skills SET description = $d3$Used Google Opal to automate incident reports and triage cloud security alerts.$d3$ WHERE name = 'Google Opal';
+UPDATE public.skills SET description = $d4$Built Grok Bot workflows to map AWS attack paths and investigate Windows detections.$d4$ WHERE name = 'Grok Bot';
+UPDATE public.skills SET description = $d5$Built n8n workflows to enrich SIEM alerts and start automated incident response.$d5$ WHERE name = 'n8n';
+UPDATE public.skills SET description = $d6$Configured CloudWatch alarms to catch unusual secret access and trigger automated responses.$d6$ WHERE name = 'AWS Cloudwatch';
+UPDATE public.skills SET description = $d7$Wrote CloudFormation templates to stand up VPC, DNS failover, and threat-detection labs.$d7$ WHERE name = 'AWS Cloudformation';
+UPDATE public.skills SET description = $d8$Deployed EC2 instances and Auto Scaling groups for DNS failover and threat-detection labs.$d8$ WHERE name = 'AWS Elastic Compute Cloud (EC2)';
+UPDATE public.skills SET description = $d9$Deployed Application Load Balancers to fail traffic over during DNS outage tests.$d9$ WHERE name = 'AWS Elastic Load Balancing (ELB)';
+UPDATE public.skills SET description = $d10$Routed IAM and security events through EventBridge to trigger automated incident response.$d10$ WHERE name = 'AWS EventBridge';
+UPDATE public.skills SET description = $d11$Configured Route 53 routing policies to fail DNS traffic over during outage tests.$d11$ WHERE name = 'AWS Route 53';
+UPDATE public.skills SET description = $d12$Built multi-tier VPCs with tight routing and access controls for AWS security labs.$d12$ WHERE name = 'AWS Virtual Private Cloud (VPC)';
+UPDATE public.skills SET description = $d13$Configured IoT Core identities and TLS MQTT access to test SSH attacks on IoT devices.$d13$ WHERE name = 'AWS IoT Core';
+UPDATE public.skills SET description = $d14$Used Coolify as a self-hosted PaaS to deploy a containerized observability stack.$d14$ WHERE name = 'Coolify';
+UPDATE public.skills SET description = $d15$Built Docker Compose labs to test container escapes and run a containerized SOC.$d15$ WHERE name = 'Docker';
+UPDATE public.skills SET description = $d16$Used Elasticsearch to correlate web traffic and alerts during bot and threat investigations.$d16$ WHERE name = 'Elasticsearch';
+UPDATE public.skills SET description = $d17$Set up GitHub Actions to run tests and secret scans across cloud and container repos.$d17$ WHERE name = 'GitHub Actions';
+UPDATE public.skills SET description = $d18$Built Grafana dashboards to chart system and container metrics in observability labs.$d18$ WHERE name = 'Grafana';
+UPDATE public.skills SET description = $d19$Deployed Prometheus to scrape system and container metrics for lab observability dashboards.$d19$ WHERE name = 'Prometheus';
+UPDATE public.skills SET description = $d20$Used cAdvisor to collect live container metrics in a Linux observability lab.$d20$ WHERE name = 'cAdvisor';
+UPDATE public.skills SET description = $d21$Used Supabase for auth and APIs in a personal site and security web applications.$d21$ WHERE name = 'Supabase';
+UPDATE public.skills SET description = $d22$Administered Windows Server and Active Directory labs for adversary simulations and investigations.$d22$ WHERE name = 'Windows';
+UPDATE public.skills SET description = $d23$Used Python to build intrusion detection tooling and analyze CloudTrail and host telemetry.$d23$ WHERE name = 'Python';
+UPDATE public.skills SET description = $d24$Used Burp Suite to find authentication and injection flaws during a web application pentest.$d24$ WHERE name = 'Burp Suite';
+UPDATE public.skills SET description = $d25$Deployed Elastic Defend on endpoints to detect malware and trace processes during incident triage.$d25$ WHERE name = 'Elastic Defend (EDR)';
+UPDATE public.skills SET description = $d26$Wrote Falco rules to detect container escapes and suspicious behavior at runtime.$d26$ WHERE name = 'Falco';
+UPDATE public.skills SET description = $d27$Used Falcon Sensor telemetry to reconstruct attack activity during an Active Directory investigation.$d27$ WHERE name = 'Falcon Sensor (EDR/XDR)';
+UPDATE public.skills SET description = $d28$Configured FortiGate policies to inspect traffic and restrict access in an AWS VPC.$d28$ WHERE name = 'FortiGate NGFW';
+UPDATE public.skills SET description = $d29$Used Metasploit to validate and exploit vulnerabilities during an offensive attack-chain lab.$d29$ WHERE name = 'Metasploit';
+UPDATE public.skills SET description = $d30$Ingested Windows logs into Microsoft Sentinel and wrote KQL rules to detect brute-force logons.$d30$ WHERE name = 'Microsoft Sentinel';
+UPDATE public.skills SET description = $d31$Ran Nessus vulnerability scans on Windows hosts and wrote follow-up remediation steps.$d31$ WHERE name = 'Nessus';
+UPDATE public.skills SET description = $d32$Ingested security logs into Splunk to hunt brute-force attacks and build investigation dashboards.$d32$ WHERE name = 'Splunk';
+UPDATE public.skills SET description = $d33$Used Trivy to scan container images and IaC for vulnerabilities during hardening work.$d33$ WHERE name = 'Trivy';
+UPDATE public.skills SET description = $d34$Used Wireshark to inspect live traffic and trace suspicious connections in a network lab.$d34$ WHERE name = 'Wireshark';
+UPDATE public.skills SET description = $d35$Used hping3 to craft packets that disrupted remote sessions in a network lab.$d35$ WHERE name = 'hping3';
+UPDATE public.skills SET description = $d36$Built React dashboards to visualize threats and drive controls in security tooling.$d36$ WHERE name = 'React';
+UPDATE public.skills SET description = $d37$Used TypeScript to build type-safe dashboards for threat modeling and security tooling.$d37$ WHERE name = 'TypeScript';
