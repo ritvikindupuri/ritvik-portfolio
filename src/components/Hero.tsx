@@ -14,7 +14,6 @@ import {
   Linkedin,
   Lock,
   Mail,
-  Shield,
   Sparkles,
   User,
   Wrench,
@@ -79,14 +78,6 @@ const tableOfContents = [
     icon: BookOpen,
     tooltip: "Technical documentation, detailed project write-ups, and knowledge base articles.",
     color: "text-indigo-400",
-  },
-  {
-    id: "security-section",
-    label: "Security",
-    icon: Shield,
-    tooltip:
-      "Interactive security architecture showing how this portfolio implements defense-in-depth with real threat detection.",
-    color: "text-emerald-400",
   },
   {
     id: "contact-section",

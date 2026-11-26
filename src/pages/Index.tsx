@@ -13,7 +13,6 @@ import { LLMShowcase } from "@/components/LLMShowcase";
 import { SectionTransition } from "@/components/SectionTransition";
 import { VisitorTrackerProvider } from "@/components/VisitorTrackerProvider";
 import { ResumeSection } from "@/components/ResumeSection";
-import { InteractiveSecurityArchitecture } from "@/components/InteractiveSecurityArchitecture";
 import { ScrollProgressIndicator } from "@/components/ScrollProgressIndicator";
 import { SectionReveal } from "@/components/SectionReveal";
 import { ChatbotProvider } from "@/contexts/ChatbotContext";
@@ -132,22 +131,6 @@ const Index = () => {
                 <div id="documentation-section">
                   <Documentation />
                 </div>
-              </SectionReveal>
-
-              <SectionTransition
-                badge="Security Architecture"
-                subtitle="How this portfolio implements defense-in-depth security with real-time threat detection"
-              />
-
-              {/* Interactive Security Architecture */}
-              <SectionReveal direction="up" delay={0.1}>
-                <section id="security-section" className="py-14 px-4 sm:px-6 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-                  <div className="container mx-auto max-w-7xl relative z-10">
-                    <InteractiveSecurityArchitecture />
-                  </div>
-                </section>
               </SectionReveal>
 
               <SectionTransition
