@@ -1,0 +1,46 @@
+-- Rewrite skill descriptions so each line covers every linked use case,
+-- combined into one sentence. Match by name. No rows deleted.
+
+UPDATE public.skills SET description = $d0$Used Claude to review AWS, host, and Kubernetes security findings and suggest remediations for audits and SRE work.$d0$ WHERE name = ' Claude';
+UPDATE public.skills SET description = $d1$Used Gemini to run agentic pentests, model threats, scan code, hunt alerts, and power detection, WAF, and bot-defense tools.$d1$ WHERE name = 'Google Gemini';
+UPDATE public.skills SET description = $d2$Used OpenAI models to review code, red-team prompts, map cloud attack surfaces, detect intrusions, and power a site chatbot.$d2$ WHERE name = 'OpenAI';
+UPDATE public.skills SET description = $d3$Used Google Opal to automate incident reports, code analysis, cloud alert triage, AD governance, and vulnerability research.$d3$ WHERE name = 'Google Opal';
+UPDATE public.skills SET description = $d4$Built Grok Bot workflows to harden containers, map AWS attack paths, investigate Windows detections, and support SRE work.$d4$ WHERE name = 'Grok Bot';
+UPDATE public.skills SET description = $d5$Built n8n workflows to enrich SIEM alerts, hunt threats with multiple models, and start incident response.$d5$ WHERE name = 'n8n';
+UPDATE public.skills SET description = $d6$Used CloudTrail logs to trace API activity, investigate credential abuse, monitor secret access, and support intrusion detection.$d6$ WHERE name = 'AWS CloudTrail';
+UPDATE public.skills SET description = $d7$Wrote CloudFormation templates to stand up VPC infrastructure, DNS failover, and GuardDuty threat detection labs.$d7$ WHERE name = 'AWS Cloudformation';
+UPDATE public.skills SET description = $d8$Configured CloudWatch alarms and logs to catch secret access, mask sensitive data, watch failover, and support observability.$d8$ WHERE name = 'AWS Cloudwatch';
+UPDATE public.skills SET description = $d9$Deployed EC2 instances and Auto Scaling groups for VPC labs, DNS failover, threat detection, and security assessments.$d9$ WHERE name = 'AWS Elastic Compute Cloud (EC2)';
+UPDATE public.skills SET description = $d10$Routed IAM and security events through EventBridge to trigger containment, detection, and automated incident response.$d10$ WHERE name = 'AWS EventBridge';
+UPDATE public.skills SET description = $d11$Audited IAM roles and policies to find privilege escalation paths, contain compromised identities, and assess account security.$d11$ WHERE name = 'AWS Identity Access Management (IAM)';
+UPDATE public.skills SET description = $d12$Wrote Lambda functions to quarantine compromised resources, contain IAM abuse, run compliance checks, and test function security.$d12$ WHERE name = 'AWS Lambda ';
+UPDATE public.skills SET description = $d13$Tested S3 bucket policies and access paths to find data exposure, simulate backdoors, and support compliance assessments.$d13$ WHERE name = 'AWS S3';
+UPDATE public.skills SET description = $d14$Built multi-tier VPCs with tight routing and access controls for security labs and network monitoring.$d14$ WHERE name = 'AWS Virtual Private Cloud (VPC)';
+UPDATE public.skills SET description = $d15$Built Docker Compose labs to test container escapes, simulate container attacks, run a containerized SOC, and package pentest tooling.$d15$ WHERE name = 'Docker';
+UPDATE public.skills SET description = $d16$Used Elasticsearch to correlate web traffic, threat intel, and security alerts in bot-defense and DevSecOps workflows.$d16$ WHERE name = 'Elasticsearch';
+UPDATE public.skills SET description = $d17$Set up GitHub Actions to run tests, secret scans, and security checks across cloud and container repos.$d17$ WHERE name = 'GitHub Actions';
+UPDATE public.skills SET description = $d18$Built Grafana dashboards to chart system and container metrics in backend and Linux observability labs.$d18$ WHERE name = 'Grafana';
+UPDATE public.skills SET description = $d19$Deployed and attacked Kubernetes clusters to test admission controls, map blast radius, and practice runtime isolation and remediation.$d19$ WHERE name = 'Kubernetes';
+UPDATE public.skills SET description = $d20$Deployed Prometheus with exporters to scrape system and container metrics for backend and Linux observability dashboards.$d20$ WHERE name = 'Prometheus';
+UPDATE public.skills SET description = $d21$Used Supabase for auth, data, and APIs in a personal site, security assessments, and threat-intel apps.$d21$ WHERE name = 'Supabase';
+UPDATE public.skills SET description = $d22$Wrote Terraform to stand up AWS detection, forensics, and security tooling, including SRE automation workflows.$d22$ WHERE name = 'Terraform';
+UPDATE public.skills SET description = $d23$Ran Ubuntu servers to forward logs, analyze system telemetry, and support detection and observability work.$d23$ WHERE name = 'Ubuntu';
+UPDATE public.skills SET description = $d24$Administered Windows Server and Active Directory labs for adversary simulations, infrastructure attacks, and host intelligence.$d24$ WHERE name = 'Windows';
+UPDATE public.skills SET description = $d25$Used Python to build intrusion detection tooling, analyze cloud and host telemetry, and automate Windows, container, Kubernetes, and SRE security work.$d25$ WHERE name = 'Python';
+UPDATE public.skills SET description = $d26$Wrote SQL queries for data analysis and tested databases for injection flaws and their defenses.$d26$ WHERE name = 'SQL';
+UPDATE public.skills SET description = $d27$Validated GuardDuty findings against attack activity and used them to drive automated response and intrusion detection.$d27$ WHERE name = 'AWS GuardDuty';
+UPDATE public.skills SET description = $d28$Deployed Elastic Defend on endpoints to detect malware, trace processes, and feed SIEM triage during incidents.$d28$ WHERE name = 'Elastic Defend (EDR)';
+UPDATE public.skills SET description = $d29$Used Elastic SIEM to build detections, investigate attack timelines, and feed automated alert triage workflows.$d29$ WHERE name = 'Elastic SIEM';
+UPDATE public.skills SET description = $d30$Wrote and tested Falco rules to detect container escapes, ingest runtime alerts, and triage findings in response workflows.$d30$ WHERE name = 'Falco';
+UPDATE public.skills SET description = $d31$Used Falcon Sensor telemetry to reconstruct attack activity in Active Directory investigations and broader endpoint analysis.$d31$ WHERE name = 'Falcon Sensor (EDR/XDR)';
+UPDATE public.skills SET description = $d32$Used Kali Linux tools to simulate attacks, including cloud and IoT scenarios, and confirm that detections fired.$d32$ WHERE name = 'Kali Linux';
+UPDATE public.skills SET description = $d33$Wrote Kyverno policies to block risky pods, harden inference workloads, and test admission attacks and escapes.$d33$ WHERE name = 'Kyverno';
+UPDATE public.skills SET description = $d34$Ingested Windows logs into Microsoft Sentinel, wrote KQL rules for brute-force logons, and supported multi-model threat hunting.$d34$ WHERE name = 'Microsoft Sentinel';
+UPDATE public.skills SET description = $d35$Ran Nmap scans to map open ports and services and to generate traffic for network intrusion detection tests.$d35$ WHERE name = 'Nmap';
+UPDATE public.skills SET description = $d36$Wrote PowerShell attack scripts to generate detection telemetry for adversary simulations and host-based IDS tests.$d36$ WHERE name = 'PowerShell';
+UPDATE public.skills SET description = $d37$Ingested security logs into Splunk to hunt brute-force and web attacks, build dashboards, and support automated response.$d37$ WHERE name = 'Splunk';
+UPDATE public.skills SET description = $d38$Used Trivy to scan container images and IaC for vulnerabilities during hardening and pentest work.$d38$ WHERE name = 'Trivy';
+UPDATE public.skills SET description = $d39$Used Wireshark to inspect live traffic, trace suspicious connections, and expose captures to automated analysis tooling.$d39$ WHERE name = 'Wireshark';
+UPDATE public.skills SET description = $d40$Used Next.js to build dashboards for threat modeling, agentic pentesting, and live telemetry including anomaly detection.$d40$ WHERE name = 'Next.js';
+UPDATE public.skills SET description = $d41$Built React dashboards to visualize threats, model attacks, and control security tooling across web, identity, and telemetry apps.$d41$ WHERE name = 'React';
+UPDATE public.skills SET description = $d42$Used TypeScript to build type-safe frontends and dashboards for threat modeling, pentesting, and live telemetry.$d42$ WHERE name = 'TypeScript';
